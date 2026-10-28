@@ -89,6 +89,22 @@ public sealed class WorkbookWorkspace(IWorkbookEngine engine, Func<CancellationT
         session.Edit(edit, token); return Summarize(session);
     }, token));
 
+    public Task<WorksheetIntegrationPreview> PreviewIntegrationAsync(Guid sessionId, WorksheetIntegrationRequest request) => Run(token => Task.Run(() =>
+    {
+        IWorkbookSession destination; IWorkbookSession copy;
+        lock (gate) { destination = RequireSession(sessionId); copy = RequireSession(request.WorkingCopyId);
+            if (!ReferenceEquals(destination, active) || !copies.ContainsKey(request.WorkingCopyId)) throw new WorkbookException("INVALID_WORKING_COPY", "Choose a working copy and its original session."); }
+        return destination.PreviewIntegration(copy, request, token);
+    }, token));
+
+    public Task<WorksheetIntegrationResult> IntegrateAsync(Guid sessionId, WorksheetIntegrationRequest request) => Run(token => Task.Run(() =>
+    {
+        IWorkbookSession destination; IWorkbookSession copy;
+        lock (gate) { destination = RequireSession(sessionId); copy = RequireSession(request.WorkingCopyId);
+            if (!ReferenceEquals(destination, active) || !copies.ContainsKey(request.WorkingCopyId)) throw new WorkbookException("INVALID_WORKING_COPY", "Choose a working copy and its original session."); }
+        return destination.Integrate(copy, request, token);
+    }, token));
+
     public Task<string> CloseAsync(Guid sessionId, bool discardChanges = false) => Run(_ =>
     {
         IWorkbookSession session; IWorkbookSession[] children;

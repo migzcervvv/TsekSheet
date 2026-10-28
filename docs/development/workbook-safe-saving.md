@@ -2,6 +2,8 @@
 
 Status: new-file-only Save As is enabled for the supported Windows x64/local fixed NTFS policy. Existing-file Save and replacement remain unavailable. Phase 2 is incomplete.
 
+Current follow-up: [Step 40 .NET 10 migration](dotnet-10-migration.md) preserves this implementation and restrictions. All workbook/save regressions, 600 native rename checks and 390 managed commit checks pass on SDK 10.0.403/runtime 10.0.14. Older framework/tool paths and results below describe the original saving milestone.
+
 ## Implementation sequence
 
 1. Reproduce native rename errors and establish the filename buffer contract.
@@ -14,7 +16,7 @@ Status: new-file-only Save As is enabled for the supported Windows x64/local fix
 
 Save As exports the main session to a separate, brand-new `.xlsx` path selected in a native dialog for each operation. React supplies only a session ID and expected revision through `workbook.saveAsNew`; it cannot supply paths. The dialog does not offer an overwrite confirmation. Its `CreateTestFile` is explicitly false, preventing the default destination-side probe described by [Microsoft's dialog documentation](https://learn.microsoft.com/en-us/dotnet/api/microsoft.win32.savefiledialog.createtestfile?view=windowsdesktop-8.0). Existing selections are rejected, and the backend independently rejects any destination that already exists or appears during commit.
 
-The source path is forbidden even if the source was deleted externally. Working copies and snapshots cannot be exported directly. Pending working-copy changes are excluded. The desktop permits Save As only from the original-session view for a workbook within the existing compatibility scope. The desktop editor still edits working copies only; it does not integrate them.
+The source path is forbidden even if the source was deleted externally. Working copies and snapshots cannot be exported directly. Pending working-copy changes are excluded. The desktop permits Save As only from the original-session view for a workbook within the existing compatibility scope. The desktop editor edits working copies; [validated Merge](worksheet-integration.md) can now integrate supported cell edits into the original session in memory. Save As includes those integrated edits only after a separate explicit action.
 
 ## Candidate and session state
 

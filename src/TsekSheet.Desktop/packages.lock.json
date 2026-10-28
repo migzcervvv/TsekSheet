@@ -1,7 +1,7 @@
 {
   "version": 1,
   "dependencies": {
-    "net8.0-windows7.0": {
+    "net10.0-windows7.0": {
       "Microsoft.Web.WebView2": {
         "type": "Direct",
         "requested": "[1.0.4314.35, )",
@@ -36,10 +36,7 @@
       "DocumentFormat.OpenXml.Framework": {
         "type": "Transitive",
         "resolved": "3.5.1",
-        "contentHash": "U5txtc3ORno73xQx9Lf2gWzfaSZnZwKHfLkTAslhlew9lxe5XbUiCt0dY1fHeAf8yRqszUAe5i/+xLC9R/Xfsw==",
-        "dependencies": {
-          "System.IO.Packaging": "8.0.1"
-        }
+        "contentHash": "U5txtc3ORno73xQx9Lf2gWzfaSZnZwKHfLkTAslhlew9lxe5XbUiCt0dY1fHeAf8yRqszUAe5i/+xLC9R/Xfsw=="
       },
       "ExcelNumberFormat": {
         "type": "Transitive",
@@ -56,11 +53,6 @@
         "resolved": "1.0.0",
         "contentHash": "LFQsCZlV0xlUyXAOMUo5kkSl+8zAQXXbbdwWchtk0B4o7zotZhQsQOcJUELGHdfPfm/xDAsz6hONAuV25bJaAg=="
       },
-      "System.IO.Packaging": {
-        "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "KYkIOAvPexQOLDxPO2g0BVoWInnQhPpkFzRqvNrNrMhVT6kqhVr0zEb6KCHlptLFukxnZrjuMVAnxK7pOGUYrw=="
-      },
       "tseksheet.application": {
         "type": "Project"
       },
@@ -73,7 +65,7 @@
         }
       }
     },
-    "net8.0-windows7.0/win-x64": {
+    "net10.0-windows7.0/win-x64": {
       "Microsoft.Web.WebView2": {
         "type": "Direct",
         "requested": "[1.0.4314.35, )",

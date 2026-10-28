@@ -12,6 +12,13 @@ public sealed record CellEdit(Guid WorksheetId, int Row, int Column, string Kind
 public sealed record CellChange(Guid WorksheetId, int Row, int Column, string Kind, string Value, int Revision);
 public sealed record WorkingCopyInfo(Guid SessionId, Guid SourceWorksheetId, int BaseRevision, int Revision, bool IsDirty, IReadOnlyList<CellChange> Changes);
 public sealed record SaveReceipt(string Status, Guid SessionId, int SavedRevision, bool SourceStillDirty, bool Rebound, bool CancellationAfterCommit, string DestinationSha256, string DisplayName);
+public enum WorksheetIntegrationOperation { Merge, Replace, CreateNew }
+public sealed record WorksheetIntegrationRequest(Guid WorkingCopyId, Guid DestinationWorksheetId,
+    int ExpectedCopyRevision, int ExpectedDestinationRevision, int ExpectedBaseRevision,
+    WorksheetIntegrationOperation Operation = WorksheetIntegrationOperation.Merge);
+public sealed record WorksheetIntegrationPreview(WorksheetIntegrationRequest Request, string DestinationName,
+    int PendingCells, bool CanApply, IReadOnlyList<CompatibilityFinding> Conflicts);
+public sealed record WorksheetIntegrationResult(WorkbookInfo Workbook, int AppliedCells);
 
 public interface IWorkbookSession : IDisposable
 {
@@ -21,6 +28,10 @@ public interface IWorkbookSession : IDisposable
     IWorkbookSession CreateWorkingCopy(Guid worksheetId, int expectedRevision, CancellationToken cancellationToken = default);
     WorkbookInfo Edit(CellEdit edit, CancellationToken cancellationToken = default);
     WorkingCopyInfo? WorkingCopy { get; }
+    WorksheetIntegrationPreview PreviewIntegration(IWorkbookSession copy, WorksheetIntegrationRequest request, CancellationToken cancellationToken = default)
+        => throw new WorkbookException("UNSUPPORTED_OPERATION", "Worksheet integration is unavailable.");
+    WorksheetIntegrationResult Integrate(IWorkbookSession copy, WorksheetIntegrationRequest request, CancellationToken cancellationToken = default)
+        => throw new WorkbookException("UNSUPPORTED_OPERATION", "Worksheet integration is unavailable.");
     SaveReceipt SaveAsNew(string destination, int expectedRevision, CancellationToken cancellationToken = default);
 }
 

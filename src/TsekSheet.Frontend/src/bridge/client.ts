@@ -14,6 +14,8 @@ export interface Cell { row: number; column: number; value: string; kind: string
 export interface Viewport { sessionId: string; worksheetId: string; startRow: number; startColumn: number; rows: number; columns: number; cells: Cell[] }
 export interface WorkingCopy { sessionId: string; sourceWorksheetId: string; baseRevision: number; revision: number; isDirty: boolean; changeCount: number }
 export interface SaveReceipt { status: 'saved'; sessionId: string; savedRevision: number; sourceStillDirty: boolean; rebound: false; cancellationAfterCommit: boolean; destinationSha256: string; displayName: string }
+export interface MergePayload { sessionId: string; workingCopyId: string; worksheetId: string; expectedCopyRevision: number; expectedRevision: number; expectedBaseRevision: number }
+export interface MergePreview { destinationName: string; pendingCells: number; canApply: boolean; conflicts: { code: string; message: string }[] }
 interface Results {
   'foundation.handshake': Handshake;
   'foundation.getInfo': Info;
@@ -27,6 +29,8 @@ interface Results {
   'workbook.createCopy': WorkingCopy;
   'workbook.editCopy': WorkingCopy;
   'workbook.saveAsNew': { status: 'saved' | 'cancelled'; receipt?: SaveReceipt | null };
+  'workbook.previewMerge': MergePreview;
+  'workbook.merge': { workbook: Workbook; appliedCells: number };
 }
 interface Payloads {
   'foundation.handshake': { supportedVersions: number[] };
@@ -41,6 +45,8 @@ interface Payloads {
   'workbook.createCopy': { sessionId: string; worksheetId: string; expectedRevision: number };
   'workbook.editCopy': { sessionId: string; worksheetId: string; row: number; column: number; kind: 'text' | 'number' | 'date' | 'formula'; value: string; expectedRevision: number };
   'workbook.saveAsNew': { sessionId: string; expectedRevision: number };
+  'workbook.previewMerge': MergePayload;
+  'workbook.merge': MergePayload;
 }
 type Command = keyof Results;
 type ObjectValue = Record<string, unknown>;
@@ -51,7 +57,7 @@ const guid = (v: unknown): v is string => typeof v === 'string' && /^[a-f\d]{8}-
 const integer = (v: unknown, min: number, max: number): v is number => typeof v === 'number' && Number.isInteger(v) && v >= min && v <= max;
 function validWorkbook(v: unknown): v is Workbook {
   return object(v) && guid(v.sessionId) && (v.parentSessionId === null || guid(v.parentSessionId)) && text(v.displayName) && !/[\\/]/.test(v.displayName)
-    && typeof v.sourceSha256 === 'string' && /^[a-f\d]{64}$/i.test(v.sourceSha256) && v.revision === 0 && v.isDirty === false && typeof v.editingAllowed === 'boolean'
+    && typeof v.sourceSha256 === 'string' && /^[a-f\d]{64}$/i.test(v.sourceSha256) && integer(v.revision, 0, 2147483647) && typeof v.isDirty === 'boolean' && typeof v.editingAllowed === 'boolean'
     && content(v.creator) && content(v.title) && Array.isArray(v.worksheets) && v.worksheets.length > 0 && v.worksheets.length <= 32
     && new Set(v.worksheets.map((s: unknown) => object(s) ? s.id : null)).size === v.worksheets.length
     && v.worksheets.every((s: unknown) => object(s) && guid(s.id) && text(s.name) && integer(s.order, 1, 32) && ['Visible', 'Hidden', 'VeryHidden'].includes(String(s.visibility)) && integer(s.lastRow, 0, 1048576) && integer(s.lastColumn, 0, 16384))
@@ -74,7 +80,10 @@ function validResult(command: Command, r: unknown): boolean {
     case 'foundation.selectFile': return r.status === 'cancelled' || (r.status === 'selected' && text(r.selectionId) && text(r.displayName) && !/[\\/]/.test(r.displayName));
     case 'diagnostics.run': return r.status === 'completed' || r.status === 'cancelled';
     case 'diagnostics.cancel': return r.status === 'requested' || r.status === 'notRunning';
-    case 'workbook.open': return r.status === 'cancelled' || (r.status === 'opened' && validWorkbook(r.workbook));
+    case 'workbook.open': return r.status === 'cancelled' || (r.status === 'opened' && validWorkbook(r.workbook) && r.workbook.revision === 0 && !r.workbook.isDirty);
+    case 'workbook.previewMerge': return text(r.destinationName) && integer(r.pendingCells, 0, 1000) && typeof r.canApply === 'boolean'
+      && Array.isArray(r.conflicts) && r.conflicts.length <= 16 && r.conflicts.every((c: unknown) => object(c) && text(c.code) && content(c.message)) && r.canApply === (r.conflicts.length === 0);
+    case 'workbook.merge': return validWorkbook(r.workbook) && integer(r.appliedCells, 0, 1000);
     case 'workbook.readViewport': return validViewport(r);
     case 'workbook.close': return r.status === 'closed';
     case 'workbook.discard': return r.status === 'closed';

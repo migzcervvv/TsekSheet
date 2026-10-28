@@ -27,11 +27,13 @@ function setup() {
     postMessage: request => {
       const m = request as { command: string; requestId: string; payload: Record<string, unknown> };
       queueMicrotask(() => {
-        const error = (m.command === 'workbook.open' && mode === 'error') || (m.command === 'workbook.editCopy' && (mode === 'edit-error' || mode === 'edit-timeout')) || (m.command === 'workbook.saveAsNew' && (mode === 'save-error' || mode === 'save-uncertain'));
+        const error = (m.command === 'workbook.open' && mode === 'error') || (m.command === 'workbook.editCopy' && (mode === 'edit-error' || mode === 'edit-timeout')) || (m.command === 'workbook.saveAsNew' && (mode === 'save-error' || mode === 'save-uncertain')) || (m.command === 'workbook.merge' && mode === 'merge-error');
         let result: unknown;
         if (m.command === 'workbook.open') result = mode === 'opened' ? { status: 'opened', workbook: book } : { status: 'cancelled' };
         else if (m.command === 'workbook.close' || m.command === 'workbook.discard') result = { status: 'closed' };
         else if (m.command === 'workbook.createCopy') result = { sessionId: copyId, sourceWorksheetId: sheetId, baseRevision: 0, revision: 0, isDirty: false, changeCount: 0 };
+        else if (m.command === 'workbook.previewMerge') result = { destinationName: 'Data', pendingCells: changed ? 1 : 0, canApply: mode !== 'merge-conflict', conflicts: mode === 'merge-conflict' ? [{ code: 'DESTINATION_CONFLICT', message: 'Create a fresh copy.' }] : [] };
+        else if (m.command === 'workbook.merge') result = { workbook: { ...book, revision: changed ? 1 : 0, isDirty: changed }, appliedCells: changed ? 1 : 0 };
         else if (m.command === 'workbook.editCopy') { if (!error) changed = true; result = { sessionId: copyId, sourceWorksheetId: sheetId, baseRevision: 0, revision: 1, isDirty: true, changeCount: 1 }; }
         else if (m.command === 'workbook.saveAsNew') result = mode === 'save-cancel' ? { status: 'cancelled' } : { status: 'saved', receipt: { status: 'saved', sessionId, savedRevision: 0, sourceStillDirty: false, rebound: false, cancellationAfterCommit: false, destinationSha256: 'B'.repeat(64), displayName: 'export.xlsx' } };
         else { const v = viewport(m.payload); if (changed && m.payload.sessionId === copyId) { const cell = v.cells.find(c => c.row === 5 && c.column === 1); if (cell) cell.value = 'Copy-only value'; } result = v; }
@@ -42,6 +44,51 @@ function setup() {
   const client = new BridgeClient(host); clients.push(client);
   return { client, mode: (value: string) => { mode = value; } };
 }
+
+test('Merge previews the destination, requires confirmation and refreshes the original view', async () => {
+  const { client } = setup(); render(<WorkbookViewer bridge={client} available />);
+  fireEvent.click(screen.getByRole('button', { name: 'Open workbook' })); await screen.findByRole('table');
+  await waitFor(() => expect((screen.getByRole('button', { name: 'Create working copy' }) as HTMLButtonElement).disabled).toBe(false));
+  fireEvent.click(screen.getByRole('button', { name: 'Create working copy' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Select A5' }));
+  fireEvent.change(screen.getByRole('textbox', { name: 'Cell value' }), { target: { value: 'Copy-only value' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Apply to working copy' })); await screen.findByText('Copy-only value');
+  await waitFor(() => expect((screen.getByRole('button', { name: 'Review Merge' }) as HTMLButtonElement).disabled).toBe(false));
+  fireEvent.click(screen.getByRole('button', { name: 'Review Merge' }));
+  await screen.findByRole('alertdialog', { name: 'Review worksheet merge' });
+  expect(screen.getByText('Merge into Data')).toBeDefined(); expect(screen.getByText(/1 effective pending cell edits/)).toBeDefined();
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel merge' }));
+  expect((screen.getByRole('combobox', { name: 'Workbook view' }) as HTMLSelectElement).value).toBe(copyId);
+  fireEvent.click(screen.getByRole('button', { name: 'Review Merge' })); await screen.findByRole('alertdialog', { name: 'Review worksheet merge' });
+  fireEvent.click(screen.getByRole('button', { name: 'Confirm merge in memory' }));
+  await screen.findByText(/Merged 1 cells in memory/);
+  expect((screen.getByRole('combobox', { name: 'Workbook view' }) as HTMLSelectElement).value).toBe('original');
+  expect(screen.getByRole('option', { name: /Working copy 1/ })).toBeDefined();
+}, 15000);
+
+test('Merge conflicts disable confirmation and retain the selected working copy', async () => {
+  const fake = setup(); render(<WorkbookViewer bridge={fake.client} available />);
+  fireEvent.click(screen.getByRole('button', { name: 'Open workbook' })); await screen.findByRole('table');
+  await waitFor(() => expect((screen.getByRole('button', { name: 'Create working copy' }) as HTMLButtonElement).disabled).toBe(false));
+  fireEvent.click(screen.getByRole('button', { name: 'Create working copy' })); await screen.findByRole('button', { name: 'Select A5' });
+  await waitFor(() => expect((screen.getByRole('button', { name: 'Review Merge' }) as HTMLButtonElement).disabled).toBe(false));
+  fake.mode('merge-conflict'); fireEvent.click(screen.getByRole('button', { name: 'Review Merge' }));
+  await screen.findByText(/DESTINATION_CONFLICT/);
+  expect((screen.getByRole('button', { name: 'Confirm merge in memory' }) as HTMLButtonElement).disabled).toBe(true);
+  expect((screen.getByRole('combobox', { name: 'Workbook view' }) as HTMLSelectElement).value).toBe(copyId);
+}, 15000);
+
+test('A rejected Merge keeps its working copy available', async () => {
+  const fake = setup(); render(<WorkbookViewer bridge={fake.client} available />);
+  fireEvent.click(screen.getByRole('button', { name: 'Open workbook' })); await screen.findByRole('table');
+  await waitFor(() => expect((screen.getByRole('button', { name: 'Create working copy' }) as HTMLButtonElement).disabled).toBe(false));
+  fireEvent.click(screen.getByRole('button', { name: 'Create working copy' })); await screen.findByRole('button', { name: 'Select A5' });
+  await waitFor(() => expect((screen.getByRole('button', { name: 'Review Merge' }) as HTMLButtonElement).disabled).toBe(false));
+  fireEvent.click(screen.getByRole('button', { name: 'Review Merge' })); await screen.findByRole('alertdialog', { name: 'Review worksheet merge' });
+  fake.mode('merge-error'); fireEvent.click(screen.getByRole('button', { name: 'Confirm merge in memory' }));
+  await screen.findByRole('alert');
+  expect((screen.getByRole('combobox', { name: 'Workbook view' }) as HTMLSelectElement).value).toBe(copyId);
+}, 15000);
 
 test('opens a read-only workbook, renders literal text and formulas, pages, switches hidden sheets and closes', async () => {
   const { client } = setup(); render(<WorkbookViewer bridge={client} available />);

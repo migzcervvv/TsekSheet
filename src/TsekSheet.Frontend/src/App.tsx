@@ -91,7 +91,7 @@ export default function App() {
             <p className="detail">Only its display name reaches this interface.</p>
           </section>
         </div>
-        <section className="scope" aria-labelledby="scope-title"><h2 id="scope-title">Available in a later phase</h2><p>Workbook integration, saving, templates, and OCR are not available in this foundation build.</p></section>
+        <section className="scope" aria-labelledby="scope-title"><h2 id="scope-title">Available in a later phase</h2><p>Worksheet replacement, new-sheet creation, existing-file saving, templates, and OCR are not available. Supported cell edits can be merged in memory and exported with Save As to a new file.</p></section>
       </main>
       <footer><span>Working copies stay in memory · Saving unavailable</span><span>Windows x64 · Offline-first</span></footer>
     </div>

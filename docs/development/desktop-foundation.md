@@ -2,48 +2,49 @@
 
 Status: Implemented foundation; Phase 1 acceptance remains open.
 
-This implements the remaining shell/transport work in [the Phase 1 plan](../../plans/phase-01-desktop-foundation.md). It retains the accepted WPF/WebView2, React/TypeScript, plain C# application layer, and local-first boundaries. No Excel, template, worksheet integration, Python, or OCR processing is implemented. No workbook can be opened or saved by the command surface.
+This records the shell/transport milestone in [the Phase 1 plan](../../plans/phase-01-desktop-foundation.md). Later workbook editing, Merge and new-file Save As are documented separately. The [Step 40 migration report](dotnet-10-migration.md) records the current .NET 10 standard build and regression results; older validation counts below are historical. Phase acceptance remains open.
 
 ## Prerequisites and Pinned Dependencies
 
-Use Windows x64, installed .NET SDK **8.0.427** selected by root `global.json`, and Visual Studio 2022-compatible project files. WPF targets `net8.0-windows`; Application targets `net8.0`. The Desktop and desktop tests use x64. The full dependency inventory remains in [toolchain.md](toolchain.md).
+Use Windows x64 and stable .NET SDK **10.0.403** selected by root `global.json`. WPF targets `net10.0-windows`; Application targets `net10.0`. Desktop and desktop tests remain x64. Use CMD or VS Code plus the SDK; Visual Studio 2026 is optional, while Visual Studio 2022 does not officially support .NET 10 targeting. The full dependency inventory remains in [toolchain.md](toolchain.md).
 
-Use Node **24.22.1**, npm **11.19.1**, and the retained `package-lock.json`. The frontend preinstall check rejects other versions. On this machine the adjacent npm CLI is 11.19.1 while the `npm.cmd` launcher reports 10.9.8; commands below deliberately invoke the documented CLI directly. No global npm installation or PATH change is required.
+Use stable Node **>=24.16.0 <25**, npm **>=11.13.0 <12**, and the retained `package-lock.json`. Current-PC verification uses 24.16.0/11.13.0; the earlier 24.22.1/11.19.1 pair is also accepted. No global npm installation is required.
 
-The build defaults `NpmCliPath` to `%ProgramFiles%\nodejs\node_modules\npm\bin\npm-cli.js`. For another Node installation, pass `/p:NpmCliPath="C:\path\to\npm\bin\npm-cli.js"` to MSBuild commands. `node` must resolve to the pinned x64 runtime. End users need neither Node nor npm.
+The build discovers `npm.cmd` on PATH with `call npm.cmd`. An explicit absolute `NpmExecutable` can select a launcher, or the legacy `/p:NpmCliPath="C:\path\to\npm\bin\npm-cli.js"` selects a CLI through `node` on PATH. The same toolchain check applies. End users need neither Node nor npm.
 
 NuGet package versions remain WebView2 **1.0.4314.35**, MSTest framework/adapter **4.5.2**, and Microsoft.NET.Test.Sdk **18.11.0**. Each .NET project now retains a `packages.lock.json`; reviewed restores can use locked mode. No new production framework is introduced. Frontend tests use the documented Vitest **5.0.5**, jsdom **30.1.3**, Testing Library React **16.3.3**, and DOM **10.4.2**. Optional jest-dom remains omitted because of its previously observed declaration conflict; built-in assertions cover these tests.
 
-The development machine's installed WebView2 Runtime **155.0.4283.62 x64** passed the current hosting/messaging tests with this SDK. This is execution evidence for the APIs used, not a claim that every SDK-156 API works on runtime 155. The documented **156.0.4314.42** runtime reference was not installed. Runtime absence is handled with a native error; the app never bootstraps a runtime download. Supply an approved standalone offline runtime installer for clean deployments. Runtime distribution and servicing still need clean-machine acceptance.
+Current-PC .NET 10 desktop tests pass with WebView2 Runtime **156.0.4314.50 x64**. Earlier counts below used runtime 155.0.4283.62 on the prior PC. Runtime absence is handled with a native error; the app never bootstraps a runtime download. Supply an approved standalone offline runtime installer for clean deployments. Runtime distribution and servicing still need clean-machine acceptance.
 
-.NET 8 support ends **November 10, 2026**. A maintained release beyond that date requires an upgrade; self-contained publishing does not extend support. Do not install .NET 10 as part of these instructions.
+The repository now targets .NET 10 LTS. Self-contained releases include their own runtime and require runtime servicing; keeping older SDKs installed does not change which SDK the repository pin selects. See the [migration report](dotnet-10-migration.md) for rollback and compatibility evidence.
 
 ## CMD Build and Test Instructions
 
-All command blocks use Windows Command Prompt. Paths containing spaces must remain quoted. Commands assume the normal Node location documented above; substitute the actual pinned CLI location if needed. Stop after any command failure. In a `.cmd` wrapper, use `if errorlevel 1 exit /b 1` after each step.
+All command blocks use Windows Command Prompt from the repository root. Paths containing spaces must remain quoted. Tools resolve from PATH. Stop after any command failure. In a `.cmd` wrapper, use `if errorlevel 1 exit /b 1` after each step.
 
 ```bat
-cd /d C:\Users\mcs\Desktop\Projects\TsekSheet
 dotnet --version
 node --version
-node "%ProgramFiles%\nodejs\node_modules\npm\bin\npm-cli.js" --version
+call npm.cmd --version
 dotnet restore TsekSheet.sln --locked-mode
 dotnet build TsekSheet.sln -c Release --no-restore
 dotnet test TsekSheet.sln -c Release --no-build
 ```
 
-Expect SDK 8.0.427, Node v24.22.1, npm 11.19.1. The desktop build performs `npm ci --no-audit --no-fund`, strict typechecking, and a Vite production build, then replaces only its generated output `frontend` directory with current `dist` files. Publish does the same for its generated `frontend` directory, preventing stale hashed bundles from accumulating. Never put user files in these generated folders. Errors stop the build. Design-time builds do not invoke npm. No development server is started, and no frontend source or node_modules is copied into the desktop distribution.
+Expect SDK 10.0.403 and an accepted Node/npm pair. The desktop build performs `npm ci --no-audit --no-fund`, strict typechecking, and a Vite production build, then replaces only its generated output `frontend` directory with current `dist` files. Publish does the same for its generated `frontend` directory, preventing stale hashed bundles from accumulating. Never put user files in these generated folders. Errors stop the build. Design-time builds do not invoke npm and are not build acceptance evidence. No development server is started, and no frontend source or node_modules is copied into the desktop distribution.
 
 Stop any local Vite/Vitest process using the frontend folder before building Desktop. On Windows, `npm ci` replaces node_modules and cannot replace a native Rolldown module held by a preview or test process. During this task, stopping the preview resolved an EPERM error. Do not work around this with dependency upgrades or force-deleting locked files.
 
 Frontend-only checks:
 
 ```bat
-cd /d C:\Users\mcs\Desktop\Projects\TsekSheet\src\TsekSheet.Frontend
-node "%ProgramFiles%\nodejs\node_modules\npm\bin\npm-cli.js" ci
-node "%ProgramFiles%\nodejs\node_modules\npm\bin\npm-cli.js" run typecheck
-node "%ProgramFiles%\nodejs\node_modules\npm\bin\npm-cli.js" run test -- --run
-node "%ProgramFiles%\nodejs\node_modules\npm\bin\npm-cli.js" run build
+pushd src\TsekSheet.Frontend
+call npm.cmd ci --no-audit --no-fund
+call npm.cmd run test:toolchain
+call npm.cmd run typecheck
+call npm.cmd run test -- --run
+call npm.cmd run build
+popd
 ```
 
 Browser preview is optional development tooling. Because the production CSP disallows remote connections and eval, use the production preview rather than assuming development HMR works. A browser without WebView2's native transport shows **Desktop host unavailable** and disables native controls. It never reports a successful C# connection.
@@ -51,14 +52,13 @@ Browser preview is optional development tooling. Because the production CSP disa
 ## Release Windows x64 Distribution
 
 ```bat
-cd /d C:\Users\mcs\Desktop\Projects\TsekSheet
-dotnet publish src\TsekSheet.Desktop\TsekSheet.Desktop.csproj -c Release -r win-x64 --self-contained true -p:RuntimeFrameworkVersion=8.0.33 -o artifacts\desktop-win-x64
-artifacts\desktop-win-x64\TsekSheet.Desktop.exe
+dotnet publish src\TsekSheet.Desktop\TsekSheet.Desktop.csproj -c Release -r win-x64 --self-contained true -p:RuntimeFrameworkVersion=10.0.14 -p:RestoreLockedMode=true -o artifacts\desktop-net10-win-x64
+artifacts\desktop-net10-win-x64\TsekSheet.Desktop.exe
 ```
 
 Restore/build can acquire packages using approved developer sources. This is separate from running the published app offline. Disconnected rebuilds additionally require a complete NuGet/npm cache and RID-specific runtime packs; this task does not claim those have been provisioned on a clean machine. `Directory.Build.props` explicitly includes the `win-x64` runtime graph so ordinary build and Windows publishing use consistent lockfiles. Review intentional dependency/runtime changes before regenerating locks.
 
-Keep the **entire** publish directory together. It contains the native executable, .NET/Core and WindowsDesktop 8.0.33 files, x64 WebView2 loader, managed dependencies, and `frontend/index.html` plus hashed JS/CSS assets. WebView2 Runtime is a separate prerequisite. Node/npm, Vite, Visual Studio, Excel, and Python are unnecessary to run it.
+Keep the **entire** publish directory together. It contains the native executable, .NET/Core and WindowsDesktop 10.0.14 files, x64 WebView2 loader, managed dependencies, and `frontend/index.html` plus hashed JS/CSS assets. WebView2 Runtime is a separate prerequisite. Node/npm, Vite, Visual Studio, Excel, and Python are unnecessary to run it.
 
 No installer or system update is included. Missing assets produce a native WPF error before browser initialization. Missing runtime and initialization failures produce native errors with retry; renderer failure instructs the user to close/reopen rather than silently replaying operations. Shutdown and page navigation cancel diagnostics and clear native selection state.
 

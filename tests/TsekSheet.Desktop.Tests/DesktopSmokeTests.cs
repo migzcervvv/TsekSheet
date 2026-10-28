@@ -225,6 +225,18 @@ public sealed class DesktopSmokeTests
                     Assert.AreEqual(hashes[index], Hash(saveTarget));
                     await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Save As').click()");
                     await Until(async () => await web.ExecuteScriptAsync("document.body.textContent.includes('Save As cancelled. No file was created.')") == "true", "Cancelled selection did not reach React.");
+                    await web.ExecuteScriptAsync("(()=>{const s=document.querySelector('select[aria-label=\"Workbook view\"]'); s.value=s.options[1].value; s.dispatchEvent(new Event('change',{bubbles:true}));})()");
+                    await Until(async () => await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Review Merge')?.disabled === false") == "true", "Merge review was unavailable.");
+                    await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Review Merge').click()");
+                    await Until(async () => await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Review worksheet merge\"]')?.textContent.includes('1 effective pending cell edits')") == "true", "Merge preview did not identify pending edits.");
+                    await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Cancel merge').click()");
+                    Assert.AreEqual("true", await web.ExecuteScriptAsync("document.querySelector('select[aria-label=\"Workbook view\"]').value !== 'original'"));
+                    await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Review Merge').click()");
+                    await Until(async () => await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Confirm merge in memory')?.disabled === false") == "true", "Merge confirmation was unavailable.");
+                    await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Confirm merge in memory').click()");
+                    await Until(async () => await web.ExecuteScriptAsync("document.querySelector('select[aria-label=\"Workbook view\"]')?.value === 'original' && document.querySelector('.cell-window')?.textContent.includes('Synthetic copy edit')") == "true", "Merge did not refresh the original session view.");
+                    Assert.AreEqual(hashes[index], Hash(paths[index]), "In-memory integration changed the source fixture.");
+                    Assert.AreEqual(hashes[index], Hash(saveTarget), "Integration automatically saved the earlier export.");
                 }
                 await Until(async () => await web.ExecuteScriptAsync("document.querySelector('select[aria-label=Worksheet]')?.disabled === false") == "true", "Worksheet selector remained disabled.");
                 await web.ExecuteScriptAsync("(()=>{const s=document.querySelector('select[aria-label=Worksheet]'); s.value=Array.from(s.options).find(o=>o.textContent==='Lookup (Hidden)').value; s.dispatchEvent(new Event('change',{bubbles:true}));})()");

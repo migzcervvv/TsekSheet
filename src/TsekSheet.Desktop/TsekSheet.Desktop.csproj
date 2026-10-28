@@ -8,20 +8,22 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <PlatformTarget>x64</PlatformTarget>
     <FrontendDirectory>$(MSBuildProjectDirectory)\..\TsekSheet.Frontend</FrontendDirectory>
-    <NpmCliPath Condition="'$(NpmCliPath)' == ''">$(ProgramFiles)\nodejs\node_modules\npm\bin\npm-cli.js</NpmCliPath>
+    <NpmCommand>call npm.cmd</NpmCommand>
+    <NpmCommand Condition="'$(NpmExecutable)' != ''">call &quot;$(NpmExecutable)&quot;</NpmCommand>
+    <NpmCommand Condition="'$(NpmCliPath)' != ''">node &quot;$(NpmCliPath)&quot;</NpmCommand>
   </PropertyGroup>
 
   <Target Name="BuildFrontend" BeforeTargets="PrepareForBuild" Condition="'$(MSBuildProjectName)' == 'TsekSheet.Desktop' and '$(DesignTimeBuild)' != 'true'">
-    <Error Condition="!Exists('$(NpmCliPath)')" Text="npm CLI not found. Set NpmCliPath to the pinned npm 11.19.1 npm-cli.js file." />
-    <Exec WorkingDirectory="$(FrontendDirectory)" Command="node &quot;$(NpmCliPath)&quot; ci --no-audit --no-fund" />
-    <Exec WorkingDirectory="$(FrontendDirectory)" Command="node &quot;$(NpmCliPath)&quot; run typecheck" />
-    <Exec WorkingDirectory="$(FrontendDirectory)" Command="node &quot;$(NpmCliPath)&quot; run build" />
+    <Error Condition="'$(NpmCliPath)' != '' and !Exists('$(NpmCliPath)')" Text="Explicit NpmCliPath does not exist. Remove the override to discover npm.cmd on PATH, or supply an existing npm-cli.js." />
+    <Exec WorkingDirectory="$(FrontendDirectory)" Command="$(NpmCommand) ci --no-audit --no-fund" />
+    <Exec WorkingDirectory="$(FrontendDirectory)" Command="$(NpmCommand) run typecheck" />
+    <Exec WorkingDirectory="$(FrontendDirectory)" Command="$(NpmCommand) run build" />
   </Target>
   <Target Name="CopyFrontendToOutput" AfterTargets="Build" Condition="'$(MSBuildProjectName)' == 'TsekSheet.Desktop'">
     <ItemGroup><FrontendOutput Include="$(FrontendDirectory)\dist\**\*" /></ItemGroup>

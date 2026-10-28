@@ -1,6 +1,8 @@
 # Read-only workbook engine foundation
 
-This document describes the earlier read-only milestone. Its statements that edits and working copies are unavailable are superseded by [the workbook editing foundation](workbook-editing-foundation.md); saving and integration remain unavailable.
+This document describes the earlier read-only milestone. Later behavior is documented in [workbook editing](workbook-editing-foundation.md), [new-file Save As](workbook-safe-saving.md) and [Merge integration](worksheet-integration.md). Historical tool paths/counts below are superseded by the [current environment and migration handoff](dotnet-10-migration.md).
+
+The current adapter targets .NET 10 after [Step 40](dotnet-10-migration.md); read-only opening, source fingerprints, compatibility rejection and all existing workbook regressions pass without changing their integrity checks.
 
 Status: read-only foundation implemented. Phase 2 is not complete.
 

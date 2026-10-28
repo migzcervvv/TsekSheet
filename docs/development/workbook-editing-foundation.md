@@ -1,5 +1,9 @@
 # Workbook editing foundation
 
+Current follow-up: [worksheet integration](worksheet-integration.md) adds conservative recorded-cell Merge, and [safe saving](workbook-safe-saving.md) provides new-file-only Save As. Historical verification and remaining-work statements below describe the earlier editing slice; they do not supersede these follow-ups. Phase 2 remains incomplete.
+
+[Step 40](dotnet-10-migration.md) now targets .NET 10 and verifies the existing editing/copy/candidate behavior unchanged. Use that report for current SDK, launch paths and complete regression counts; net8.0 commands below are historical.
+
 Status: implemented for the bounded in-memory scope below. Phase 2 remains incomplete.
 
 ## Implementation plan

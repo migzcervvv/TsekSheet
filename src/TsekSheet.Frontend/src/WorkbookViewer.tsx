@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BridgeError } from './bridge/client';
-import type { BridgeClient, Workbook, Viewport, WorkingCopy, Cell } from './bridge/client';
+import type { BridgeClient, Workbook, Viewport, WorkingCopy, Cell, MergePayload, MergePreview } from './bridge/client';
 
 const columnLabel = (column: number): string => { let label = ''; for (let n = column; n > 0; n = Math.floor((n - 1) / 26)) label = String.fromCharCode(65 + (n - 1) % 26) + label; return label; };
 
@@ -16,12 +16,14 @@ export default function WorkbookViewer({ bridge, available }: { bridge: BridgeCl
   const [editKind, setEditKind] = useState<'text' | 'number' | 'date' | 'formula'>('text'); const [draft, setDraft] = useState('');
   const [confirm, setConfirm] = useState<'close' | 'open' | null>(null);
   const [uncertain, setUncertain] = useState(false);
+  const [merge, setMerge] = useState<{ payload: MergePayload; preview: MergePreview } | null>(null);
   const enabled = available && bridge !== null;
   const sheet = book?.worksheets.find(s => s.id === sheetId);
   const copy = copies.find(c => c.sessionId === viewId);
   const activeId = copy?.sessionId ?? book?.sessionId;
   const activeRevision = copy?.revision ?? book?.revision;
   const pending = uncertain || copies.some(c => c.isDirty) || book?.isDirty === true;
+  useEffect(() => { setMerge(null); }, [bridge, book?.revision, viewId, sheetId, copy?.revision]);
   useEffect(() => { if (!bridge) { setBook(null); setView(null); setSheetId(''); setLoading(false); setBusy(false); setCopies([]); setViewId('original'); setUncertain(false); } }, [bridge]);
   useEffect(() => {
     if (!bridge || !book || !sheetId || !activeId) return;
@@ -72,6 +74,30 @@ export default function WorkbookViewer({ bridge, available }: { bridge: BridgeCl
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
+  async function previewMerge() {
+    if (!bridge || !book || !copy) return;
+    setBusy(true); setError(''); setMerge(null);
+    const payload: MergePayload = { sessionId: book.sessionId, workingCopyId: copy.sessionId, worksheetId: copy.sourceWorksheetId, expectedCopyRevision: copy.revision, expectedRevision: book.revision, expectedBaseRevision: copy.baseRevision };
+    try { const preview = await bridge.request('workbook.previewMerge', payload).promise;
+      if (preview.destinationName !== book.worksheets.find(s => s.id === copy.sourceWorksheetId)?.name) throw new Error('The desktop returned a mismatched destination.');
+      setMerge({ payload, preview });
+    } catch (e) { setError((e as Error).message); }
+    finally { setBusy(false); }
+  }
+  async function applyMerge() {
+    if (!bridge || !book || !merge || !merge.preview.canApply) return;
+    setBusy(true); setError('');
+    try {
+      const result = await bridge.request('workbook.merge', merge.payload).promise;
+      if (result.workbook.sessionId !== book.sessionId || result.workbook.sourceSha256 !== book.sourceSha256 || result.appliedCells !== merge.preview.pendingCells
+        || result.workbook.revision !== book.revision + (result.appliedCells > 0 ? 1 : 0) || (result.appliedCells > 0 && !result.workbook.isDirty)) {
+        setUncertain(true); throw new Error('The desktop returned an invalid merge result. Its outcome is unknown.');
+      }
+      setBook(result.workbook); setView(null); setViewId('original'); setSheetId(merge.payload.worksheetId); setOriginalSheet(merge.payload.worksheetId); setSelected(null);
+      setNotice(`Merged ${result.appliedCells} cells in memory. Save As is a separate action. The working copy is retained; create a fresh copy for further integration.`);
+    } catch (e) { if ((e as Error).message.includes('outcome is unknown')) setUncertain(true); setError((e as Error).message); }
+    finally { setMerge(null); setBusy(false); }
+  }
   function chooseCell(cell: Cell) {
     setSelected(cell); setError(''); setNotice('');
     setEditKind(cell.formula ? 'formula' : cell.kind === 'Number' ? 'number' : 'text');
@@ -88,12 +114,13 @@ export default function WorkbookViewer({ bridge, available }: { bridge: BridgeCl
   }
 
   return <section className="reader" aria-labelledby="workbook-title">
-    <div className="reader-heading"><div><h2 id="workbook-title">Workbook viewer</h2><p>{copy ? 'Working copy. Its edits cannot be saved or integrated yet.' : 'Original workbook view. Edit an isolated working copy.'}</p></div><button className="primary" disabled={!enabled || busy || loading} onClick={() => pending ? setConfirm('open') : void open()}>{busy ? 'Working…' : 'Open workbook'}</button></div>
+    <div className="reader-heading"><div><h2 id="workbook-title">Workbook viewer</h2><p>{copy ? 'Working copy. Review and merge supported cell edits into its original worksheet.' : 'Original workbook view. Edit an isolated working copy.'}</p></div><button className="primary" disabled={!enabled || busy || loading || !!merge} onClick={() => pending ? setConfirm('open') : void open()}>{busy ? 'Working…' : 'Open workbook'}</button></div>
     {!enabled && <p>Connect to the Windows desktop host to inspect a local .xlsx workbook.</p>}
     {notice && <p aria-live="polite">{notice}</p>}
     {error && <p role="alert" className="error">{error}</p>}
     {uncertain && <p>A working-copy operation has an unknown outcome. Discard the session and reopen the workbook before continuing edits.</p>}
-    {confirm && <div role="alertdialog" aria-labelledby="discard-title" className="discard-warning"><strong id="discard-title">Discard pending working-copy changes?</strong><p>These changes exist only in memory and cannot be saved or integrated yet.</p><div className="actions"><button onClick={() => setConfirm(null)}>Keep editing</button><button onClick={() => { const action = confirm; setConfirm(null); if (action === 'close') void close(true); else void open(true); }}>Discard changes</button></div></div>}
+    {confirm && <div role="alertdialog" aria-labelledby="discard-title" className="discard-warning"><strong id="discard-title">Discard pending working-copy changes?</strong><p>Unsaved changes exist only in memory. Closing discards them.</p><div className="actions"><button onClick={() => setConfirm(null)}>Keep editing</button><button onClick={() => { const action = confirm; setConfirm(null); if (action === 'close') void close(true); else void open(true); }}>Discard changes</button></div></div>}
+    {merge && <div role="alertdialog" aria-label="Review worksheet merge"><strong>Merge into {merge.preview.destinationName}</strong><p>{merge.preview.pendingCells} effective pending cell edits. The original file stays unchanged.</p>{merge.preview.conflicts.map(c => <p role="alert" key={c.code}>{c.code}: {c.message}</p>)}<button disabled={busy} onClick={() => setMerge(null)}>Cancel merge</button><button disabled={busy || !merge.preview.canApply || uncertain} onClick={() => void applyMerge()}>Confirm merge in memory</button></div>}
     {!book && <p className="reader-empty">No workbook open. Source files remain unchanged.</p>}
     {book && <>
       <div className="reader-controls"><button disabled={!enabled || busy || loading || !!copy || !book.editingAllowed || uncertain} onClick={() => void saveAs()}>Save As</button><p>Save As creates a new .xlsx file from the original session only. Pending working-copy edits are excluded. Existing files cannot be overwritten.</p></div>
@@ -102,6 +129,7 @@ export default function WorkbookViewer({ bridge, available }: { bridge: BridgeCl
       {!book.editingAllowed && <p>This workbook is available for inspection only because its content is outside the supported editing scope.</p>}
       <div className="reader-controls"><label>Worksheet <select aria-label="Worksheet" value={sheetId} disabled={busy || loading} onChange={e => { setView(null); setSheetId(e.target.value); if (!copy) setOriginalSheet(e.target.value); setSelected(null); setRow(1); setColumn(1); }}>{book.worksheets.map(s => <option key={s.id} value={s.id}>{s.name}{s.visibility !== 'Visible' ? ` (${s.visibility})` : ''}</option>)}</select></label><span>{sheet ? `Used extent: ${sheet.lastRow} rows × ${sheet.lastColumn} columns` : ''}</span></div>
       {copy && <p className="cached-notice">Working copy {copies.findIndex(c => c.sessionId === copy.sessionId) + 1} · Base revision {copy.baseRevision} · Revision {copy.revision} · {copy.isDirty ? 'Pending changes' : 'No changes'}{copy.sourceWorksheetId !== sheetId ? ' · This context sheet is read-only' : ' · Select a cell to edit'}</p>}
+      {copy && <div className="reader-controls"><p>Destination: {book.worksheets.find(s => s.id === copy.sourceWorksheetId)?.name}. Recorded edits: {copy.changeCount}. Operation: Merge. Replace and Create New are unavailable pending preservation tests.</p><button disabled={busy || loading || uncertain || !!merge} onClick={() => void previewMerge()}>Review Merge</button></div>}
       {copy && selected && copy.sourceWorksheetId === sheetId && <div className="cell-editor"><strong>Edit {columnLabel(selected.column)}{selected.row}</strong>{selected.formula && <p>This cell contains a formula. Select Formula to edit it explicitly; other edits are rejected.</p>}<label>Value type <select aria-label="Value type" value={editKind} disabled={busy || uncertain} onChange={e => setEditKind(e.target.value as typeof editKind)}><option value="text">Text</option><option value="number">Number</option><option value="date">Date (YYYY-MM-DD)</option><option value="formula">Formula</option></select></label><label>Cell value <input aria-label="Cell value" value={draft} maxLength={1024} disabled={busy || uncertain} onChange={e => setDraft(e.target.value)} /></label><button className="primary" disabled={busy || loading || uncertain} onClick={() => void applyEdit()}>Apply to working copy</button></div>}
       <p className="cached-notice">Formula results are stored cached values and may be blank or stale. Formulas are not recalculated.</p>
       {loading && <p aria-live="polite">Loading worksheet…</p>}

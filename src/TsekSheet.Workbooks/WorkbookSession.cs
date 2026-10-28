@@ -5,7 +5,7 @@ using TsekSheet.Application.Workbooks;
 
 namespace TsekSheet.Workbooks;
 
-internal sealed class WorkbookSession : IWorkbookSession
+internal sealed partial class WorkbookSession : IWorkbookSession
 {
     private readonly WorkbookEngine engine;
     private XLWorkbook? workbook;

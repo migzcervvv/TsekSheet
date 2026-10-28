@@ -86,7 +86,7 @@ public sealed class BridgeSession : IDisposable
                 Success(id!, new { selectedVersion = 1, applicationName = new ApplicationMetadataService().ApplicationName, version = "0.1.0", capabilities = new { diagnostics = true, fileSelection = true, workbooks = workbooks != null, templates = false, ocr = false } });
                 return;
             }
-            if (command is not ("foundation.getInfo" or "foundation.selectFile" or "diagnostics.run" or "diagnostics.cancel" or "workbook.open" or "workbook.readViewport" or "workbook.close" or "workbook.discard" or "workbook.createCopy" or "workbook.editCopy" or "workbook.saveAsNew"))
+            if (command is not ("foundation.getInfo" or "foundation.selectFile" or "diagnostics.run" or "diagnostics.cancel" or "workbook.open" or "workbook.readViewport" or "workbook.close" or "workbook.discard" or "workbook.createCopy" or "workbook.editCopy" or "workbook.saveAsNew" or "workbook.previewMerge" or "workbook.merge"))
             { Error(id!, "UNSUPPORTED_COMMAND", "Command is unavailable."); return; }
             if (!ready) { Error(id!, "NOT_READY", "Handshake is required."); return; }
             if (command!.StartsWith("workbook.", StringComparison.Ordinal))
@@ -101,6 +101,7 @@ public sealed class BridgeSession : IDisposable
                 {
                     "workbook.close" or "workbook.discard" => new[] { "sessionId" },
                     "workbook.saveAsNew" => new[] { "sessionId", "expectedRevision" },
+                    "workbook.previewMerge" or "workbook.merge" => new[] { "sessionId", "workingCopyId", "worksheetId", "expectedCopyRevision", "expectedRevision", "expectedBaseRevision" },
                     "workbook.createCopy" => new[] { "sessionId", "worksheetId", "expectedRevision" },
                     "workbook.editCopy" => new[] { "sessionId", "worksheetId", "row", "column", "kind", "value", "expectedRevision" },
                     _ => new[] { "sessionId", "worksheetId", "startRow", "startColumn", "rows", "columns" }
@@ -115,6 +116,18 @@ public sealed class BridgeSession : IDisposable
                 }
                 if (payload.GetProperty("worksheetId").ValueKind != JsonValueKind.String || !Guid.TryParseExact(payload.GetProperty("worksheetId").GetString(), "D", out var worksheetId)
                     ) { Error(id!, "INVALID_REQUEST", "Invalid worksheet identity."); return; }
+                if (command is "workbook.previewMerge" or "workbook.merge")
+                {
+                    if (payload.GetProperty("workingCopyId").ValueKind != JsonValueKind.String || !Guid.TryParseExact(payload.GetProperty("workingCopyId").GetString(), "D", out var copyId)
+                        || !payload.GetProperty("expectedCopyRevision").TryGetInt32(out var copyRevision) || copyRevision < 0
+                        || !payload.GetProperty("expectedRevision").TryGetInt32(out var revision) || revision < 0
+                        || !payload.GetProperty("expectedBaseRevision").TryGetInt32(out var baseRevision) || baseRevision < 0)
+                    { Error(id!, "INVALID_REQUEST", "Invalid integration identity or revisions."); return; }
+                    var request = new WorksheetIntegrationRequest(copyId, worksheetId, copyRevision, revision, baseRevision);
+                    if (command == "workbook.previewMerge") Success(id!, await workbooks.PreviewIntegrationAsync(sessionId, request));
+                    else Success(id!, await workbooks.IntegrateAsync(sessionId, request));
+                    return;
+                }
                 if (command == "workbook.createCopy")
                 {
                     if (!payload.GetProperty("expectedRevision").TryGetInt32(out var revision) || revision < 0) { Error(id!, "INVALID_REQUEST", "Invalid revision."); return; }

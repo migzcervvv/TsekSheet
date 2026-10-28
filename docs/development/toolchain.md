@@ -1,5 +1,20 @@
 # Windows x64 Development Toolchain
 
+## Current requirements — Step 40 (2026-10-28, Asia/Manila)
+
+The [.NET 10 migration and environment repair](dotnet-10-migration.md) supersedes the old PC inventory and exact Node/npm restrictions below. Current verified baseline: Windows x64 build 26200, stable .NET SDK **10.0.403**, Core/WindowsDesktop runtime **10.0.14**, net10.0/net10.0-windows, Node 24.16.0, npm 11.13.0, WebView2 156.0.4314.50. Standard Release build, complete regression suites and self-contained win-x64 publish pass on this PC. No design-time build exception is needed.
+
+- .NET SDK selection pins **10.0.403** in `global.json`, with `rollForward: disable`. All nine project targets and NuGet lock graphs are migrated. .NET 8 remains installed for comparison/rollback. WPF, x64, nullable and win-x64 settings are preserved; the SDK selects C# 14.0 without preview settings.
+- Stable Node `>=24.16.0 <25` x64 and npm `>=11.13.0 <12` are accepted. The reference pair recorded in `packageManager` is npm 11.13.0 with Node 24.16.0. The previous 24.22.1/11.19.1 pair is also accepted. Other accepted patches are not individually execution-qualified.
+- All 104 locked package Node-engine declarations accept Node 24.16.0. Exact patch equality was a provisioning policy, not a requirement demonstrated by the packages or regression suite. Major boundaries and a tested minimum remain enforced; prereleases and alternate managers are rejected.
+- Dependency versions, URLs, integrity records and npm lockfile version 3 are unchanged. Always use `npm ci`; the permitted tool range guarantees neither byte-identical asset generation across runtimes nor acceptance without regression checks.
+- MSBuild uses `call npm.cmd` from PATH. In CMD run `where node`, `where npm.cmd`, `node --version`, and `call npm.cmd --version`. Explicit absolute `NpmExecutable` or legacy `NpmCliPath` overrides are optional. No `%ProgramFiles%` layout is assumed. Restart the build shell after an intentional tool switch.
+- .NET CLI and VS Code are the .NET 10 development paths; Visual Studio 2022 does not officially support .NET 10 targeting. Visual Studio 2026 is optional. The user installed the SDK; this agent did not change an IDE installation.
+
+The remainder is historical inspection evidence from the previous PC. Its machine paths, SDK inventory, no-.NET-10 instruction and exact Node/npm recommendations are not current prerequisites.
+
+## Historical P1-01 assessment
+
 Assessment date: 2026-10-28 (Asia/Shanghai)
 
 Scope: P1-01 in [the Phase 1 plan](../../plans/phase-01-desktop-foundation.md), governed by [AGENTS.md](../../AGENTS.md). This document records an inspection and a proposed exact baseline. No dependencies were installed, projects scaffolded, package locks written, or application code generated.
