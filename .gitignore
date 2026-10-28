@@ -1,0 +1,72 @@
+# .NET build and test output
+**/bin/
+**/obj/
+**/TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# Frontend dependencies and generated bundles
+**/node_modules/
+**/dist/
+**/coverage/
+**/.vite/
+*.tsbuildinfo
+*.log
+
+# Local research/build output (retained docs/research/evidence is intentional)
+**/artifacts/
+.taste-skill/
+
+# IDE and operating-system temporary files
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.code-workspace
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Python caches and local virtual environments
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+ENV/
+
+# Local secrets, environment configuration and private keys
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pfx
+*.p12
+*.pem
+*.key
+*.secrets.json
+secrets.json
+
+# Office locks, temporary files, local backups and recovery files
+~$*
+*.tmp
+*.temp
+*.xlk
+*.xar
+*.bak
+*.backup
+*.recover
+*.recovery
+.tseksheet-recovery/
+
+# Keep source, synthetic .xlsx fixtures, documentation and dependency lockfiles.

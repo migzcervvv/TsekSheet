@@ -1,0 +1,64 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{CA7AE15A-356F-41B7-9AC3-1EB4DB91338B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TsekSheet.Application", "src\TsekSheet.Application\TsekSheet.Application.csproj", "{373AAA7D-6651-449A-AEE6-5A30582BBE97}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TsekSheet.Desktop", "src\TsekSheet.Desktop\TsekSheet.Desktop.csproj", "{FA05B1AD-CB68-4CB1-8F1C-A3078779B369}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{39F01E6F-49EE-4714-AA64-CB0C892CEDCE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TsekSheet.Application.Tests", "tests\TsekSheet.Application.Tests\TsekSheet.Application.Tests.csproj", "{9BBA647B-6F37-4973-98D5-EDB1440A0FAC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TsekSheet.Desktop.Tests", "tests\TsekSheet.Desktop.Tests\TsekSheet.Desktop.Tests.csproj", "{7DCB2436-6BF9-437F-B24C-D71F58C1AF6B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TsekSheet.Workbooks", "src\TsekSheet.Workbooks\TsekSheet.Workbooks.csproj", "{9BEA5832-8574-4010-8A20-E1497B80958F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TsekSheet.Workbooks.Tests", "tests\TsekSheet.Workbooks.Tests\TsekSheet.Workbooks.Tests.csproj", "{4BEE3E37-B32E-4620-89E0-7B744F882CD0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{373AAA7D-6651-449A-AEE6-5A30582BBE97}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{373AAA7D-6651-449A-AEE6-5A30582BBE97}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{373AAA7D-6651-449A-AEE6-5A30582BBE97}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{373AAA7D-6651-449A-AEE6-5A30582BBE97}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA05B1AD-CB68-4CB1-8F1C-A3078779B369}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA05B1AD-CB68-4CB1-8F1C-A3078779B369}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA05B1AD-CB68-4CB1-8F1C-A3078779B369}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA05B1AD-CB68-4CB1-8F1C-A3078779B369}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9BBA647B-6F37-4973-98D5-EDB1440A0FAC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9BBA647B-6F37-4973-98D5-EDB1440A0FAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9BBA647B-6F37-4973-98D5-EDB1440A0FAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9BBA647B-6F37-4973-98D5-EDB1440A0FAC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7DCB2436-6BF9-437F-B24C-D71F58C1AF6B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7DCB2436-6BF9-437F-B24C-D71F58C1AF6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7DCB2436-6BF9-437F-B24C-D71F58C1AF6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7DCB2436-6BF9-437F-B24C-D71F58C1AF6B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9BEA5832-8574-4010-8A20-E1497B80958F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9BEA5832-8574-4010-8A20-E1497B80958F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9BEA5832-8574-4010-8A20-E1497B80958F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9BEA5832-8574-4010-8A20-E1497B80958F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4BEE3E37-B32E-4620-89E0-7B744F882CD0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4BEE3E37-B32E-4620-89E0-7B744F882CD0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4BEE3E37-B32E-4620-89E0-7B744F882CD0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4BEE3E37-B32E-4620-89E0-7B744F882CD0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{373AAA7D-6651-449A-AEE6-5A30582BBE97} = {CA7AE15A-356F-41B7-9AC3-1EB4DB91338B}
+		{FA05B1AD-CB68-4CB1-8F1C-A3078779B369} = {CA7AE15A-356F-41B7-9AC3-1EB4DB91338B}
+		{9BBA647B-6F37-4973-98D5-EDB1440A0FAC} = {39F01E6F-49EE-4714-AA64-CB0C892CEDCE}
+		{7DCB2436-6BF9-437F-B24C-D71F58C1AF6B} = {39F01E6F-49EE-4714-AA64-CB0C892CEDCE}
+		{9BEA5832-8574-4010-8A20-E1497B80958F} = {CA7AE15A-356F-41B7-9AC3-1EB4DB91338B}
+		{4BEE3E37-B32E-4620-89E0-7B744F882CD0} = {39F01E6F-49EE-4714-AA64-CB0C892CEDCE}
+	EndGlobalSection
+EndGlobal

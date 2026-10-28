@@ -1,0 +1,47 @@
+[
+  {
+    "Library": "ClosedXML",
+    "DataRowsOnMainSheet": 10000,
+    "InputBytes": 257113,
+    "OutputBytes": 286915,
+    "ElapsedMilliseconds": 2439,
+    "AllocatedBytes": 254539432,
+    "ManagedBefore": 1393544,
+    "ManagedAfter": 29614920,
+    "WorkingSetAfter": 129286144,
+    "SourceUnchanged": true,
+    "Differences": [],
+    "SchemaErrors": [],
+    "Limitation": "Single cold library operation after SDK fixture generation in a fresh process; includes load/save/reopen. Not peak memory, steady state, or a fair speed ranking. Inspector excluded from timing."
+  },
+  {
+    "Library": "NPOI",
+    "DataRowsOnMainSheet": 10000,
+    "InputBytes": 257111,
+    "OutputBytes": 274540,
+    "ElapsedMilliseconds": 1378,
+    "AllocatedBytes": 153029872,
+    "ManagedBefore": 1382536,
+    "ManagedAfter": 50334720,
+    "WorkingSetAfter": 132562944,
+    "SourceUnchanged": true,
+    "Differences": [],
+    "SchemaErrors": [],
+    "Limitation": "Single cold library operation after SDK fixture generation in a fresh process; includes load/save/reopen. Not peak memory, steady state, or a fair speed ranking. Inspector excluded from timing."
+  },
+  {
+    "Library": "OpenXmlSdk",
+    "DataRowsOnMainSheet": 10000,
+    "InputBytes": 257106,
+    "OutputBytes": 257166,
+    "ElapsedMilliseconds": 716,
+    "AllocatedBytes": 44063880,
+    "ManagedBefore": 1381624,
+    "ManagedAfter": 39642944,
+    "WorkingSetAfter": 89202688,
+    "SourceUnchanged": true,
+    "Differences": [],
+    "SchemaErrors": [],
+    "Limitation": "Single cold library operation after SDK fixture generation in a fresh process; includes load/save/reopen. Not peak memory, steady state, or a fair speed ranking. Inspector excluded from timing."
+  }
+]

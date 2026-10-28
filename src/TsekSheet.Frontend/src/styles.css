@@ -1,0 +1,77 @@
+:root { font-family: 'Segoe UI', sans-serif; color: #202623; background: #f3f5f3; font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+button { font: inherit; font-size: 14px; padding: 9px 16px; border: 1px solid #bbc3bd; border-radius: 5px; background: #fff; color: #202623; cursor: pointer; min-height: 40px; }
+button:hover:not(:disabled) { background: #edf1ee; }
+button:focus-visible { outline: 3px solid #29705b; outline-offset: 3px; }
+button:disabled { color: #58645b; border-color: #d9deda; cursor: not-allowed; }
+button.primary { background: #253e32; color: #fff; border-color: #253e32; }
+button.primary:hover:not(:disabled) { background: #365843; }
+button.primary:disabled { background: #e4e9e5; border-color: #d9deda; color: #56635a; }
+.shell { min-height: 100vh; display: flex; flex-direction: column; }
+.topbar { display: flex; align-items: center; gap: 24px; padding: 16px 32px; background: #fff; border-bottom: 1px solid #dce2dc; font-size: 14px; color: #59655c; }
+.wordmark { font-size: 21px; letter-spacing: -.6px; font-weight: 650; color: #253e32; }
+.local { margin-left: auto; }
+main { width: 100%; max-width: 1200px; margin: 0 auto; padding: 20px 32px; flex: 1; }
+.heading, .panel-heading, .progress-label { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+h1 { margin: 0; font-size: 26px; letter-spacing: -.5px; font-weight: 600; }
+h2 { margin: 0; font-size: 16px; font-weight: 600; }
+p { color: #58645b; font-size: 14px; line-height: 1.6; margin: 8px 0 0; }
+.version, .panel-heading span { font-size: 12px; color: #5d675f; }
+.connection { margin-top: 20px; display: flex; align-items: center; gap: 24px; padding: 16px 20px; background: #e7ede8; border-radius: 6px; }
+.connection strong { margin-left: auto; font-weight: 600; font-size: 14px; }
+.connection .connected { color: #1d6147; }
+.connection p { margin-top: 4px; }
+.workspace { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; align-items: start; }
+.panel { background: #fff; padding: 20px; border: 1px solid #dce2dc; border-radius: 6px; }
+.panel > p { min-height: 45px; }
+.progress-label { font-size: 13px; margin-top: 16px; }
+progress { display: block; width: 100%; height: 8px; margin: 8px 0 16px; border: 0; border-radius: 4px; overflow: hidden; accent-color: #29705b; }
+progress::-webkit-progress-bar { background: #e9ede9; }
+progress::-webkit-progress-value { background: #29705b; }
+.actions { display: flex; gap: 10px; }
+.panel p.detail { font-size: 12px; margin-top: 16px; min-height: auto; }
+.selection { margin: 22px 0 18px; background: #f3f5f3; padding: 13px 14px; font-size: 14px; overflow-wrap: anywhere; }
+.scope { margin-top: 16px; padding: 0 4px; }
+.scope h2 { font-size: 14px; }
+.notice, .error { padding: 12px 16px; margin-top: 16px; background: #fff; border-left: 3px solid #797f74; }
+.error { color: #962d30; border-color: #962d30; }
+footer { display: flex; justify-content: space-between; gap: 16px; padding: 10px 32px; font-size: 12px; color: #5d675f; border-top: 1px solid #dce2dc; }
+.reader { margin-top: 20px; padding: 20px; border: 1px solid #c7d1c9; background: #fff; border-radius: 6px; min-width: 0; }
+.reader-heading, .reader-file, .reader-controls, .reader-paging { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.reader-heading { justify-content: space-between; }
+.reader-heading p { margin-top: 3px; }
+.reader-empty { padding: 24px 0; }
+.reader-file { border-top: 1px solid #e0e6e1; margin-top: 16px; padding: 14px 0; }
+.reader-file strong { overflow-wrap: anywhere; }
+.reader-file span, .reader-controls span { color: #59655c; font-size: 12px; }
+.reader-file button { margin-left: auto; }
+.reader-controls { justify-content: space-between; margin-bottom: 8px; }
+.reader-controls label { font-size: 13px; max-width: 100%; }
+select { font: inherit; padding: 8px; margin-left: 8px; border: 1px solid #bbc3bd; border-radius: 4px; max-width: 100%; background: #fff; }
+select:focus-visible, .cell-window:focus-visible { outline: 3px solid #29705b; outline-offset: 2px; }
+.reader .cached-notice { font-size: 12px; margin: 8px 0 12px; }
+.cell-window { max-width: 100%; overflow: auto; border: 1px solid #dce2dc; }
+.cell-window table { border-collapse: collapse; width: 100%; table-layout: fixed; min-width: 690px; font-size: 12px; }
+.cell-window caption { text-align: left; padding: 10px 12px; background: #edf2ee; color: #334b3d; }
+.cell-window th, .cell-window td { border: 1px solid #e0e6e1; height: 28px; padding: 5px 8px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.cell-window th { background: #f3f6f3; font-weight: 500; color: #59655c; }
+.cell-window th:first-child { width: 48px; }
+.cell-window td { color: #202623; }
+.formula-marker { color: #29705b; margin-right: 5px; }
+.formula-text { color: #58645b; font-size: 11px; }
+.reader-paging { margin-top: 12px; gap: 8px; }
+.reader-paging button { padding: 7px 10px; min-height: 34px; font-size: 12px; }
+.compatibility { margin-top: 14px; font-size: 12px; color: #58645b; }
+.compatibility summary { cursor: pointer; padding: 4px 0; }
+.compatibility li { margin-top: 6px; }
+.cell-window .cell-select { display: block; width: 100%; min-height: 24px; padding: 2px; border: 0; border-radius: 0; background: transparent; text-align: left; font: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cell-window .cell-select[aria-pressed="true"] { outline: 2px solid #29705b; outline-offset: -2px; }
+.cell-editor { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin-top: 16px; padding: 14px; background: #f3f6f3; }
+.cell-editor strong, .cell-editor p { flex-basis: 100%; }
+.cell-editor label { font-size: 13px; display: grid; gap: 5px; }
+.cell-editor select { margin-left: 0; }
+.cell-editor input { min-height: 40px; max-width: 100%; padding: 8px; font: inherit; border: 1px solid #bbc3bd; border-radius: 4px; }
+.discard-warning { margin: 14px 0; padding: 14px; border: 1px solid #b18e63; background: #fffaf2; }
+.discard-warning .actions { margin-top: 12px; }
+@media (max-width: 720px) { .workspace { grid-template-columns: 1fr; } main { padding: 24px 20px; } .topbar { padding: 16px 20px; gap: 16px; } .local { display: none; } .heading { align-items: start; } h1 { font-size: 23px; } .connection { flex-wrap: wrap; padding: 16px; gap: 16px; } footer { padding: 16px 20px; flex-wrap: wrap; } }

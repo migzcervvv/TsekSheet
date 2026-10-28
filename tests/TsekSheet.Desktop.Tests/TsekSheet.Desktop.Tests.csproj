@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <PlatformTarget>x64</PlatformTarget>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+    <PackageReference Include="MSTest.TestAdapter" Version="4.5.2" />
+    <PackageReference Include="MSTest.TestFramework" Version="4.5.2" />
+    <ProjectReference Include="..\..\src\TsekSheet.Desktop\TsekSheet.Desktop.csproj" />
+    <Content Include="..\WorkbookLibrary.Evaluation\Fixtures\*.xlsx" Link="Fixtures\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Target Name="CopySmokeAssets" AfterTargets="Build">
+    <ItemGroup><SmokeAsset Include="..\..\src\TsekSheet.Frontend\dist\**\*" /></ItemGroup>
+    <Copy SourceFiles="@(SmokeAsset)" DestinationFiles="@(SmokeAsset->'$(TargetDir)frontend\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+</Project>

@@ -1,0 +1,20 @@
+{
+  "handshakeRequest": {
+    "protocolVersion": 1,
+    "requestId": "fixture-handshake",
+    "command": "foundation.handshake",
+    "payload": { "supportedVersions": [1] }
+  },
+  "metadataResponse": {
+    "protocolVersion": 1,
+    "type": "response",
+    "requestId": "fixture-info",
+    "ok": true,
+    "result": {
+      "applicationName": "TsekSheet",
+      "version": "0.1.0",
+      "platform": "Windows x64",
+      "hasUnsavedWork": false
+    }
+  }
+}

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+    <PackageReference Include="MSTest.TestAdapter" Version="4.5.2" />
+    <PackageReference Include="MSTest.TestFramework" Version="4.5.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\contracts\protocol-v1.json" Link="protocol-v1.json" CopyToOutputDirectory="PreserveNewest" />
+    <ProjectReference Include="..\..\src\TsekSheet.Application\TsekSheet.Application.csproj" />
+  </ItemGroup>
+</Project>

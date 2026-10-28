@@ -1,0 +1,326 @@
+[
+  {
+    "Id": "ClosedXML",
+    "Version": "0.105.1",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "https://github.com/ClosedXML/ClosedXML",
+    "Commit": "b4ebe47bd3ecebf8480dea7422188d16b35b9d9a",
+    "NuGet": "https://www.nuget.org/packages/ClosedXML/0.105.1"
+  },
+  {
+    "Id": "DocumentFormat.OpenXml",
+    "Version": "3.5.1",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "https://github.com/dotnet/Open-XML-SDK",
+    "Commit": "3139fdfd27414548a41555f7848d5728f6e71a42",
+    "NuGet": "https://www.nuget.org/packages/DocumentFormat.OpenXml/3.5.1"
+  },
+  {
+    "Id": "Microsoft.NET.Test.Sdk",
+    "Version": "18.11.0",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "https://github.com/microsoft/vstest",
+    "Commit": "36206450d47fec22e281ba9846445edc796f5080",
+    "NuGet": "https://www.nuget.org/packages/Microsoft.NET.Test.Sdk/18.11.0"
+  },
+  {
+    "Id": "MSTest.TestAdapter",
+    "Version": "4.5.2",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "https://github.com/microsoft/testfx",
+    "Commit": "933377f07ac4bded77e820b0beef7d27e805cd89",
+    "NuGet": "https://www.nuget.org/packages/MSTest.TestAdapter/4.5.2"
+  },
+  {
+    "Id": "MSTest.TestFramework",
+    "Version": "4.5.2",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "https://github.com/microsoft/testfx",
+    "Commit": "933377f07ac4bded77e820b0beef7d27e805cd89",
+    "NuGet": "https://www.nuget.org/packages/MSTest.TestFramework/4.5.2"
+  },
+  {
+    "Id": "NPOI",
+    "Version": "2.7.6",
+    "LicenseType": "expression",
+    "License": "Apache-2.0",
+    "Repository": "https://github.com/nissl-lab/npoi",
+    "Commit": "a0f50a01a845aa4dd793cee0ac5b776745966cb6",
+    "NuGet": "https://www.nuget.org/packages/NPOI/2.7.6"
+  },
+  {
+    "Id": "BouncyCastle.Cryptography",
+    "Version": "2.6.2",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "https://github.com/bcgit/bc-csharp",
+    "Commit": "b4f2f6ad76bcd1f11f365ee50cc7447fbce79077",
+    "NuGet": "https://www.nuget.org/packages/BouncyCastle.Cryptography/2.6.2"
+  },
+  {
+    "Id": "ClosedXML.Parser",
+    "Version": "2.0.0",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "https://github.com/ClosedXML/ClosedXML.Parser",
+    "Commit": "658973aeedc2fe289e0ccba2bb9959f67692ded5",
+    "NuGet": "https://www.nuget.org/packages/ClosedXML.Parser/2.0.0"
+  },
+  {
+    "Id": "DocumentFormat.OpenXml.Framework",
+    "Version": "3.5.1",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "https://github.com/dotnet/Open-XML-SDK",
+    "Commit": "3139fdfd27414548a41555f7848d5728f6e71a42",
+    "NuGet": "https://www.nuget.org/packages/DocumentFormat.OpenXml.Framework/3.5.1"
+  },
+  {
+    "Id": "Enums.NET",
+    "Version": "5.0.0",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "https://github.com/TylerBrinkley/Enums.NET",
+    "Commit": "1ce2a8836bc40c16fc99cb6ca4f4ceceba713724",
+    "NuGet": "https://www.nuget.org/packages/Enums.NET/5.0.0"
+  },
+  {
+    "Id": "ExcelNumberFormat",
+    "Version": "1.1.0",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": null,
+    "Commit": null,
+    "NuGet": "https://www.nuget.org/packages/ExcelNumberFormat/1.1.0"
+  },
+  {
+    "Id": "ExtendedNumerics.BigDecimal",
+    "Version": "2025.1001.2.129",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "https://github.com/AdamWhiteHat/BigDecimal",
+    "Commit": "8d3de28cf6ee59e9c6be864dacdba7d450c2a026",
+    "NuGet": "https://www.nuget.org/packages/ExtendedNumerics.BigDecimal/2025.1001.2.129"
+  },
+  {
+    "Id": "MathNet.Numerics.Signed",
+    "Version": "5.0.0",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "https://github.com/mathnet/mathnet-numerics",
+    "Commit": null,
+    "NuGet": "https://www.nuget.org/packages/MathNet.Numerics.Signed/5.0.0"
+  },
+  {
+    "Id": "Microsoft.ApplicationInsights",
+    "Version": "2.23.0",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "https://github.com/Microsoft/ApplicationInsights-dotnet",
+    "Commit": "2faa7e8b157a431daa2e71785d68abd5fa817b53",
+    "NuGet": "https://www.nuget.org/packages/Microsoft.ApplicationInsights/2.23.0"
+  },
+  {
+    "Id": "Microsoft.CodeCoverage",
+    "Version": "18.11.0",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "https://github.com/microsoft/vstest",
+    "Commit": "36206450d47fec22e281ba9846445edc796f5080",
+    "NuGet": "https://www.nuget.org/packages/Microsoft.CodeCoverage/18.11.0"
+  },
+  {
+    "Id": "Microsoft.IO.RecyclableMemoryStream",
+    "Version": "3.0.1",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "https://github.com/Microsoft/Microsoft.IO.RecyclableMemoryStream",
+    "Commit": "e29a28387da9018fa9605a1dcb3f7a0435aa9974",
+    "NuGet": "https://www.nuget.org/packages/Microsoft.IO.RecyclableMemoryStream/3.0.1"
+  },
+  {
+    "Id": "Microsoft.NETCore.Platforms",
+    "Version": "5.0.0",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "git://github.com/dotnet/runtime",
+    "Commit": "cf258a14b70ad9069470a108f13765e0e5988f51",
+    "NuGet": "https://www.nuget.org/packages/Microsoft.NETCore.Platforms/5.0.0"
+  },
+  {
+    "Id": "Microsoft.Testing.Extensions.Telemetry",
+    "Version": "2.5.2",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "https://github.com/microsoft/testfx",
+    "Commit": "933377f07ac4bded77e820b0beef7d27e805cd89",
+    "NuGet": "https://www.nuget.org/packages/Microsoft.Testing.Extensions.Telemetry/2.5.2"
+  },
+  {
+    "Id": "Microsoft.Testing.Extensions.TrxReport.Abstractions",
+    "Version": "2.5.2",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "https://github.com/microsoft/testfx",
+    "Commit": "933377f07ac4bded77e820b0beef7d27e805cd89",
+    "NuGet": "https://www.nuget.org/packages/Microsoft.Testing.Extensions.TrxReport.Abstractions/2.5.2"
+  },
+  {
+    "Id": "Microsoft.Testing.Platform",
+    "Version": "2.5.2",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "https://github.com/microsoft/testfx",
+    "Commit": "933377f07ac4bded77e820b0beef7d27e805cd89",
+    "NuGet": "https://www.nuget.org/packages/Microsoft.Testing.Platform/2.5.2"
+  },
+  {
+    "Id": "Microsoft.Testing.Platform.MSBuild",
+    "Version": "2.5.2",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "https://github.com/microsoft/testfx",
+    "Commit": "933377f07ac4bded77e820b0beef7d27e805cd89",
+    "NuGet": "https://www.nuget.org/packages/Microsoft.Testing.Platform.MSBuild/2.5.2"
+  },
+  {
+    "Id": "Microsoft.TestPlatform.ObjectModel",
+    "Version": "18.11.0",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "https://github.com/microsoft/vstest",
+    "Commit": "36206450d47fec22e281ba9846445edc796f5080",
+    "NuGet": "https://www.nuget.org/packages/Microsoft.TestPlatform.ObjectModel/18.11.0"
+  },
+  {
+    "Id": "Microsoft.TestPlatform.TestHost",
+    "Version": "18.11.0",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "https://github.com/microsoft/vstest",
+    "Commit": "36206450d47fec22e281ba9846445edc796f5080",
+    "NuGet": "https://www.nuget.org/packages/Microsoft.TestPlatform.TestHost/18.11.0"
+  },
+  {
+    "Id": "MSTest.Analyzers",
+    "Version": "4.5.2",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "https://github.com/microsoft/testfx",
+    "Commit": "933377f07ac4bded77e820b0beef7d27e805cd89",
+    "NuGet": "https://www.nuget.org/packages/MSTest.Analyzers/4.5.2"
+  },
+  {
+    "Id": "NSax",
+    "Version": "1.0.2",
+    "LicenseType": "expression",
+    "License": "LGPL-3.0-only",
+    "Repository": "https://github.com/antony-liu/NSax",
+    "Commit": "b75861cbc49be1ce4b02410e324b5755ffcb17a2",
+    "NuGet": "https://www.nuget.org/packages/NSax/1.0.2"
+  },
+  {
+    "Id": "RBush.Signed",
+    "Version": "4.0.0",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "https://github.com/viceroypenguin/RBush",
+    "Commit": "b8690322abac35d835baa2fdca4a3918ed77a910",
+    "NuGet": "https://www.nuget.org/packages/RBush.Signed/4.0.0"
+  },
+  {
+    "Id": "SharpZipLib",
+    "Version": "1.4.2",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "https://github.com/icsharpcode/SharpZipLib",
+    "Commit": "33f64eb0f28cdd2b084cb822fcc224c7c5aba553",
+    "NuGet": "https://www.nuget.org/packages/SharpZipLib/1.4.2"
+  },
+  {
+    "Id": "SixLabors.Fonts",
+    "Version": "1.0.1",
+    "LicenseType": "expression",
+    "License": "Apache-2.0",
+    "Repository": "https://github.com/SixLabors/Fonts",
+    "Commit": "be8883caf13f364292508274d68c39c2455ec3e2",
+    "NuGet": "https://www.nuget.org/packages/SixLabors.Fonts/1.0.1"
+  },
+  {
+    "Id": "SixLabors.ImageSharp",
+    "Version": "2.1.11",
+    "LicenseType": "expression",
+    "License": "Apache-2.0",
+    "Repository": "https://github.com/SixLabors/ImageSharp",
+    "Commit": "cb115c2293b63155ce29ee1e168024add20bcf28",
+    "NuGet": "https://www.nuget.org/packages/SixLabors.ImageSharp/2.1.11"
+  },
+  {
+    "Id": "System.Diagnostics.DiagnosticSource",
+    "Version": "5.0.0",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "git://github.com/dotnet/runtime",
+    "Commit": "cf258a14b70ad9069470a108f13765e0e5988f51",
+    "NuGet": "https://www.nuget.org/packages/System.Diagnostics.DiagnosticSource/5.0.0"
+  },
+  {
+    "Id": "System.IO.Packaging",
+    "Version": "8.0.1",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "https://github.com/dotnet/runtime",
+    "Commit": "81cabf2857a01351e5ab578947c7403a5b128ad1",
+    "NuGet": "https://www.nuget.org/packages/System.IO.Packaging/8.0.1"
+  },
+  {
+    "Id": "System.Runtime.CompilerServices.Unsafe",
+    "Version": "5.0.0",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "git://github.com/dotnet/runtime",
+    "Commit": "cf258a14b70ad9069470a108f13765e0e5988f51",
+    "NuGet": "https://www.nuget.org/packages/System.Runtime.CompilerServices.Unsafe/5.0.0"
+  },
+  {
+    "Id": "System.Security.Cryptography.Pkcs",
+    "Version": "8.0.1",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "https://github.com/dotnet/runtime",
+    "Commit": "81cabf2857a01351e5ab578947c7403a5b128ad1",
+    "NuGet": "https://www.nuget.org/packages/System.Security.Cryptography.Pkcs/8.0.1"
+  },
+  {
+    "Id": "System.Security.Cryptography.Xml",
+    "Version": "8.0.2",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "https://github.com/dotnet/runtime",
+    "Commit": "81cabf2857a01351e5ab578947c7403a5b128ad1",
+    "NuGet": "https://www.nuget.org/packages/System.Security.Cryptography.Xml/8.0.2"
+  },
+  {
+    "Id": "System.Text.Encoding.CodePages",
+    "Version": "5.0.0",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "git://github.com/dotnet/runtime",
+    "Commit": "cf258a14b70ad9069470a108f13765e0e5988f51",
+    "NuGet": "https://www.nuget.org/packages/System.Text.Encoding.CodePages/5.0.0"
+  },
+  {
+    "Id": "ZString",
+    "Version": "2.6.0",
+    "LicenseType": "expression",
+    "License": "MIT",
+    "Repository": "https://github.com/Cysharp/ZString",
+    "Commit": "3156134075b89a162fe95350a2e92a4c85ccca59",
+    "NuGet": "https://www.nuget.org/packages/ZString/2.6.0"
+  }
+]

@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\TsekSheet.Application\TsekSheet.Application.csproj" />
+    <ProjectReference Include="..\TsekSheet.Workbooks\TsekSheet.Workbooks.csproj" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4314.35" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <PlatformTarget>x64</PlatformTarget>
+    <FrontendDirectory>$(MSBuildProjectDirectory)\..\TsekSheet.Frontend</FrontendDirectory>
+    <NpmCliPath Condition="'$(NpmCliPath)' == ''">$(ProgramFiles)\nodejs\node_modules\npm\bin\npm-cli.js</NpmCliPath>
+  </PropertyGroup>
+
+  <Target Name="BuildFrontend" BeforeTargets="PrepareForBuild" Condition="'$(MSBuildProjectName)' == 'TsekSheet.Desktop' and '$(DesignTimeBuild)' != 'true'">
+    <Error Condition="!Exists('$(NpmCliPath)')" Text="npm CLI not found. Set NpmCliPath to the pinned npm 11.19.1 npm-cli.js file." />
+    <Exec WorkingDirectory="$(FrontendDirectory)" Command="node &quot;$(NpmCliPath)&quot; ci --no-audit --no-fund" />
+    <Exec WorkingDirectory="$(FrontendDirectory)" Command="node &quot;$(NpmCliPath)&quot; run typecheck" />
+    <Exec WorkingDirectory="$(FrontendDirectory)" Command="node &quot;$(NpmCliPath)&quot; run build" />
+  </Target>
+  <Target Name="CopyFrontendToOutput" AfterTargets="Build" Condition="'$(MSBuildProjectName)' == 'TsekSheet.Desktop'">
+    <ItemGroup><FrontendOutput Include="$(FrontendDirectory)\dist\**\*" /></ItemGroup>
+    <Error Condition="!Exists('$(FrontendDirectory)\dist\index.html')" Text="Frontend production assets are missing." />
+    <RemoveDir Directories="$(TargetDir)frontend" />
+    <Copy SourceFiles="@(FrontendOutput)" DestinationFiles="@(FrontendOutput->'$(TargetDir)frontend\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+  <Target Name="CopyFrontendToPublish" AfterTargets="Publish">
+    <ItemGroup><FrontendPublish Include="$(FrontendDirectory)\dist\**\*" /></ItemGroup>
+    <RemoveDir Directories="$(PublishDir)frontend" />
+    <Copy SourceFiles="@(FrontendPublish)" DestinationFiles="@(FrontendPublish->'$(PublishDir)frontend\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+
+</Project>
