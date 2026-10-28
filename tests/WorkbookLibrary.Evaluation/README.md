@@ -1,6 +1,8 @@
 # Workbook library experiment (not production code)
 
-This isolated .NET 8 project is deliberately excluded from `TsekSheet.sln` and has no production project reference. It compares exact library versions against synthetic packages. It does not establish full Excel compatibility.
+This isolated .NET 10 project is deliberately excluded from `TsekSheet.sln` and has no production project reference. It compares exact library versions against synthetic packages. It does not establish full Excel compatibility.
+
+Security scope: [Step 41](../../docs/development/dependency-security-review.md) patches the evaluation-only cryptography dependencies while retaining NPOI 2.7.6 and its historical matrix. **ImageSharp 2.1.11 still has five advisories.** Run only the retained hash-checked synthetic fixtures or internally generated benchmarks; this is not a general workbook/image tool and is not qualified for external inputs. Audit warnings remain visible. Original research reports remain historical; the new matrix is compared against them rather than rewriting expected failures.
 
 Implementation sequence:
 

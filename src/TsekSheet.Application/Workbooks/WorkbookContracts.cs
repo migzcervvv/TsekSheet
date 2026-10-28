@@ -28,6 +28,8 @@ public interface IWorkbookSession : IDisposable
     IWorkbookSession CreateWorkingCopy(Guid worksheetId, int expectedRevision, CancellationToken cancellationToken = default);
     WorkbookInfo Edit(CellEdit edit, CancellationToken cancellationToken = default);
     WorkingCopyInfo? WorkingCopy { get; }
+    WorkbookInfo InsertWorkflowRows(TsekSheet.Application.Workflows.WorkflowPlan plan, bool approved, bool duplicatesReviewed, CancellationToken cancellationToken = default)
+        => TsekSheet.Application.Workflows.WorkflowPlanning.RejectStructuralInsertion(this, plan, approved, duplicatesReviewed, cancellationToken);
     WorksheetIntegrationPreview PreviewIntegration(IWorkbookSession copy, WorksheetIntegrationRequest request, CancellationToken cancellationToken = default)
         => throw new WorkbookException("UNSUPPORTED_OPERATION", "Worksheet integration is unavailable.");
     WorksheetIntegrationResult Integrate(IWorkbookSession copy, WorksheetIntegrationRequest request, CancellationToken cancellationToken = default)

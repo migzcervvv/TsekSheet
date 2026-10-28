@@ -75,3 +75,10 @@ select:focus-visible, .cell-window:focus-visible { outline: 3px solid #29705b; o
 .discard-warning { margin: 14px 0; padding: 14px; border: 1px solid #b18e63; background: #fffaf2; }
 .discard-warning .actions { margin-top: 12px; }
 @media (max-width: 720px) { .workspace { grid-template-columns: 1fr; } main { padding: 24px 20px; } .topbar { padding: 16px 20px; gap: 16px; } .local { display: none; } .heading { align-items: start; } h1 { font-size: 23px; } .connection { flex-wrap: wrap; padding: 16px; gap: 16px; } footer { padding: 16px 20px; flex-wrap: wrap; } }
+.workflow-panel { margin-top: 1.5rem; border-top: 1px solid #d7dee5; padding-top: 1rem; min-width: 0; }
+.workflow-panel label { display: flex; flex-direction: column; gap: .35rem; margin: .6rem 0; }
+.workflow-panel select, .workflow-panel input { padding: .55rem; max-width: 100%; min-width: 0; }
+.workflow-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: .75rem; }
+.workflow-proposal { margin-top: 1rem; overflow-wrap: anywhere; }
+.workflow-proposal table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+.workflow-proposal th, .workflow-proposal td { padding: .5rem; border-bottom: 1px solid #d7dee5; text-align: left; overflow-wrap: anywhere; }

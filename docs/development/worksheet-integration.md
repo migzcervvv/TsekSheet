@@ -4,6 +4,8 @@ Status: conservative Merge implemented with backend, bridge, frontend and real W
 
 Current follow-up: [Step 40](dotnet-10-migration.md) migrates all projects to .NET 10 and reverifies the unchanged Merge implementation, rollback/conflict tests and real desktop workflow. Current build/runtime requirements come from that report; the earlier milestone's environment and counts below remain historical.
 
+Step 42 follow-up: [workflow proposals](workflow-profiles.md) perform read-only section/entity analysis. [Structural insertion](safe-row-insertion.md) remains disabled and proposals cannot be replayed as recorded-cell Merge edits. Existing Merge and new-file Save As guarantees are unchanged; Phase 2 is incomplete.
+
 ## Implementation plan
 
 1. Add application-owned operation, request, preview and result contracts with frozen copy, base and destination revisions.

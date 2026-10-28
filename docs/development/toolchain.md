@@ -11,6 +11,8 @@ The [.NET 10 migration and environment repair](dotnet-10-migration.md) supersede
 - MSBuild uses `call npm.cmd` from PATH. In CMD run `where node`, `where npm.cmd`, `node --version`, and `call npm.cmd --version`. Explicit absolute `NpmExecutable` or legacy `NpmCliPath` overrides are optional. No `%ProgramFiles%` layout is assumed. Restart the build shell after an intentional tool switch.
 - .NET CLI and VS Code are the .NET 10 development paths; Visual Studio 2022 does not officially support .NET 10 targeting. Visual Studio 2026 is optional. The user installed the SDK; this agent did not change an IDE installation.
 
+- [Step 41 security review](dependency-security-review.md) adds an evaluation-only Cryptography.Xml 8.0.5 override, resolving Pkcs 8.0.2 and 14 advisory findings. No production/npm package or target changed. Five ImageSharp advisories remain visible in the synthetic-only NPOI graph; do not run that experiment on external inputs. See the review for exact inventory and local versus unexecuted release acceptance.
+
 The remainder is historical inspection evidence from the previous PC. Its machine paths, SDK inventory, no-.NET-10 instruction and exact Node/npm recommendations are not current prerequisites.
 
 ## Historical P1-01 assessment

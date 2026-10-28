@@ -12,6 +12,48 @@ namespace TsekSheet.Desktop.Tests;
 [DoNotParallelize]
 public sealed class DesktopSmokeTests
 {
+    [TestMethod, TestCategory("WindowsSmoke")]
+    public Task ManualPayablesPlanningRequiresSectionChoiceAndNeverEnablesInsertion() => OnDesktop(async () =>
+    {
+        using var fixture = new TsekSheet.TestFixtures.PayablesFixture();
+        string Hash() => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(fixture.Path)));
+        var hash = Hash();
+        var browserProfile = Path.Combine(Path.GetTempPath(), "TsekSheet-smoke", Guid.NewGuid().ToString("N")); Profiles.Add(browserProfile);
+        // Actual WPF/WebView2/React/C# pipeline; the native picker is deliberately replaced by a selector seam.
+        var window = new MainWindow(null, browserProfile, null, _ => Task.FromResult<string?>(fixture.Path)) { ShowInTaskbar = false };
+        try
+        {
+            window.Show(); var web = (WebView2)window.FindName("FrontendWebView");
+            async Task Click(string label) => _ = await web.ExecuteScriptAsync($"Array.from(document.querySelectorAll('button')).find(b=>b.textContent==={JsonSerializer.Serialize(label)}).click()");
+            async Task Select(string label, string value) => _ = await web.ExecuteScriptAsync($"(()=>{{const el=document.querySelector('select[aria-label={JsonSerializer.Serialize(label)}]'); el.value={JsonSerializer.Serialize(value)}; el.dispatchEvent(new Event('change',{{bubbles:true}}));}})()");
+            await Until(async () => web.CoreWebView2 != null && await web.ExecuteScriptAsync("document.querySelector('[role=status]')?.textContent") == "\"Connected\"", "Host did not connect.");
+            await Click("Open workbook");
+            await Until(async () => await web.ExecuteScriptAsync("!!document.querySelector('select[aria-label=\"Workflow profile\"] option[value=\"synthetic-payables\"]')") == "true", "Profile catalog did not load.");
+            await Select("Workflow profile", "synthetic-payables");
+            await Until(async () => await web.ExecuteScriptAsync("!!document.querySelector('input[aria-label=\"Payable Vendor name\"]')") == "true", "Manual fields did not render.");
+            foreach (var (label, value) in new[] { ("Vendor name", "Acme Trading Incorporated"), ("RFP number", "R3"), ("Amount", "123.45") })
+                await web.ExecuteScriptAsync($"(()=>{{const el=document.querySelector('input[aria-label={JsonSerializer.Serialize("Payable " + label)}]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,{JsonSerializer.Serialize(value)});el.dispatchEvent(new Event('input',{{bubbles:true}}));}})()");
+            await Click("Preview payable destination");
+            await Until(async () => await web.ExecuteScriptAsync("!!document.querySelector('select[aria-label=\"Destination section\"]') && document.body.textContent.includes('Potential duplicates')") == "true", "Multi-section matches or duplicate warning missing.");
+            Assert.AreEqual("\"\"", await web.ExecuteScriptAsync("document.querySelector('select[aria-label=\"Destination section\"]').value"));
+            await Select("Destination section", "internal"); await Click("Preview payable destination");
+            await Until(async () => await web.ExecuteScriptAsync("document.body.textContent.includes('insert at base row 9, proposed final row 9')") == "true", "Explicit section choice did not yield the expected vendor boundary.");
+            Assert.AreEqual("true", await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Apply row insertion — unavailable').disabled"));
+            Assert.AreEqual("true", await web.ExecuteScriptAsync("document.body.textContent.includes('No pending changes')"));
+            foreach (var width in new[] { 390d, 768d, 1100d })
+            {
+                window.Width = width; await Task.Delay(100);
+                Assert.AreEqual("true", await web.ExecuteScriptAsync("document.documentElement.scrollWidth<=document.documentElement.clientWidth"), "Planning overflow at " + width);
+            }
+            await web.ExecuteScriptAsync("document.querySelector('.workflow-panel').scrollIntoView({block:'start'})");
+            using var screenshot = File.Create(Path.Combine(AppContext.BaseDirectory, "payables-planning.png"));
+            await web.CoreWebView2.CapturePreviewAsync(Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png, screenshot);
+            Assert.AreEqual(hash, Hash(), "Planning altered synthetic source bytes.");
+        }
+        finally { window.Close(); }
+        Assert.AreEqual(hash, Hash());
+    });
+
     private static readonly List<string> Profiles = [];
     private static async Task OnDesktop(Func<Task> test)
     {

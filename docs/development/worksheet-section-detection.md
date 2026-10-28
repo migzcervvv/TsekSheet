@@ -1,0 +1,17 @@
+# Worksheet section detection
+
+Step 42 supplies a bounded read-only detector and a pure section analyzer. It does not infer arbitrary Excel layouts or mutate a worksheet.
+
+1. Select a stable worksheet ID in a known session and freeze its expected revision and approved profile hash.
+2. Reject empty/oversized used extents. Capture every row through `LastRow` and every configured column using the existing 20×10 viewport API. No partial vendor search, truncated cells or missing capture is accepted. Used extent bounds resource use; it does not classify rows as meaningful records.
+3. Find exactly one row with exactly one occurrence of every configured header. Map field roles by headers rather than absolute columns. Repeated/missing complete headers are rejected.
+4. Find exactly one heading for every configured section after the header, in the mapped entity column. Sort headings by current row, then require exactly one configured subtotal before the next heading/end. Reject missing, duplicate or empty/overlapping section boundaries. A heading/subtotal that also contains a literal or formula identifier rejects as an ambiguous boundary rather than hiding a possible record.
+5. Inside each data region, a record needs a literal text entity and at least one nonblank literal identifier. Entity-only notes are ignored. Entity plus contextual literal data without an identifier is ambiguous and rejected. Formula-derived entity/identifier cells are rejected rather than trusting cached identity; other formula context is explicitly marked unverified.
+6. Scan every unclassified row, including gaps, lower summaries and rows before the field header. Record-shaped content outside recognized sections rejects analysis, so an incomplete profile cannot silently narrow lookup to the external section. Headings/subtotals are classified separately. Formula-only contextual summaries are not records; unsupported formulas in identity roles still reject.
+7. Return profile-defined section IDs, labels, actual heading/data/subtotal rows and bounded record lists, scoped to worksheet/revision/profile hash. Recheck cancellation and revision before returning.
+
+The current Payables example permits 2,000 rows ×16 columns (32,000 cells). Engine maxima are 2,000 rows/32 columns/40,000 cells; profile limits can be smaller. A sparse worksheet formatted far beyond the bound rejects rather than hiding possible records. There is no scan expansion, background indexing or database. Full repeated scans are bounded but their maximum-size desktop responsiveness has not been benchmarked.
+
+Stable section IDs come from the profile; row boundaries are rediscovered after edits. A request choosing a section must name one of the current entity's matching sections (or the configured fallback for a genuinely absent entity). A moved subtotal changes the proposal without changing engine coordinates/configuration. Stale revisions require a fresh analysis.
+
+Synthetic coverage includes moved external boundaries, multiple sections/vendors, notes/summaries, missing/duplicate subtotal, duplicate heading/header, record-shaped content outside a section, formula identity, incomplete capture, oversized used extents, cancellation and concurrent revision change. Fixtures also contain unrelated sheets, hidden visibility, merges, defined names, table extents, formatting and cross/self-qualified formulas. Their existence in a read-only plan proves no mutation, **not** safe structural adjustment. See [safe row insertion](safe-row-insertion.md).

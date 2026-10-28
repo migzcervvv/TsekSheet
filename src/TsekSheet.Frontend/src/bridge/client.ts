@@ -17,6 +17,8 @@ export interface SaveReceipt { status: 'saved'; sessionId: string; savedRevision
 export interface MergePayload { sessionId: string; workingCopyId: string; worksheetId: string; expectedCopyRevision: number; expectedRevision: number; expectedBaseRevision: number }
 export interface MergePreview { destinationName: string; pendingCells: number; canApply: boolean; conflicts: { code: string; message: string }[] }
 interface Results {
+  'workflow.profiles': { profiles: WorkflowProfile[] };
+  'workbook.planRecords': WorkflowPlan;
   'foundation.handshake': Handshake;
   'foundation.getInfo': Info;
   'foundation.selectFile': Selection;
@@ -33,6 +35,8 @@ interface Results {
   'workbook.merge': { workbook: Workbook; appliedCells: number };
 }
 interface Payloads {
+  'workflow.profiles': Record<string, never>;
+  'workbook.planRecords': WorkflowRequest;
   'foundation.handshake': { supportedVersions: number[] };
   'foundation.getInfo': Record<string, never>;
   'foundation.selectFile': Record<string, never>;
@@ -74,6 +78,8 @@ function validViewport(v: ObjectValue): boolean {
 function validResult(command: Command, r: unknown): boolean {
   if (!object(r)) return false;
   switch (command) {
+    case 'workflow.profiles': return validProfiles(r);
+    case 'workbook.planRecords': return validWorkflowPlan(r);
     case 'foundation.handshake': return r.selectedVersion === 1 && text(r.applicationName) && text(r.version) && object(r.capabilities)
       && ['diagnostics', 'fileSelection', 'workbooks', 'templates', 'ocr'].every(k => typeof (r.capabilities as ObjectValue)[k] === 'boolean');
     case 'foundation.getInfo': return text(r.applicationName) && text(r.version) && text(r.platform) && typeof r.hasUnsavedWork === 'boolean';
@@ -143,3 +149,5 @@ export class BridgeClient {
     for (const [id, p] of this.pending) { this.finish(id); p.reject(new Error('Desktop connection closed.')); }
   }
 }
+import { validProfiles, validWorkflowPlan } from './workflows';
+import type { WorkflowProfile, WorkflowRequest, WorkflowPlan } from './workflows';

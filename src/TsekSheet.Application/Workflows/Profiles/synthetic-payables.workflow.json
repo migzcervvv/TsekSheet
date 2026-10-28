@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "synthetic-payables",
+  "revision": 1,
+  "displayName": "Synthetic Payables — manual planning",
+  "worksheetRule": "selected-with-unique-headers",
+  "maxRows": 2000,
+  "maxColumns": 16,
+  "entityField": "vendor",
+  "identifierFields": ["rfp", "invoice"],
+  "contextFields": ["amount", "date"],
+  "fields": [
+    { "key": "vendor", "header": "Vendor name", "kind": "text", "required": true, "maxLength": 128 },
+    { "key": "particulars", "header": "Particulars", "kind": "text", "required": false, "maxLength": 256 },
+    { "key": "rfp", "header": "RFP number", "kind": "text", "required": false, "maxLength": 64 },
+    { "key": "invoice", "header": "Invoice number", "kind": "text", "required": false, "maxLength": 64 },
+    { "key": "amount", "header": "Amount", "kind": "decimal", "required": true, "maxLength": 32 },
+    { "key": "date", "header": "Record date", "kind": "date", "required": false, "maxLength": 10 }
+  ],
+  "sections": [
+    { "id": "internal", "label": "Synthetic internal payables", "heading": "2025 PAYABLES (INTERNAL)", "subtotal": "INTERNAL SUBTOTAL" },
+    { "id": "external", "label": "Synthetic external payables", "heading": "2025 PAYABLES (EXTERNAL)", "subtotal": "EXTERNAL SUBTOTAL" }
+  ],
+  "aliases": [ { "alias": "Acme Trading", "canonical": "Acme Trading Incorporated" } ],
+  "foldCase": true,
+  "collapseWhitespace": true,
+  "fallbackSectionId": "external",
+  "existingDestination": "after-last-match",
+  "missingDestination": "before-subtotal",
+  "duplicatePolicy": "entity-and-any-identifier",
+  "insertionPolicy": "disabled",
+  "stylePolicy": "explicit-template-required",
+  "requireReview": true,
+  "requireDuplicateReview": true
+}

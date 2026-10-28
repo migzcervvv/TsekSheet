@@ -1,0 +1,429 @@
+{
+  "reviewedAtUtc": "2026-10-28T15:59:28.528Z",
+  "sdk": "10.0.403",
+  "startingCommit": "c828394a580be35cb7065d5b82ac4557765e1688",
+  "currentHead": "a711216be151b5d6caefa9304cb10ccf546dfeb1",
+  "gitNote": "HEAD advanced externally during review; this agent created no commit.",
+  "advisorySource": "https://api.nuget.org/v3/index.json",
+  "baseline": {
+    "vulnerablePackages": 3,
+    "distinctAdvisories": 19,
+    "distinctCves": 19,
+    "severities": {
+      "High": 16,
+      "Moderate": 3
+    }
+  },
+  "after": {
+    "vulnerablePackages": 1,
+    "distinctAdvisories": 5,
+    "severities": {
+      "High": 3,
+      "Moderate": 2
+    },
+    "solutionAdvisories": 0,
+    "fileCommitHarnessAdvisories": 0,
+    "npmAdvisories": 0
+  },
+  "changes": [
+    {
+      "package": "System.Security.Cryptography.Xml",
+      "from": "8.0.2",
+      "to": "8.0.5",
+      "reference": "evaluation-only direct override"
+    },
+    {
+      "package": "System.Security.Cryptography.Pkcs",
+      "from": "8.0.1",
+      "to": "8.0.2",
+      "reference": "transitive requirement of Xml 8.0.5"
+    }
+  ],
+  "inventory": [
+    {
+      "package": "SixLabors.ImageSharp",
+      "baselineVersion": "2.1.11",
+      "advisory": "GHSA-gwg2-r3hj-4w44",
+      "cve": "CVE-2026-106114",
+      "severity": "Moderate",
+      "advisoryUrl": "https://github.com/advisories/GHSA-gwg2-r3hj-4w44",
+      "apiSource": "https://api.github.com/advisories/GHSA-gwg2-r3hj-4w44",
+      "updatedAt": "2026-10-26T14:17:38Z",
+      "relevantRanges": [
+        {
+          "affected": ">= 1.0.0-beta0001, < 3.2.0",
+          "firstPatched": "3.2.0"
+        }
+      ],
+      "scope": "evaluation-only",
+      "affectedProject": "tests/WorkbookLibrary.Evaluation",
+      "origin": "NPOI 2.7.6 -> SixLabors.ImageSharp",
+      "status": "unresolved"
+    },
+    {
+      "package": "SixLabors.ImageSharp",
+      "baselineVersion": "2.1.11",
+      "advisory": "GHSA-j3p4-wp97-rph4",
+      "cve": "CVE-2026-106113",
+      "severity": "High",
+      "advisoryUrl": "https://github.com/advisories/GHSA-j3p4-wp97-rph4",
+      "apiSource": "https://api.github.com/advisories/GHSA-j3p4-wp97-rph4",
+      "updatedAt": "2026-10-26T14:19:00Z",
+      "relevantRanges": [
+        {
+          "affected": ">= 2.0.0, < 3.2.0",
+          "firstPatched": "3.2.0"
+        }
+      ],
+      "scope": "evaluation-only",
+      "affectedProject": "tests/WorkbookLibrary.Evaluation",
+      "origin": "NPOI 2.7.6 -> SixLabors.ImageSharp",
+      "status": "unresolved"
+    },
+    {
+      "package": "SixLabors.ImageSharp",
+      "baselineVersion": "2.1.11",
+      "advisory": "GHSA-j9gm-c75j-xc9q",
+      "cve": "CVE-2026-106110",
+      "severity": "High",
+      "advisoryUrl": "https://github.com/advisories/GHSA-j9gm-c75j-xc9q",
+      "apiSource": "https://api.github.com/advisories/GHSA-j9gm-c75j-xc9q",
+      "updatedAt": "2026-10-26T14:22:53Z",
+      "relevantRanges": [
+        {
+          "affected": ">= 2.0.0, < 3.2.0",
+          "firstPatched": "3.2.0"
+        }
+      ],
+      "scope": "evaluation-only",
+      "affectedProject": "tests/WorkbookLibrary.Evaluation",
+      "origin": "NPOI 2.7.6 -> SixLabors.ImageSharp",
+      "status": "unresolved"
+    },
+    {
+      "package": "SixLabors.ImageSharp",
+      "baselineVersion": "2.1.11",
+      "advisory": "GHSA-wmxv-xphr-5c9g",
+      "cve": "CVE-2026-106116",
+      "severity": "Moderate",
+      "advisoryUrl": "https://github.com/advisories/GHSA-wmxv-xphr-5c9g",
+      "apiSource": "https://api.github.com/advisories/GHSA-wmxv-xphr-5c9g",
+      "updatedAt": "2026-10-26T14:20:10Z",
+      "relevantRanges": [
+        {
+          "affected": ">= 2.0.0, < 3.2.0",
+          "firstPatched": "3.2.0"
+        }
+      ],
+      "scope": "evaluation-only",
+      "affectedProject": "tests/WorkbookLibrary.Evaluation",
+      "origin": "NPOI 2.7.6 -> SixLabors.ImageSharp",
+      "status": "unresolved"
+    },
+    {
+      "package": "SixLabors.ImageSharp",
+      "baselineVersion": "2.1.11",
+      "advisory": "GHSA-jjfr-hcj7-qf5w",
+      "cve": "CVE-2026-106115",
+      "severity": "High",
+      "advisoryUrl": "https://github.com/advisories/GHSA-jjfr-hcj7-qf5w",
+      "apiSource": "https://api.github.com/advisories/GHSA-jjfr-hcj7-qf5w",
+      "updatedAt": "2026-10-26T14:21:22Z",
+      "relevantRanges": [
+        {
+          "affected": ">= 2.1.0, < 3.2.0",
+          "firstPatched": "3.2.0"
+        }
+      ],
+      "scope": "evaluation-only",
+      "affectedProject": "tests/WorkbookLibrary.Evaluation",
+      "origin": "NPOI 2.7.6 -> SixLabors.ImageSharp",
+      "status": "unresolved"
+    },
+    {
+      "package": "System.Security.Cryptography.Pkcs",
+      "baselineVersion": "8.0.1",
+      "advisory": "GHSA-846f-f764-76mx",
+      "cve": "CVE-2026-84008",
+      "severity": "High",
+      "advisoryUrl": "https://github.com/advisories/GHSA-846f-f764-76mx",
+      "apiSource": "https://api.github.com/advisories/GHSA-846f-f764-76mx",
+      "updatedAt": "2026-10-19T19:17:43Z",
+      "relevantRanges": [
+        {
+          "affected": ">= 8.0.0, <= 8.0.1",
+          "firstPatched": "8.0.2"
+        }
+      ],
+      "scope": "evaluation-only",
+      "affectedProject": "tests/WorkbookLibrary.Evaluation",
+      "origin": "NPOI 2.7.6 -> System.Security.Cryptography.Xml -> System.Security.Cryptography.Pkcs",
+      "status": "remediated"
+    },
+    {
+      "package": "System.Security.Cryptography.Pkcs",
+      "baselineVersion": "8.0.1",
+      "advisory": "GHSA-2fmv-rv2c-59x7",
+      "cve": "CVE-2026-70162",
+      "severity": "Moderate",
+      "advisoryUrl": "https://github.com/advisories/GHSA-2fmv-rv2c-59x7",
+      "apiSource": "https://api.github.com/advisories/GHSA-2fmv-rv2c-59x7",
+      "updatedAt": "2026-10-19T19:17:53Z",
+      "relevantRanges": [
+        {
+          "affected": ">= 8.0.0, <= 8.0.1",
+          "firstPatched": "8.0.2"
+        }
+      ],
+      "scope": "evaluation-only",
+      "affectedProject": "tests/WorkbookLibrary.Evaluation",
+      "origin": "NPOI 2.7.6 -> System.Security.Cryptography.Xml -> System.Security.Cryptography.Pkcs",
+      "status": "remediated"
+    },
+    {
+      "package": "System.Security.Cryptography.Xml",
+      "baselineVersion": "8.0.2",
+      "advisory": "GHSA-37gx-xxp4-5rgx",
+      "cve": "CVE-2026-33116",
+      "severity": "High",
+      "advisoryUrl": "https://github.com/advisories/GHSA-37gx-xxp4-5rgx",
+      "apiSource": "https://api.github.com/advisories/GHSA-37gx-xxp4-5rgx",
+      "updatedAt": "2026-04-17T13:19:58Z",
+      "relevantRanges": [
+        {
+          "affected": ">= 8.0.0, <= 8.0.2",
+          "firstPatched": "8.0.3"
+        }
+      ],
+      "scope": "evaluation-only",
+      "affectedProject": "tests/WorkbookLibrary.Evaluation",
+      "origin": "NPOI 2.7.6 -> System.Security.Cryptography.Xml",
+      "status": "remediated"
+    },
+    {
+      "package": "System.Security.Cryptography.Xml",
+      "baselineVersion": "8.0.2",
+      "advisory": "GHSA-w3x6-4m5h-cxqf",
+      "cve": "CVE-2026-26171",
+      "severity": "High",
+      "advisoryUrl": "https://github.com/advisories/GHSA-w3x6-4m5h-cxqf",
+      "apiSource": "https://api.github.com/advisories/GHSA-w3x6-4m5h-cxqf",
+      "updatedAt": "2026-04-17T13:20:50Z",
+      "relevantRanges": [
+        {
+          "affected": ">= 8.0.0, <= 8.0.2",
+          "firstPatched": "8.0.3"
+        }
+      ],
+      "scope": "evaluation-only",
+      "affectedProject": "tests/WorkbookLibrary.Evaluation",
+      "origin": "NPOI 2.7.6 -> System.Security.Cryptography.Xml",
+      "status": "remediated"
+    },
+    {
+      "package": "System.Security.Cryptography.Xml",
+      "baselineVersion": "8.0.2",
+      "advisory": "GHSA-cvvh-rhrc-wg4q",
+      "cve": "CVE-2026-47302",
+      "severity": "High",
+      "advisoryUrl": "https://github.com/advisories/GHSA-cvvh-rhrc-wg4q",
+      "apiSource": "https://api.github.com/advisories/GHSA-cvvh-rhrc-wg4q",
+      "updatedAt": "2026-07-21T17:32:48Z",
+      "relevantRanges": [
+        {
+          "affected": ">= 8.0.0, <= 8.0.3",
+          "firstPatched": "8.0.4"
+        }
+      ],
+      "scope": "evaluation-only",
+      "affectedProject": "tests/WorkbookLibrary.Evaluation",
+      "origin": "NPOI 2.7.6 -> System.Security.Cryptography.Xml",
+      "status": "remediated"
+    },
+    {
+      "package": "System.Security.Cryptography.Xml",
+      "baselineVersion": "8.0.2",
+      "advisory": "GHSA-g8r8-53c2-pm3f",
+      "cve": "CVE-2026-47304",
+      "severity": "High",
+      "advisoryUrl": "https://github.com/advisories/GHSA-g8r8-53c2-pm3f",
+      "apiSource": "https://api.github.com/advisories/GHSA-g8r8-53c2-pm3f",
+      "updatedAt": "2026-07-21T16:49:13Z",
+      "relevantRanges": [
+        {
+          "affected": ">= 8.0.0, <= 8.0.3",
+          "firstPatched": "8.0.4"
+        }
+      ],
+      "scope": "evaluation-only",
+      "affectedProject": "tests/WorkbookLibrary.Evaluation",
+      "origin": "NPOI 2.7.6 -> System.Security.Cryptography.Xml",
+      "status": "remediated"
+    },
+    {
+      "package": "System.Security.Cryptography.Xml",
+      "baselineVersion": "8.0.2",
+      "advisory": "GHSA-23rf-6693-g89p",
+      "cve": "CVE-2026-50648",
+      "severity": "High",
+      "advisoryUrl": "https://github.com/advisories/GHSA-23rf-6693-g89p",
+      "apiSource": "https://api.github.com/advisories/GHSA-23rf-6693-g89p",
+      "updatedAt": "2026-07-21T17:32:18Z",
+      "relevantRanges": [
+        {
+          "affected": ">= 8.0.0, <= 8.0.3",
+          "firstPatched": "8.0.4"
+        }
+      ],
+      "scope": "evaluation-only",
+      "affectedProject": "tests/WorkbookLibrary.Evaluation",
+      "origin": "NPOI 2.7.6 -> System.Security.Cryptography.Xml",
+      "status": "remediated"
+    },
+    {
+      "package": "System.Security.Cryptography.Xml",
+      "baselineVersion": "8.0.2",
+      "advisory": "GHSA-8q5v-6pqq-x66h",
+      "cve": "CVE-2026-50525",
+      "severity": "High",
+      "advisoryUrl": "https://github.com/advisories/GHSA-8q5v-6pqq-x66h",
+      "apiSource": "https://api.github.com/advisories/GHSA-8q5v-6pqq-x66h",
+      "updatedAt": "2026-07-21T17:29:22Z",
+      "relevantRanges": [
+        {
+          "affected": ">= 8.0.0, <= 8.0.3",
+          "firstPatched": "8.0.4"
+        }
+      ],
+      "scope": "evaluation-only",
+      "affectedProject": "tests/WorkbookLibrary.Evaluation",
+      "origin": "NPOI 2.7.6 -> System.Security.Cryptography.Xml",
+      "status": "remediated"
+    },
+    {
+      "package": "System.Security.Cryptography.Xml",
+      "baselineVersion": "8.0.2",
+      "advisory": "GHSA-mmjf-rqrv-855v",
+      "cve": "CVE-2026-50527",
+      "severity": "High",
+      "advisoryUrl": "https://github.com/advisories/GHSA-mmjf-rqrv-855v",
+      "apiSource": "https://api.github.com/advisories/GHSA-mmjf-rqrv-855v",
+      "updatedAt": "2026-08-04T05:09:53Z",
+      "relevantRanges": [
+        {
+          "affected": ">= 8.0.0, <= 8.0.3",
+          "firstPatched": "8.0.4"
+        }
+      ],
+      "scope": "evaluation-only",
+      "affectedProject": "tests/WorkbookLibrary.Evaluation",
+      "origin": "NPOI 2.7.6 -> System.Security.Cryptography.Xml",
+      "status": "remediated"
+    },
+    {
+      "package": "System.Security.Cryptography.Xml",
+      "baselineVersion": "8.0.2",
+      "advisory": "GHSA-6588-8gv4-xfgh",
+      "cve": "CVE-2026-32203",
+      "severity": "High",
+      "advisoryUrl": "https://github.com/advisories/GHSA-6588-8gv4-xfgh",
+      "apiSource": "https://api.github.com/advisories/GHSA-6588-8gv4-xfgh",
+      "updatedAt": "2026-07-28T21:02:50Z",
+      "relevantRanges": [
+        {
+          "affected": ">= 8.0.0, <= 8.0.2",
+          "firstPatched": "8.0.3"
+        }
+      ],
+      "scope": "evaluation-only",
+      "affectedProject": "tests/WorkbookLibrary.Evaluation",
+      "origin": "NPOI 2.7.6 -> System.Security.Cryptography.Xml",
+      "status": "remediated"
+    },
+    {
+      "package": "System.Security.Cryptography.Xml",
+      "baselineVersion": "8.0.2",
+      "advisory": "GHSA-r955-8q5j-3h83",
+      "cve": "CVE-2026-96958",
+      "severity": "High",
+      "advisoryUrl": "https://github.com/advisories/GHSA-r955-8q5j-3h83",
+      "apiSource": "https://api.github.com/advisories/GHSA-r955-8q5j-3h83",
+      "updatedAt": "2026-10-19T19:17:44Z",
+      "relevantRanges": [
+        {
+          "affected": ">= 8.0.0, <= 8.0.4",
+          "firstPatched": "8.0.5"
+        }
+      ],
+      "scope": "evaluation-only",
+      "affectedProject": "tests/WorkbookLibrary.Evaluation",
+      "origin": "NPOI 2.7.6 -> System.Security.Cryptography.Xml",
+      "status": "remediated"
+    },
+    {
+      "package": "System.Security.Cryptography.Xml",
+      "baselineVersion": "8.0.2",
+      "advisory": "GHSA-7hqp-7c5m-4vq6",
+      "cve": "CVE-2026-96960",
+      "severity": "High",
+      "advisoryUrl": "https://github.com/advisories/GHSA-7hqp-7c5m-4vq6",
+      "apiSource": "https://api.github.com/advisories/GHSA-7hqp-7c5m-4vq6",
+      "updatedAt": "2026-10-19T16:19:51Z",
+      "relevantRanges": [
+        {
+          "affected": ">= 8.0.0, <= 8.0.4",
+          "firstPatched": "8.0.5"
+        }
+      ],
+      "scope": "evaluation-only",
+      "affectedProject": "tests/WorkbookLibrary.Evaluation",
+      "origin": "NPOI 2.7.6 -> System.Security.Cryptography.Xml",
+      "status": "remediated"
+    },
+    {
+      "package": "System.Security.Cryptography.Xml",
+      "baselineVersion": "8.0.2",
+      "advisory": "GHSA-vrv5-2jg9-4mmr",
+      "cve": "CVE-2026-96222",
+      "severity": "High",
+      "advisoryUrl": "https://github.com/advisories/GHSA-vrv5-2jg9-4mmr",
+      "apiSource": "https://api.github.com/advisories/GHSA-vrv5-2jg9-4mmr",
+      "updatedAt": "2026-10-19T19:18:08Z",
+      "relevantRanges": [
+        {
+          "affected": ">= 8.0.0, <= 8.0.4",
+          "firstPatched": "8.0.5"
+        }
+      ],
+      "scope": "evaluation-only",
+      "affectedProject": "tests/WorkbookLibrary.Evaluation",
+      "origin": "NPOI 2.7.6 -> System.Security.Cryptography.Xml",
+      "status": "remediated"
+    },
+    {
+      "package": "System.Security.Cryptography.Xml",
+      "baselineVersion": "8.0.2",
+      "advisory": "GHSA-c399-9853-6jmj",
+      "cve": "CVE-2026-96959",
+      "severity": "High",
+      "advisoryUrl": "https://github.com/advisories/GHSA-c399-9853-6jmj",
+      "apiSource": "https://api.github.com/advisories/GHSA-c399-9853-6jmj",
+      "updatedAt": "2026-10-19T19:18:54Z",
+      "relevantRanges": [
+        {
+          "affected": ">= 8.0.0, <= 8.0.4",
+          "firstPatched": "8.0.5"
+        }
+      ],
+      "scope": "evaluation-only",
+      "affectedProject": "tests/WorkbookLibrary.Evaluation",
+      "origin": "NPOI 2.7.6 -> System.Security.Cryptography.Xml",
+      "status": "remediated"
+    }
+  ],
+  "limitations": [
+    "This is an advisory-feed snapshot, not a complete security assessment.",
+    "ImageSharp 2.1.11 remains vulnerable in the synthetic-only historical NPOI evaluation graph.",
+    "No arbitrary workbook/image input or production use of the evaluation runner is qualified."
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "id": "synthetic-laboratory",
+  "revision": 1,
+  "displayName": "Synthetic Laboratory — manual planning",
+  "worksheetRule": "selected-with-unique-headers",
+  "maxRows": 2000,
+  "maxColumns": 16,
+  "entityField": "partner",
+  "identifierFields": [
+    "run",
+    "sample"
+  ],
+  "contextFields": [
+    "measurement",
+    "day"
+  ],
+  "fields": [
+    {
+      "key": "partner",
+      "header": "Partner",
+      "kind": "text",
+      "required": true,
+      "maxLength": 128
+    },
+    {
+      "key": "description",
+      "header": "Description",
+      "kind": "text",
+      "required": false,
+      "maxLength": 256
+    },
+    {
+      "key": "run",
+      "header": "Run key",
+      "kind": "text",
+      "required": false,
+      "maxLength": 64
+    },
+    {
+      "key": "sample",
+      "header": "Sample key",
+      "kind": "text",
+      "required": false,
+      "maxLength": 64
+    },
+    {
+      "key": "measurement",
+      "header": "Measurement",
+      "kind": "decimal",
+      "required": true,
+      "maxLength": 32
+    },
+    {
+      "key": "day",
+      "header": "Run date",
+      "kind": "date",
+      "required": false,
+      "maxLength": 10
+    }
+  ],
+  "sections": [
+    {
+      "id": "routine",
+      "label": "Routine work",
+      "heading": "ROUTINE WORK",
+      "subtotal": "ROUTINE TOTAL"
+    },
+    {
+      "id": "partner",
+      "label": "Partner work",
+      "heading": "PARTNER WORK",
+      "subtotal": "PARTNER TOTAL"
+    }
+  ],
+  "aliases": [
+    {
+      "alias": "North Lab",
+      "canonical": "North Laboratory"
+    }
+  ],
+  "foldCase": true,
+  "collapseWhitespace": true,
+  "fallbackSectionId": "partner",
+  "existingDestination": "after-last-match",
+  "missingDestination": "before-subtotal",
+  "duplicatePolicy": "entity-and-any-identifier",
+  "insertionPolicy": "disabled",
+  "stylePolicy": "explicit-template-required",
+  "requireReview": true,
+  "requireDuplicateReview": true
+}

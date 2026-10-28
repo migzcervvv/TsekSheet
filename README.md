@@ -21,6 +21,7 @@ The [.NET 10 migration](docs/development/dotnet-10-migration.md) is verified on 
 - Independent full-context worksheet working copies. Only the selected worksheet is editable; surrounding sheets remain read-only context.
 - Controlled text, number, date, and explicit formula edits to supported populated cells, with formula-overwrite protection and isolated candidate validation.
 - Reviewed Merge of recorded cell changes into the original worksheet in memory, with stable identities, strict base/revision checks, conflict rejection, candidate validation and atomic adoption.
+- [Manual workflow planning](docs/workflows/payables-processing.md) with approved versioned JSON profiles, bounded whole-worksheet section detection, explicit multi-section/vendor choices, duplicate warnings and batch proposals. **Structural insertion remains disabled.** The synthetic Payables and Laboratory profiles share one generic planner.
 - **Save As to a separate, brand-new `.xlsx` file only**, using protected staging, a no-overwrite commit, and final file identity/content verification on supported local fixed NTFS paths.
 - Automated application, workbook, protocol, frontend, filesystem, and actual Windows desktop smoke tests, with artificial reimbursement and laboratory fixtures.
 
@@ -59,7 +60,7 @@ Dependency versions are pinned in project/package manifests and retained lockfil
 - Git. Use Windows CMD or VS Code with the installed .NET SDK for CLI development. Visual Studio 2026 is optional; Visual Studio 2022 does not officially support .NET 10 targeting.
 - Approved NuGet/npm sources or complete local caches for dependency provisioning. An initial developer restore/build can require network access; application document processing and bundled UI assets are local.
 
-Excel and Python are not prerequisites for the currently implemented application. Keep .NET 8 installed if you need the retained pre-migration comparison/rollback files; it is no longer the build SDK. [The migration report](docs/development/dotnet-10-migration.md) contains VS Code instructions, package compatibility findings and remaining validation limits. Its evaluation-only NPOI dependency graph has audit warnings requiring separate remediation; those research libraries are excluded from the production publish.
+Excel and Python are not prerequisites for the currently implemented application. Keep .NET 8 installed if you need the retained pre-migration comparison/rollback files; it is no longer the build SDK. [The migration report](docs/development/dotnet-10-migration.md) contains VS Code instructions and build guidance. [The dependency security review](docs/development/dependency-security-review.md) removes 14 of 19 evaluation-only advisories through a cryptography servicing patch; five ImageSharp advisories remain visible in the synthetic-only NPOI research graph. Production/solution and npm audits report no vulnerable packages on the queried feeds; that is not a production-readiness certification. Those research libraries are excluded from the production publish.
 
 ## Build and test from Windows CMD
 

@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using TsekSheet.Application.Workbooks;
+using TsekSheet.Application.Workflows;
 
 namespace TsekSheet.Application.Foundation;
 
@@ -86,9 +87,14 @@ public sealed class BridgeSession : IDisposable
                 Success(id!, new { selectedVersion = 1, applicationName = new ApplicationMetadataService().ApplicationName, version = "0.1.0", capabilities = new { diagnostics = true, fileSelection = true, workbooks = workbooks != null, templates = false, ocr = false } });
                 return;
             }
-            if (command is not ("foundation.getInfo" or "foundation.selectFile" or "diagnostics.run" or "diagnostics.cancel" or "workbook.open" or "workbook.readViewport" or "workbook.close" or "workbook.discard" or "workbook.createCopy" or "workbook.editCopy" or "workbook.saveAsNew" or "workbook.previewMerge" or "workbook.merge"))
+            if (command is not ("foundation.getInfo" or "foundation.selectFile" or "diagnostics.run" or "diagnostics.cancel" or "workbook.open" or "workbook.readViewport" or "workbook.close" or "workbook.discard" or "workbook.createCopy" or "workbook.editCopy" or "workbook.saveAsNew" or "workbook.previewMerge" or "workbook.merge" or "workflow.profiles" or "workbook.planRecords"))
             { Error(id!, "UNSUPPORTED_COMMAND", "Command is unavailable."); return; }
             if (!ready) { Error(id!, "NOT_READY", "Handshake is required."); return; }
+            if (command == "workflow.profiles")
+            {
+                if (!HasOnly(payload) || workbooks == null) { Error(id!, "INVALID_REQUEST", "Workflow catalog accepts no paths or arguments and requires a workbook host."); return; }
+                Success(id!, new { profiles = WorkflowProfiles.Catalog }); return;
+            }
             if (command!.StartsWith("workbook.", StringComparison.Ordinal))
             {
                 if (workbooks == null) { Error(id!, "UNSUPPORTED_COMMAND", "Read-only workbooks are unavailable in this host."); return; }
@@ -101,6 +107,7 @@ public sealed class BridgeSession : IDisposable
                 {
                     "workbook.close" or "workbook.discard" => new[] { "sessionId" },
                     "workbook.saveAsNew" => new[] { "sessionId", "expectedRevision" },
+                    "workbook.planRecords" => new[] { "sessionId", "worksheetId", "expectedRevision", "profileId", "profileHash", "records" },
                     "workbook.previewMerge" or "workbook.merge" => new[] { "sessionId", "workingCopyId", "worksheetId", "expectedCopyRevision", "expectedRevision", "expectedBaseRevision" },
                     "workbook.createCopy" => new[] { "sessionId", "worksheetId", "expectedRevision" },
                     "workbook.editCopy" => new[] { "sessionId", "worksheetId", "row", "column", "kind", "value", "expectedRevision" },
@@ -116,6 +123,11 @@ public sealed class BridgeSession : IDisposable
                 }
                 if (payload.GetProperty("worksheetId").ValueKind != JsonValueKind.String || !Guid.TryParseExact(payload.GetProperty("worksheetId").GetString(), "D", out var worksheetId)
                     ) { Error(id!, "INVALID_REQUEST", "Invalid worksheet identity."); return; }
+                if (command == "workbook.planRecords")
+                {
+                    var request = WorkflowProfiles.ParseRequest(payload.GetRawText());
+                    Success(id!, await workbooks.PlanRecordsAsync(request)); return;
+                }
                 if (command is "workbook.previewMerge" or "workbook.merge")
                 {
                     if (payload.GetProperty("workingCopyId").ValueKind != JsonValueKind.String || !Guid.TryParseExact(payload.GetProperty("workingCopyId").GetString(), "D", out var copyId)

@@ -89,6 +89,12 @@ public sealed class WorkbookWorkspace(IWorkbookEngine engine, Func<CancellationT
         session.Edit(edit, token); return Summarize(session);
     }, token));
 
+    public Task<TsekSheet.Application.Workflows.WorkflowPlan> PlanRecordsAsync(TsekSheet.Application.Workflows.WorkflowPlanRequest request) => Run(token => Task.Run(() =>
+    {
+        IWorkbookSession session; lock (gate) session = RequireSession(request.SessionId);
+        return TsekSheet.Application.Workflows.WorkflowPlanning.Prepare(session, request, token);
+    }, token));
+
     public Task<WorksheetIntegrationPreview> PreviewIntegrationAsync(Guid sessionId, WorksheetIntegrationRequest request) => Run(token => Task.Run(() =>
     {
         IWorkbookSession destination; IWorkbookSession copy;

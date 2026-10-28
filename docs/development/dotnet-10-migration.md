@@ -2,6 +2,8 @@
 
 Status: **Step 40 .NET 10 migration complete for the existing supported application scope**. Stable SDK **10.0.403**, Core/WindowsDesktop **10.0.14**, standard Release build, required regression suites, self-contained publish and source-integrity checks pass. Existing uncommitted Merge and environment-repair work is preserved. Phase 2 and product-release acceptance remain incomplete; no spreadsheet feature was added.
 
+Subsequent [Step 41 security review](dependency-security-review.md) patches the evaluation-only Xml/Pkcs servicing versions and reduces the 19 advisory findings recorded below to five unresolved ImageSharp findings. The original Step 40 counts/lock descriptions below are historical migration evidence. The full matrix remains unchanged and all regression/publish checks pass after that patch; no production package or target changed in Step 41.
+
 ## Step 40 implementation and verification
 
 The user installed the SDK. Inspection confirmed 10.0.403 under `C:\Program Files\dotnet\sdk` and Core/WindowsDesktop runtime 10.0.14 alongside .NET 8. Before touching targets, the standard .NET 8 Release solution build was rerun successfully: 0 warnings, 0 errors, normal frontend target, no diagnostic override. Branch remains `main`, starting/latest commit `c828394a580be35cb7065d5b82ac4557765e1688`. At Step 40 start the working tree had 20 tracked modified and 5 untracked files from Merge and environment repair; none was reset/discarded.
