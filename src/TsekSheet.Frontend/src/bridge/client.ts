@@ -19,6 +19,9 @@ export interface MergePreview { destinationName: string; pendingCells: number; c
 interface Results {
   'workflow.profiles': { profiles: WorkflowProfile[] };
   'workbook.planRecords': WorkflowPlan;
+  'workbook.generateCandidate': CandidateReview;
+  'workbook.approveCandidate': CandidateReview;
+  'workbook.cancelCandidate': {status:'cancelled'};
   'foundation.handshake': Handshake;
   'foundation.getInfo': Info;
   'foundation.selectFile': Selection;
@@ -37,6 +40,9 @@ interface Results {
 interface Payloads {
   'workflow.profiles': Record<string, never>;
   'workbook.planRecords': WorkflowRequest;
+  'workbook.generateCandidate': WorkflowRequest & {destinationSessionId:string; expectedDestinationRevision:number};
+  'workbook.approveCandidate': CandidateApproval;
+  'workbook.cancelCandidate': {sessionId:string; candidateId:string; expectedRevision:number};
   'foundation.handshake': { supportedVersions: number[] };
   'foundation.getInfo': Record<string, never>;
   'foundation.selectFile': Record<string, never>;
@@ -80,6 +86,8 @@ function validResult(command: Command, r: unknown): boolean {
   switch (command) {
     case 'workflow.profiles': return validProfiles(r);
     case 'workbook.planRecords': return validWorkflowPlan(r);
+    case 'workbook.generateCandidate': case 'workbook.approveCandidate': return validCandidateReview(r);
+    case 'workbook.cancelCandidate': return r.status==='cancelled';
     case 'foundation.handshake': return r.selectedVersion === 1 && text(r.applicationName) && text(r.version) && object(r.capabilities)
       && ['diagnostics', 'fileSelection', 'workbooks', 'templates', 'ocr'].every(k => typeof (r.capabilities as ObjectValue)[k] === 'boolean');
     case 'foundation.getInfo': return text(r.applicationName) && text(r.version) && text(r.platform) && typeof r.hasUnsavedWork === 'boolean';
@@ -149,5 +157,5 @@ export class BridgeClient {
     for (const [id, p] of this.pending) { this.finish(id); p.reject(new Error('Desktop connection closed.')); }
   }
 }
-import { validProfiles, validWorkflowPlan } from './workflows';
-import type { WorkflowProfile, WorkflowRequest, WorkflowPlan } from './workflows';
+import { validProfiles, validWorkflowPlan, validCandidateReview } from './workflows';
+import type { WorkflowProfile, WorkflowRequest, WorkflowPlan, CandidateReview, CandidateApproval } from './workflows';

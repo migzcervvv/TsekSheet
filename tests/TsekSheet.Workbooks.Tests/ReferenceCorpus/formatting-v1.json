@@ -1,0 +1,23 @@
+{
+  "schemaVersion":1,
+  "provenance":"hand-authored expectations; actual Excel results must be captured separately",
+  "cases":[
+    {"id":"noop-height-fifteen","height":"15","mode":"noop","feature":"plain","steps":[],"expectedFormulas":{}},
+    {"id":"noop-height-eighteen","height":"18","mode":"noop","feature":"plain","steps":[],"expectedFormulas":{}},
+    {"id":"noop-height-twenty","height":"20","mode":"noop","feature":"plain","steps":[],"expectedFormulas":{}},
+    {"id":"noop-height-twentyone","height":"21","mode":"noop","feature":"plain","steps":[],"expectedFormulas":{}},
+    {"id":"noop-height-twentytwo","height":"22","mode":"noop","feature":"plain","steps":[],"expectedFormulas":{}},
+    {"id":"noop-height-half","height":"22.5","mode":"noop","feature":"plain","steps":[],"expectedFormulas":{}},
+    {"id":"noop-height-twentyfour","height":"24","mode":"noop","feature":"plain","steps":[],"expectedFormulas":{}},
+    {"id":"noop-height-thirty","height":"30","mode":"noop","feature":"plain","steps":[],"expectedFormulas":{}},
+    {"id":"after-vendor-twentyone","height":"21","mode":"insert","feature":"plain","steps":[{"boundary":8,"count":1,"template":6,"firstData":6,"subtotal":10}],"expectedFormulas":{"E11":"SUM(E6:E10)","E23":"SUM(E17:E22)","E26":"E11+E23","E27":"$E$11+E$23+$E6","E28":"E6+E7"}},
+    {"id":"subtotal-twentyone","height":"21","mode":"insert","feature":"plain","steps":[{"boundary":22,"count":1,"template":16,"firstData":16,"subtotal":22}],"expectedFormulas":{"E23":"SUM(E16:E22)","E26":"E10+E23","E27":"$E$10+E$23+$E6"}},
+    {"id":"batch-three-twentyone","height":"21","mode":"insert","feature":"plain","steps":[{"boundary":22,"count":3,"template":16,"firstData":16,"subtotal":22}],"expectedFormulas":{"E25":"SUM(E16:E24)","E28":"E10+E25","E29":"$E$10+E$25+$E6"}},
+    {"id":"repeated-twentyone","height":"21","mode":"insert","feature":"plain","steps":[{"boundary":22,"count":1,"template":16,"firstData":16,"subtotal":22},{"boundary":23,"count":1,"template":16,"firstData":16,"subtotal":23}],"expectedFormulas":{"E24":"SUM(E16:E23)","E27":"E10+E24","E28":"$E$10+E$24+$E6"}},
+    {"id":"subtotal-twentyfour","height":"24","mode":"insert","feature":"plain","steps":[{"boundary":22,"count":1,"template":16,"firstData":16,"subtotal":22}],"expectedFormulas":{"E23":"SUM(E16:E22)","E26":"E10+E23"}},
+    {"id":"subtotal-thirty","height":"30","mode":"insert","feature":"plain","steps":[{"boundary":22,"count":1,"template":16,"firstData":16,"subtotal":22}],"expectedFormulas":{"E23":"SUM(E16:E22)","E26":"E10+E23"}},
+    {"id":"blank-template-twentyone","height":"21","mode":"insert","feature":"blank-template","steps":[{"boundary":22,"count":1,"template":21,"firstData":16,"subtotal":22}],"expectedFormulas":{"E23":"SUM(E16:E22)","E26":"E10+E23"}},
+    {"id":"custom-currency-twentyone","height":"21","mode":"insert","feature":"currency","steps":[{"boundary":22,"count":1,"template":16,"firstData":16,"subtotal":22}],"expectedFormulas":{"E23":"SUM(E16:E22)","E26":"E10+E23"}},
+    {"id":"decorated-twentyone","height":"21","mode":"insert","feature":"decorated","steps":[{"boundary":22,"count":1,"template":16,"firstData":16,"subtotal":22}],"expectedFormulas":{"E23":"SUM(E16:E22)","E26":"E10+E23"}}
+  ]
+}

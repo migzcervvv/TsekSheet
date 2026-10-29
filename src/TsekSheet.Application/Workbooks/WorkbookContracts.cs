@@ -28,6 +28,12 @@ public interface IWorkbookSession : IDisposable
     IWorkbookSession CreateWorkingCopy(Guid worksheetId, int expectedRevision, CancellationToken cancellationToken = default);
     WorkbookInfo Edit(CellEdit edit, CancellationToken cancellationToken = default);
     WorkingCopyInfo? WorkingCopy { get; }
+    TsekSheet.Application.Workflows.StructuralCandidateReview PrepareCandidateReview(IWorkbookSession destination, TsekSheet.Application.Workflows.WorkflowPlanRequest request, int expectedDestinationRevision, CancellationToken token = default)
+        => throw new WorkbookException("CANDIDATE_REVIEW_UNAVAILABLE", "Candidate review is unavailable.");
+    TsekSheet.Application.Workflows.StructuralCandidateReview ApproveCandidateReview(IWorkbookSession destination, TsekSheet.Application.Workflows.CandidateReviewApproval request, CancellationToken token = default)
+        => throw new WorkbookException("CANDIDATE_REVIEW_UNAVAILABLE", "Candidate approval is unavailable.");
+    void CancelCandidateReview(Guid candidateId, int expectedRevision) => throw new WorkbookException("CANDIDATE_REVIEW_UNAVAILABLE", "Candidate cancellation is unavailable.");
+    TsekSheet.Application.Workflows.WorkflowPlan InspectStructuralInsertion(TsekSheet.Application.Workflows.WorkflowPlan plan, CancellationToken token = default) => plan;
     WorkbookInfo InsertWorkflowRows(TsekSheet.Application.Workflows.WorkflowPlan plan, bool approved, bool duplicatesReviewed, CancellationToken cancellationToken = default)
         => TsekSheet.Application.Workflows.WorkflowPlanning.RejectStructuralInsertion(this, plan, approved, duplicatesReviewed, cancellationToken);
     WorksheetIntegrationPreview PreviewIntegration(IWorkbookSession copy, WorksheetIntegrationRequest request, CancellationToken cancellationToken = default)

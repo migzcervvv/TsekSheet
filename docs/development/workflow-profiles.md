@@ -1,5 +1,11 @@
 # Workflow profiles
 
+Step 45 connects the original portable planner to public **review-only** generation/approval/cancellation. The profile schema/insertion policy is unchanged. Generation re-plans under copy/destination locks; explicit approval binds the original/selected-copy identities, source hash, profile hash, section/mappings, exact manifest/candidate/review hashes, oracle report and independent revisions. All public tickets permanently reject adoption/integration. Only a narrow native-height policy permits review approval; no profile can override it. See [Step 45 verification](step45-verification.md).
+
+Step 44 adds `WorkflowPlan.Review` with distinct planning-only lifecycle facts. `StructuralCandidateReview` is a separate generated-candidate contract containing exact profile/proposal/source identity, workbook/worksheet, manifest/candidate/review fingerprints, section/row/template specification, field values, duplicate warnings, formula/style impacts, rejection reasons and independent intended copy/destination revisions. Candidate generation leaves accepted state unchanged; explicit approval and adoption are separate internal calls. Profile policies remain disabled and unchanged. See [lifecycle evidence](step44-verification.md).
+
+Step 43 adds a read-only `StructuralStatus` to session-backed plans: ambiguous destination, duplicate review, unsupported structure, stale proposal, experimental envelope only, or production disabled. Preflight does not certify a candidate; `CanApply` and profile `insertionPolicy` remain disabled. An internal experiment re-plans from the original request and compares the complete reviewed plan under the session lock before mutation. See [oracle contract](structural-preservation-oracle.md) and [verification](step43-verification.md). The Step 42 implementation details below remain applicable to pure planning.
+
 Step 42 implements a generic, plain-.NET profile/analysis/planning layer in `TsekSheet.Application/Workflows`. It has no WPF, WebView2, ClosedXML, database, cloud or OCR dependency. `WorksheetAnalysisReader` uses the existing bounded session projection; the pure analyzer and planner also accept synthetic domain data. `WorkbookWorkspace` serializes production planning with existing edit/Merge operations.
 
 ## Versioned local JSON

@@ -66,6 +66,7 @@ internal sealed partial class WorkbookSession : IWorkbookSession
             ObjectDisposedException.ThrowIf(disposed, this);
             cancellationToken.ThrowIfCancellationRequested();
             engine.CheckSnapshotCapacity();
+            if (structuralExperiment) throw PackageGuard.Reject("STRUCTURAL_SNAPSHOT_DISABLED", "Experimental structural copies cannot be exported through snapshots.");
             if (facts.Findings.Any(f => f.Code is "ADVANCED_CONTENT" or "UNKNOWN_PARTS")) throw PackageGuard.Reject("SNAPSHOT_UNSUPPORTED", "This workbook can be inspected, but its advanced content is outside the snapshot compatibility scope.");
             if (cellsBySheet.Values.Any(s => s.Values.Any(c => c.Truncated))) throw PackageGuard.Reject("SNAPSHOT_UNSUPPORTED", "Snapshot validation does not support truncated cell content.");
             using var preparation = engine.ReserveSnapshotWork(estimate);
@@ -199,6 +200,7 @@ internal sealed partial class WorkbookSession : IWorkbookSession
                 using var reservation = engine.ReserveSnapshotWork(estimate);
                 var frozenHash = Convert.ToHexString(SHA256.HashData(currentBytes));
                 var candidateBytes = currentBytes.ToArray();
+                if (structuralExportProof != null) StructuralLifecycle(StructuralLifecycleStage.ExportConstruction, cancellationToken);
                 if (engine.CandidateFaultForTesting != null) candidateBytes = engine.CandidateFaultForTesting(candidateBytes);
                 if (!Convert.ToHexString(SHA256.HashData(candidateBytes)).Equals(frozenHash, StringComparison.Ordinal)) throw PackageGuard.Reject("CANDIDATE_REJECTED", "The serialized workbook differs from the frozen session.");
                 using (var candidate = engine.Load(candidateBytes, info.DisplayName, info.SourceSha256, info.ParentSessionId, info.Worksheets, cancellationToken))
@@ -218,6 +220,7 @@ internal sealed partial class WorkbookSession : IWorkbookSession
                     }
                 }
                 cancellationToken.ThrowIfCancellationRequested();
+                ValidateStructuralExport(candidateBytes, cancellationToken);
                 var exported = info with { LastExportedRevision = info.Revision, LastExportedSha256 = frozenHash };
                 // Allocate response/state before commit so response construction cannot turn
                 // an already confirmed disk commit into an ordinary failed-save result.
@@ -266,6 +269,7 @@ internal sealed partial class WorkbookSession : IWorkbookSession
         {
             if (disposed) return;
             disposed = true;
+            pendingStructuralReview = null; acceptedStructuralReview = null; structuralExportProof = null;
             try { workbook?.Dispose(); } finally { inputStream?.Dispose(); inputStream = null; workbook = null; baseline = []; currentBytes = []; copyBaseBytes = null; cellsBySheet.Clear(); changes.Clear(); release(); }
         }
     }

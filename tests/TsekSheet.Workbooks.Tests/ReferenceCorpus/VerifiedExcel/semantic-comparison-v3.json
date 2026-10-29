@@ -1,0 +1,147 @@
+{
+  "verifierSha256": "EF5E2AD63FB03BDFF29FF4DE3C87342BFF07075967798449127E5B5014DBB517",
+  "excelEvidenceSha256": "3132CC77EFA7FE1D0D834CEEA0C0A59EB444FA81AC3FF47CEF2AC3C6FB735189",
+  "comparisons": [
+    {
+      "id": "within-vendor-group",
+      "contentFormulaAndComparedStyleDifferences": [],
+      "rowHeightDifferences": [
+        "height/Ledger/17: 22 \u003C\u003E 21.95",
+        "height/Ledger/18: 22 \u003C\u003E 21.95",
+        "height/Ledger/6: 22 \u003C\u003E 21.95",
+        "height/Ledger/7: 22 \u003C\u003E 21.95",
+        "height/Ledger/8: 22 \u003C\u003E 21.95"
+      ],
+      "addedExcelParts": [
+        "docProps/core.xml",
+        "xl/calcChain.xml"
+      ],
+      "removedExcelParts": [
+        "package/services/metadata/core-properties/9a338de00ff24fe0896ed6febd4caadc.psmdcp"
+      ],
+      "changedPackageParts": [
+        "_rels/.rels",
+        "[Content_Types].xml",
+        "docProps/app.xml",
+        "xl/_rels/workbook.xml.rels",
+        "xl/sharedStrings.xml",
+        "xl/styles.xml",
+        "xl/theme/theme1.xml",
+        "xl/workbook.xml",
+        "xl/worksheets/sheet1.xml",
+        "xl/worksheets/sheet2.xml"
+      ],
+      "changedRelationshipParts": [
+        "_rels/.rels",
+        "xl/_rels/workbook.xml.rels"
+      ],
+      "qualification": "content/formula/compared styles match; measured Excel row-height rounding differs; not full structural equivalence"
+    },
+    {
+      "id": "after-final-vendor-record",
+      "contentFormulaAndComparedStyleDifferences": [],
+      "rowHeightDifferences": [
+        "height/Ledger/17: 22 \u003C\u003E 21.95",
+        "height/Ledger/18: 22 \u003C\u003E 21.95",
+        "height/Ledger/6: 22 \u003C\u003E 21.95",
+        "height/Ledger/7: 22 \u003C\u003E 21.95",
+        "height/Ledger/8: 22 \u003C\u003E 21.95"
+      ],
+      "addedExcelParts": [
+        "docProps/core.xml",
+        "xl/calcChain.xml"
+      ],
+      "removedExcelParts": [
+        "package/services/metadata/core-properties/d07cdc97b8f745f3a30e36c674ee75c2.psmdcp"
+      ],
+      "changedPackageParts": [
+        "_rels/.rels",
+        "[Content_Types].xml",
+        "docProps/app.xml",
+        "xl/_rels/workbook.xml.rels",
+        "xl/sharedStrings.xml",
+        "xl/styles.xml",
+        "xl/theme/theme1.xml",
+        "xl/workbook.xml",
+        "xl/worksheets/sheet1.xml",
+        "xl/worksheets/sheet2.xml"
+      ],
+      "changedRelationshipParts": [
+        "_rels/.rels",
+        "xl/_rels/workbook.xml.rels"
+      ],
+      "qualification": "content/formula/compared styles match; measured Excel row-height rounding differs; not full structural equivalence"
+    },
+    {
+      "id": "before-subtotal",
+      "contentFormulaAndComparedStyleDifferences": [],
+      "rowHeightDifferences": [
+        "height/Ledger/16: 22 \u003C\u003E 21.95",
+        "height/Ledger/17: 22 \u003C\u003E 21.95",
+        "height/Ledger/22: 22 \u003C\u003E 21.95",
+        "height/Ledger/6: 22 \u003C\u003E 21.95",
+        "height/Ledger/7: 22 \u003C\u003E 21.95"
+      ],
+      "addedExcelParts": [
+        "docProps/core.xml",
+        "xl/calcChain.xml"
+      ],
+      "removedExcelParts": [
+        "package/services/metadata/core-properties/a1726a5d1e3648b7b8c25ee468ec464b.psmdcp"
+      ],
+      "changedPackageParts": [
+        "_rels/.rels",
+        "[Content_Types].xml",
+        "docProps/app.xml",
+        "xl/_rels/workbook.xml.rels",
+        "xl/sharedStrings.xml",
+        "xl/styles.xml",
+        "xl/theme/theme1.xml",
+        "xl/workbook.xml",
+        "xl/worksheets/sheet1.xml",
+        "xl/worksheets/sheet2.xml"
+      ],
+      "changedRelationshipParts": [
+        "_rels/.rels",
+        "xl/_rels/workbook.xml.rels"
+      ],
+      "qualification": "content/formula/compared styles match; measured Excel row-height rounding differs; not full structural equivalence"
+    },
+    {
+      "id": "batch-before-subtotal",
+      "contentFormulaAndComparedStyleDifferences": [],
+      "rowHeightDifferences": [
+        "height/Ledger/16: 22 \u003C\u003E 21.95",
+        "height/Ledger/17: 22 \u003C\u003E 21.95",
+        "height/Ledger/22: 22 \u003C\u003E 21.95",
+        "height/Ledger/23: 22 \u003C\u003E 21.95",
+        "height/Ledger/6: 22 \u003C\u003E 21.95",
+        "height/Ledger/7: 22 \u003C\u003E 21.95"
+      ],
+      "addedExcelParts": [
+        "docProps/core.xml",
+        "xl/calcChain.xml"
+      ],
+      "removedExcelParts": [
+        "package/services/metadata/core-properties/fdbb016b5ea747eda6b9362767047363.psmdcp"
+      ],
+      "changedPackageParts": [
+        "_rels/.rels",
+        "[Content_Types].xml",
+        "docProps/app.xml",
+        "xl/_rels/workbook.xml.rels",
+        "xl/sharedStrings.xml",
+        "xl/styles.xml",
+        "xl/theme/theme1.xml",
+        "xl/workbook.xml",
+        "xl/worksheets/sheet1.xml",
+        "xl/worksheets/sheet2.xml"
+      ],
+      "changedRelationshipParts": [
+        "_rels/.rels",
+        "xl/_rels/workbook.xml.rels"
+      ],
+      "qualification": "content/formula/compared styles match; measured Excel row-height rounding differs; not full structural equivalence"
+    }
+  ]
+}

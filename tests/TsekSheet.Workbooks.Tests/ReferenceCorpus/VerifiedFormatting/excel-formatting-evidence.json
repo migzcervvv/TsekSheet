@@ -1,0 +1,338 @@
+{
+  "schemaVersion": 1,
+  "provenance": "Microsoft Excel isolated synthetic no-op and insertion formatting experiments",
+  "excelVersion": "16.0",
+  "excelBuild": "20326",
+  "executableVersion": "16.0.20326.20232",
+  "scriptSha256": "421292ED26C5D63CA29EE1834FDE7854AE10BA0B497064DE090746D3138C0005",
+  "indexSha256": "D11DE99CFED0AA3BAF183F9C0AE2786502CF7641CCAA1E2FFFC366F463CA7427",
+  "generatedUtc": "2026-10-29T02:58:10.1992710Z",
+  "cases": [
+    {
+      "id": "noop-height-fifteen",
+      "inputSha256": "E0FA06025F4FB606C6A58163B2B5A77505A39AD0679D82804D2AC70C766A3BE7",
+      "outputFile": "noop-height-fifteen.excel.xlsx",
+      "outputSha256": "3F452958AEE5F65FE80511EE5D7CC896BDD487107C9CF71D5CE6B0B732641C4E",
+      "openedHeight": 15.0,
+      "openedRangeHeight": 15.0,
+      "beforeSaveHeight": 15.0,
+      "reopenedHeight": 15.0,
+      "operations": []
+    },
+    {
+      "id": "noop-height-eighteen",
+      "inputSha256": "F1EC08B3436B38D9EA2812E70ABF09F4001678433D77865D55527D25AC0AA6DB",
+      "outputFile": "noop-height-eighteen.excel.xlsx",
+      "outputSha256": "A39486F90F304A8C56F563E336562975D6DC4DA4306D46C6D9A58D6AB8E3DCB7",
+      "openedHeight": 18.0,
+      "openedRangeHeight": 18.0,
+      "beforeSaveHeight": 18.0,
+      "reopenedHeight": 18.0,
+      "operations": []
+    },
+    {
+      "id": "noop-height-twenty",
+      "inputSha256": "462BB5A27951EFFE2D0E6CF19C82818914EE5FB4B13ABADCE0E9B5CA57472D09",
+      "outputFile": "noop-height-twenty.excel.xlsx",
+      "outputSha256": "941BBC576564B82B8BA83F86FFA9F2C9EE56FBBF1DE96948166FE8C69A09B218",
+      "openedHeight": 20.0,
+      "openedRangeHeight": 19.5,
+      "beforeSaveHeight": 20.0,
+      "reopenedHeight": 20.0,
+      "operations": []
+    },
+    {
+      "id": "noop-height-twentyone",
+      "inputSha256": "7A4C1425D9A3A99D5A0A815D888FE5A43DA70A8289E4B5E8C4E02DB7BCF6183B",
+      "outputFile": "noop-height-twentyone.excel.xlsx",
+      "outputSha256": "697888D986BC492813740118D45634A4931EC25166FB14358A9FF723AC95FDAA",
+      "openedHeight": 21.0,
+      "openedRangeHeight": 21.0,
+      "beforeSaveHeight": 21.0,
+      "reopenedHeight": 21.0,
+      "operations": []
+    },
+    {
+      "id": "noop-height-twentytwo",
+      "inputSha256": "F02E5F49F9D269809B86004861C7BBE5F7B91190579849C9DFEBF7B2159F796E",
+      "outputFile": "noop-height-twentytwo.excel.xlsx",
+      "outputSha256": "3A12679A57652F71B9B4C966DE6D966621827C677A0822D9EA01C5398FAE1B1E",
+      "openedHeight": 22.0,
+      "openedRangeHeight": 21.75,
+      "beforeSaveHeight": 22.0,
+      "reopenedHeight": 22.0,
+      "operations": []
+    },
+    {
+      "id": "noop-height-half",
+      "inputSha256": "741327630F016D56145A1D9ED59A7AA9AD2D3DEA410B3084B7D7D8A0AFF2DE1C",
+      "outputFile": "noop-height-half.excel.xlsx",
+      "outputSha256": "3E45261937E3B5A469447C80E513A89D1BD35FBF84950174CD9B2814C3966CC0",
+      "openedHeight": 22.5,
+      "openedRangeHeight": 22.5,
+      "beforeSaveHeight": 22.5,
+      "reopenedHeight": 22.5,
+      "operations": []
+    },
+    {
+      "id": "noop-height-twentyfour",
+      "inputSha256": "84E75D819D4C6820E04C2333E1C76B1B06A26BBA33EE8D743D2A7753D37E27C1",
+      "outputFile": "noop-height-twentyfour.excel.xlsx",
+      "outputSha256": "1CCA37E93B7B4C68BF791D65C28592CDD48B5BB9187FBE54076AB379C770BA3A",
+      "openedHeight": 24.0,
+      "openedRangeHeight": 24.0,
+      "beforeSaveHeight": 24.0,
+      "reopenedHeight": 24.0,
+      "operations": []
+    },
+    {
+      "id": "noop-height-thirty",
+      "inputSha256": "2E3ED91E7AC5C8C3B42FB955589134FF1460D0BA41E2B380450BA07D22DAEFD4",
+      "outputFile": "noop-height-thirty.excel.xlsx",
+      "outputSha256": "F670C06F45261039A82882F2204BBAF2638E1A4F35C8CC7E64495A1CBCC249FB",
+      "openedHeight": 30.0,
+      "openedRangeHeight": 30.0,
+      "beforeSaveHeight": 30.0,
+      "reopenedHeight": 30.0,
+      "operations": []
+    },
+    {
+      "id": "after-vendor-twentyone",
+      "inputSha256": "7A4C1425D9A3A99D5A0A815D888FE5A43DA70A8289E4B5E8C4E02DB7BCF6183B",
+      "outputFile": "after-vendor-twentyone.excel.xlsx",
+      "outputSha256": "1B5005B4D1849EB543DB2ADE2A978A18E6FAF982455D35202D5F27D464EE15A3",
+      "openedHeight": 21.0,
+      "openedRangeHeight": 21.0,
+      "beforeSaveHeight": 15.0,
+      "reopenedHeight": 15.0,
+      "operations": [
+        {
+          "boundary": 8,
+          "count": 1,
+          "rawFormulas": {
+            "E27": "=$E$11+E$23+$E6",
+            "E11": "=SUM(E6:E10)",
+            "E26": "=E11+E23",
+            "E28": "=E6+E7",
+            "E23": "=SUM(E17:E22)"
+          },
+          "templateHeight": 21.0,
+          "insertedHeight": 21.0
+        }
+      ]
+    },
+    {
+      "id": "subtotal-twentyone",
+      "inputSha256": "7A4C1425D9A3A99D5A0A815D888FE5A43DA70A8289E4B5E8C4E02DB7BCF6183B",
+      "outputFile": "subtotal-twentyone.excel.xlsx",
+      "outputSha256": "545E8A57857CDA12AC161BDB7784058496E3B8D02F66E7D9F6691BCB72822E51",
+      "openedHeight": 21.0,
+      "openedRangeHeight": 21.0,
+      "beforeSaveHeight": 21.0,
+      "reopenedHeight": 21.0,
+      "operations": [
+        {
+          "boundary": 22,
+          "count": 1,
+          "rawFormulas": {
+            "E10": "=SUM(E6:E9)",
+            "E26": "=E10+E23",
+            "E27": "=$E$10+E$23+$E6",
+            "E28": "=E6+E7",
+            "E23": "=SUM(E16:E21)"
+          },
+          "templateHeight": 21.0,
+          "insertedHeight": 21.0
+        }
+      ]
+    },
+    {
+      "id": "batch-three-twentyone",
+      "inputSha256": "7A4C1425D9A3A99D5A0A815D888FE5A43DA70A8289E4B5E8C4E02DB7BCF6183B",
+      "outputFile": "batch-three-twentyone.excel.xlsx",
+      "outputSha256": "CC1D496BB6DA1EBC7ABE3E00CEFF68729A05C86AE69A297A824324697B1DB20F",
+      "openedHeight": 21.0,
+      "openedRangeHeight": 21.0,
+      "beforeSaveHeight": 21.0,
+      "reopenedHeight": 21.0,
+      "operations": [
+        {
+          "boundary": 22,
+          "count": 3,
+          "rawFormulas": {
+            "E10": "=SUM(E6:E9)",
+            "E28": "=E10+E25",
+            "E30": "=E6+E7",
+            "E25": "=SUM(E16:E21)",
+            "E29": "=$E$10+E$25+$E6"
+          },
+          "templateHeight": 21.0,
+          "insertedHeight": 21.0
+        }
+      ]
+    },
+    {
+      "id": "repeated-twentyone",
+      "inputSha256": "7A4C1425D9A3A99D5A0A815D888FE5A43DA70A8289E4B5E8C4E02DB7BCF6183B",
+      "outputFile": "repeated-twentyone.excel.xlsx",
+      "outputSha256": "2DE953CE2BAF0F99EC3D386BC9077175708F1A4952A7433AFB499A8F0D048738",
+      "openedHeight": 21.0,
+      "openedRangeHeight": 21.0,
+      "beforeSaveHeight": 21.0,
+      "reopenedHeight": 21.0,
+      "operations": [
+        {
+          "boundary": 22,
+          "count": 1,
+          "rawFormulas": {
+            "E10": "=SUM(E6:E9)",
+            "E26": "=E10+E23",
+            "E27": "=$E$10+E$23+$E6",
+            "E28": "=E6+E7",
+            "E23": "=SUM(E16:E21)"
+          },
+          "templateHeight": 21.0,
+          "insertedHeight": 21.0
+        },
+        {
+          "boundary": 23,
+          "count": 1,
+          "rawFormulas": {
+            "E10": "=SUM(E6:E9)",
+            "E27": "=E10+E24",
+            "E28": "=$E$10+E$24+$E6",
+            "E29": "=E6+E7",
+            "E24": "=SUM(E16:E22)"
+          },
+          "templateHeight": 21.0,
+          "insertedHeight": 21.0
+        }
+      ]
+    },
+    {
+      "id": "subtotal-twentyfour",
+      "inputSha256": "84E75D819D4C6820E04C2333E1C76B1B06A26BBA33EE8D743D2A7753D37E27C1",
+      "outputFile": "subtotal-twentyfour.excel.xlsx",
+      "outputSha256": "1662987CF2FBA77147496FE48209E622F93ACC367572937DCB51B39149DA0757",
+      "openedHeight": 24.0,
+      "openedRangeHeight": 24.0,
+      "beforeSaveHeight": 24.0,
+      "reopenedHeight": 24.0,
+      "operations": [
+        {
+          "boundary": 22,
+          "count": 1,
+          "rawFormulas": {
+            "E10": "=SUM(E6:E9)",
+            "E26": "=E10+E23",
+            "E27": "=$E$10+E$23+$E6",
+            "E28": "=E6+E7",
+            "E23": "=SUM(E16:E21)"
+          },
+          "templateHeight": 24.0,
+          "insertedHeight": 24.0
+        }
+      ]
+    },
+    {
+      "id": "subtotal-thirty",
+      "inputSha256": "2E3ED91E7AC5C8C3B42FB955589134FF1460D0BA41E2B380450BA07D22DAEFD4",
+      "outputFile": "subtotal-thirty.excel.xlsx",
+      "outputSha256": "48ECE3A0BA8F0CCB48738110FE3D8D3ED598AD015F026D1839FACC8F969BB0DA",
+      "openedHeight": 30.0,
+      "openedRangeHeight": 30.0,
+      "beforeSaveHeight": 30.0,
+      "reopenedHeight": 30.0,
+      "operations": [
+        {
+          "boundary": 22,
+          "count": 1,
+          "rawFormulas": {
+            "E10": "=SUM(E6:E9)",
+            "E26": "=E10+E23",
+            "E27": "=$E$10+E$23+$E6",
+            "E28": "=E6+E7",
+            "E23": "=SUM(E16:E21)"
+          },
+          "templateHeight": 30.0,
+          "insertedHeight": 30.0
+        }
+      ]
+    },
+    {
+      "id": "blank-template-twentyone",
+      "inputSha256": "9FC496B35F75DA9F0A23A1C32734ED66DBA7D814D7DB742368E4D7923B22C6DB",
+      "outputFile": "blank-template-twentyone.excel.xlsx",
+      "outputSha256": "6CAD3A9A7190CBF985D98DF54FDAE7E43A24D4E33C026C869B8E505E8B6BFB88",
+      "openedHeight": 21.0,
+      "openedRangeHeight": 21.0,
+      "beforeSaveHeight": 21.0,
+      "reopenedHeight": 21.0,
+      "operations": [
+        {
+          "boundary": 22,
+          "count": 1,
+          "rawFormulas": {
+            "E10": "=SUM(E6:E9)",
+            "E26": "=E10+E23",
+            "E27": "=$E$10+E$23+$E6",
+            "E28": "=E6+E7",
+            "E23": "=SUM(E16:E21)"
+          },
+          "templateHeight": 21.0,
+          "insertedHeight": 21.0
+        }
+      ]
+    },
+    {
+      "id": "custom-currency-twentyone",
+      "inputSha256": "3993EE9AABFA3618F3669211CCA3D501FA479F5215908ECBDB9F43CC1AD67071",
+      "outputFile": "custom-currency-twentyone.excel.xlsx",
+      "outputSha256": "2137F62DDB0EC9D1887AECB6ABB6BB57DCCA91085FEC9FD555DEE6690F88B092",
+      "openedHeight": 21.0,
+      "openedRangeHeight": 21.0,
+      "beforeSaveHeight": 21.0,
+      "reopenedHeight": 21.0,
+      "operations": [
+        {
+          "boundary": 22,
+          "count": 1,
+          "rawFormulas": {
+            "E10": "=SUM(E6:E9)",
+            "E26": "=E10+E23",
+            "E27": "=$E$10+E$23+$E6",
+            "E28": "=E6+E7",
+            "E23": "=SUM(E16:E21)"
+          },
+          "templateHeight": 21.0,
+          "insertedHeight": 21.0
+        }
+      ]
+    },
+    {
+      "id": "decorated-twentyone",
+      "inputSha256": "FCC2CA9A39FAA15BD19A1C42AA2230C6718DB1DBD4F8D2CC928A38021FE8A83C",
+      "outputFile": "decorated-twentyone.excel.xlsx",
+      "outputSha256": "9D9D9933EC84CCFE9CE15E50223119001047591ED7000E0C91D5CD39EAB0F82B",
+      "openedHeight": 21.0,
+      "openedRangeHeight": 21.0,
+      "beforeSaveHeight": 21.0,
+      "reopenedHeight": 21.0,
+      "operations": [
+        {
+          "boundary": 22,
+          "count": 1,
+          "rawFormulas": {
+            "E10": "=SUM(E6:E9)",
+            "E26": "=E10+E23",
+            "E27": "=$E$10+E$23+$E6",
+            "E28": "=E6+E7",
+            "E23": "=SUM(E16:E21)"
+          },
+          "templateHeight": 21.0,
+          "insertedHeight": 21.0
+        }
+      ]
+    }
+  ]
+}

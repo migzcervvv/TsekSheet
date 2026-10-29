@@ -138,7 +138,8 @@ export default function WorkbookViewer({ bridge, available }: { bridge: BridgeCl
       <div className="reader-paging"><button disabled={busy || loading || row <= 1} onClick={() => { setView(null); setSelected(null); setRow(r => Math.max(1, r - 20)); }}>Previous rows</button><button disabled={busy || loading || row + 20 > (sheet?.lastRow ?? 0) || row >= 1048557} onClick={() => { setView(null); setSelected(null); setRow(r => Math.min(r + 20, 1048557)); }}>Next rows</button><button disabled={busy || loading || column <= 1} onClick={() => { setView(null); setSelected(null); setColumn(c => Math.max(1, c - 6)); }}>Previous columns</button><button disabled={busy || loading || column + 6 > (sheet?.lastColumn ?? 0) || column >= 16379} onClick={() => { setView(null); setSelected(null); setColumn(c => Math.min(c + 6, 16379)); }}>Next columns</button></div>
       <details className="compatibility"><summary>Compatibility findings ({book.findings.length})</summary><ul>{book.findings.map(f => <li key={f.code}>{f.message}</li>)}</ul><p>Creator: {book.creator || 'Not specified'}. Title: {book.title || 'Not specified'}.</p></details>
       {bridge && activeId && activeRevision !== undefined && <PayablesProcessing key={`${activeId}:${sheetId}:${activeRevision}`} bridge={bridge} sessionId={activeId} worksheetId={sheetId}
-        revision={activeRevision} sourceSha256={book.sourceSha256} workbookName={book.displayName} worksheetName={sheet?.name??''} disabled={busy||loading||uncertain||!!merge}/>}
+          revision={activeRevision} sourceSha256={book.sourceSha256} workbookName={book.displayName} worksheetName={sheet?.name??''} disabled={busy||loading||uncertain||!!merge}
+          destinationSessionId={book.sessionId} destinationRevision={book.revision} isWorkingCopy={!!copy}/>}
     </>}
   </section>;
 }

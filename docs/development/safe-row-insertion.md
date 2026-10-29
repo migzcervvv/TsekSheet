@@ -1,5 +1,21 @@
 # Safe row insertion foundation — Step 42
 
+## Step 45 current status
+
+The [real desktop candidate-review flow](step45-verification.md) now generates an isolated oracle-accepted candidate and records explicit revision/fingerprint-bound **review-only** approval. Unqualified native heights block approval; all public adoption/Apply remain disabled regardless of experimental flags. No insertion, Merge or export follows review approval. Seventeen further native captures improve evidence but do not establish general compatibility. Exact raw row heights/flags/defaults/styles remain protected; no 22/21.95 tolerance or normalization was added. Historical sections below retain prior checkpoints.
+
+## Step 44 current status
+
+[Native Excel reference capture](excel-reference-corpus.md), exact candidate review/approval and an internal one-operation structural Merge/export chain are implemented and tested. [Verification](step44-verification.md) distinguishes OOXML assertions, qualified Excel comparisons and full lifecycle tests. Production Apply/public structural Merge remain disabled. The supported/rejected feature envelope is unchanged; native row-height differences and broad compatibility remain unresolved. Step 42/43 sections below are historical checkpoints.
+
+## Step 43 current implementation
+
+An [independently callable OOXML oracle and internal candidate editor](structural-preservation-oracle.md) now exist. Step 42 evidence below is historical. Production Apply, structural Merge/export, Replace/Create New and existing-file saving remain disabled. The experiment supports one boundary/section with plain uniform record rows and restricted same-sheet formulas. Names, tables, merges, hidden dimensions, cross-sheet formulas and advanced structures reject. The existing library research failures remain unchanged.
+
+The implementation plan is in PLANS.md. See [Step 43 verification](step43-verification.md) for current test evidence, environment, fingerprints and compatibility limitations.
+
+## Historical Step 42 foundation
+
 Status (2026-10-29): profile-driven analysis, pure batch proposals and manual desktop preview are implemented and tested. Production structural insertion remains disabled until a dependency-aware candidate editor and an independent structural preservation oracle pass. Phase 2 is incomplete.
 
 ## Implementation plan

@@ -10,7 +10,8 @@ button.primary:hover:not(:disabled) { background: #365843; }
 button.primary:disabled { background: #e4e9e5; border-color: #d9deda; color: #56635a; }
 .shell { min-height: 100vh; display: flex; flex-direction: column; }
 .topbar { display: flex; align-items: center; gap: 24px; padding: 16px 32px; background: #fff; border-bottom: 1px solid #dce2dc; font-size: 14px; color: #59655c; }
-.wordmark { font-size: 21px; letter-spacing: -.6px; font-weight: 650; color: #253e32; }
+.wordmark { font-size: 21px; letter-spacing: -.6px; font-weight: 650; color: #253e32; display: inline-flex; align-items: center; gap: 8px; }
+.brand-logo { display: block; width: 36px; height: 36px; object-fit: contain; flex-shrink: 0; }
 .local { margin-left: auto; }
 main { width: 100%; max-width: 1200px; margin: 0 auto; padding: 20px 32px; flex: 1; }
 .heading, .panel-heading, .progress-label { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
@@ -78,6 +79,8 @@ select:focus-visible, .cell-window:focus-visible { outline: 3px solid #29705b; o
 .workflow-panel { margin-top: 1.5rem; border-top: 1px solid #d7dee5; padding-top: 1rem; min-width: 0; }
 .workflow-panel label { display: flex; flex-direction: column; gap: .35rem; margin: .6rem 0; }
 .workflow-panel select, .workflow-panel input { padding: .55rem; max-width: 100%; min-width: 0; }
+.workflow-panel label:has(input[type="checkbox"]) { flex-direction: row; align-items: flex-start; }
+.workflow-panel input[type="checkbox"] { flex: 0 0 auto; margin-top: .2rem; }
 .workflow-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: .75rem; }
 .workflow-proposal { margin-top: 1rem; overflow-wrap: anywhere; }
 .workflow-proposal table { width: 100%; table-layout: fixed; border-collapse: collapse; }

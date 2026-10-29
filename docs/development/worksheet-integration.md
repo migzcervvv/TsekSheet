@@ -1,5 +1,19 @@
 # Worksheet integration
 
+## Step 45 public-review boundary
+
+Public review tickets cannot enter structural integration, even after explicit metadata approval or changes to internal experimental flags. No structural Merge bridge/UI command was added. Existing internally generated Step 44 tickets still use the separately gated, exact-base/revision/oracle-validated one-operation transaction described below. Ordinary recorded-cell Merge remains unchanged. Native row-height uncertainty and incomplete production mutation UI keep Apply disabled; see [Step 45 verification](step45-verification.md).
+
+## Step 44 structural integration experiment
+
+Ordinary recorded-cell Merge retains its original behavior and continues to reject structural copies. A **separate internal** `IntegrateReviewedStructure` operation is gated by `StructuralIntegrationExperimentsEnabled` (false by default), not exposed through the bridge or desktop.
+
+Eligibility is deliberately narrow: one operation on a clean working copy, generated candidate accepted by the oracle, exact candidate-bound approval and adoption, correct source/parent/worksheet identity, unchanged profile, current independent copy/base/destination revisions, identical original base/destination bytes, and no post-review cell edits. Request candidate/review/manifest hashes and resulting bytes must match. Section/subtotal/template boundaries are rediscovered. Any destination divergence rejects, including unrelated edits or revision changes followed by reversion; no rebase/conflict resolution is attempted.
+
+The entire approved copy package is cloned and reopened. The oracle compares it to the frozen destination plus explicit manifest; the candidate hash must also match approval. Only then does one atomic swap advance the destination revision and dirty state. The copy stays independently adopted, with integration recorded; replay rejects. A prior accepted destination cell edit is supported only if it predates copy creation and belongs to its exact frozen base. Copy/destination revisions are tracked independently.
+
+Only one reviewed structural integration per main session is supported in this experiment. Legacy repeated raw insertion tests do not imply repeated reviewed Merge support. A second integration or later divergence cannot bypass the retained export proof. Failures/cancellation retain both states and support retry of the same valid request. Tests cover corrupt/reopenable tampering and all Merge stage faults. [Structural export](workbook-safe-saving.md) uses a separate proof; no integration saves automatically. [Step 44 verification](step44-verification.md) records exact evidence and disabled production gates.
+
 Status: conservative Merge implemented with backend, bridge, frontend and real WPF/WebView2 regression evidence. Replace and Create New remain disabled. [Step 39 environment repair](dotnet-10-migration.md) subsequently restored the standard .NET 8 Release build; the prerequisite mismatch and diagnostic-build results below describe the earlier integration run. Phase 2 remains incomplete.
 
 Current follow-up: [Step 40](dotnet-10-migration.md) migrates all projects to .NET 10 and reverifies the unchanged Merge implementation, rollback/conflict tests and real desktop workflow. Current build/runtime requirements come from that report; the earlier milestone's environment and counts below remain historical.

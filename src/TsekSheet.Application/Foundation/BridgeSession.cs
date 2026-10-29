@@ -87,7 +87,7 @@ public sealed class BridgeSession : IDisposable
                 Success(id!, new { selectedVersion = 1, applicationName = new ApplicationMetadataService().ApplicationName, version = "0.1.0", capabilities = new { diagnostics = true, fileSelection = true, workbooks = workbooks != null, templates = false, ocr = false } });
                 return;
             }
-            if (command is not ("foundation.getInfo" or "foundation.selectFile" or "diagnostics.run" or "diagnostics.cancel" or "workbook.open" or "workbook.readViewport" or "workbook.close" or "workbook.discard" or "workbook.createCopy" or "workbook.editCopy" or "workbook.saveAsNew" or "workbook.previewMerge" or "workbook.merge" or "workflow.profiles" or "workbook.planRecords"))
+            if (command is not ("foundation.getInfo" or "foundation.selectFile" or "diagnostics.run" or "diagnostics.cancel" or "workbook.open" or "workbook.readViewport" or "workbook.close" or "workbook.discard" or "workbook.createCopy" or "workbook.editCopy" or "workbook.saveAsNew" or "workbook.previewMerge" or "workbook.merge" or "workflow.profiles" or "workbook.planRecords" or "workbook.generateCandidate" or "workbook.approveCandidate" or "workbook.cancelCandidate"))
             { Error(id!, "UNSUPPORTED_COMMAND", "Command is unavailable."); return; }
             if (!ready) { Error(id!, "NOT_READY", "Handshake is required."); return; }
             if (command == "workflow.profiles")
@@ -98,6 +98,31 @@ public sealed class BridgeSession : IDisposable
             if (command!.StartsWith("workbook.", StringComparison.Ordinal))
             {
                 if (workbooks == null) { Error(id!, "UNSUPPORTED_COMMAND", "Read-only workbooks are unavailable in this host."); return; }
+                if (command == "workbook.generateCandidate")
+                {
+                    if (!HasOnly(payload,"sessionId","worksheetId","expectedRevision","profileId","profileHash","records","destinationSessionId","expectedDestinationRevision")
+                        || !Guid.TryParseExact(payload.GetProperty("destinationSessionId").GetString(),"D",out var destination)
+                        || !payload.GetProperty("expectedDestinationRevision").TryGetInt32(out var destinationRevision) || destinationRevision < 0)
+                    { Error(id!,"INVALID_REQUEST","Invalid candidate generation payload."); return; }
+                    var fields = JsonSerializer.Deserialize<Dictionary<string,JsonElement>>(payload.GetRawText())!;
+                    fields.Remove("destinationSessionId"); fields.Remove("expectedDestinationRevision");
+                    var request = WorkflowProfiles.ParseRequest(JsonSerializer.Serialize(fields));
+                    Success(id!,await workbooks.GenerateCandidateAsync(destination,destinationRevision,request)); return;
+                }
+                if (command == "workbook.approveCandidate")
+                {
+                    if (!HasOnly(payload,"sessionId","destinationSessionId","worksheetId","candidateId","reviewSha256","candidateSha256","manifestSha256","sourceSha256","expectedCopyRevision","expectedDestinationRevision","profileId","profileHash","duplicatesReviewed"))
+                    { Error(id!,"INVALID_REQUEST","Invalid candidate approval payload."); return; }
+                    var request = JsonSerializer.Deserialize<CandidateReviewApproval>(payload.GetRawText(),JsonOptions)!;
+                    Success(id!,await workbooks.ApproveCandidateAsync(request)); return;
+                }
+                if (command == "workbook.cancelCandidate")
+                {
+                    if (!HasOnly(payload,"sessionId","candidateId","expectedRevision") || !Guid.TryParseExact(payload.GetProperty("sessionId").GetString(),"D",out var copyId)
+                        || !Guid.TryParseExact(payload.GetProperty("candidateId").GetString(),"D",out var candidateId) || !payload.GetProperty("expectedRevision").TryGetInt32(out var revision) || revision < 0)
+                    { Error(id!,"INVALID_REQUEST","Invalid review cancellation payload."); return; }
+                    Success(id!,new { status = await workbooks.CancelCandidateAsync(copyId,candidateId,revision) }); return;
+                }
                 if (command == "workbook.open")
                 {
                     if (!HasOnly(payload)) { Error(id!, "INVALID_REQUEST", "Workbook opening accepts no paths or other arguments."); return; }

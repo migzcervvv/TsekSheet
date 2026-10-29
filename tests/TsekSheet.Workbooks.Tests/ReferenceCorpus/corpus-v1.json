@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "fixtureKind": "generated-artificial-ledger-only",
+  "expectationProvenance": "hand-authored-OOXML-semantics-not-Excel",
+  "operation": "Insert whole rows, copy template styles and height, clear all copied contents, populate approved literals, explicitly extend the selected section subtotal and preserve its original number format",
+  "invariants": ["Every existing vendor/RFP/invoice/amount/date is retained exactly once in order", "Context worksheet identity and content are unchanged", "Only approved new fields are populated; payment status and voucher stay blank", "Formula caches are not trusted"],
+  "cases": [
+    { "id": "within-vendor-group", "feature": "vendor-group", "boundary": 7, "count": 1, "template": 6, "firstData": 6, "subtotal": 10, "supported": true, "excelReference": "pending", "expectedFormulas": {"E11":"SUM(E6:E10)","E23":"SUM(E17:E22)","E26":"E11+E23","E27":"$E$11+E$23+$E6","E28":"E6+E8"} },
+    { "id": "after-final-vendor-record", "feature": "plain", "boundary": 8, "count": 1, "template": 6, "firstData": 6, "subtotal": 10, "supported": true, "excelReference": "pending", "expectedFormulas": {"E11":"SUM(E6:E10)","E23":"SUM(E17:E22)","E26":"E11+E23","E27":"$E$11+E$23+$E6","E28":"E6+E7"} },
+    { "id": "before-subtotal", "feature": "plain", "boundary": 22, "count": 1, "template": 16, "firstData": 16, "subtotal": 22, "supported": true, "excelReference": "pending", "expectedFormulas": {"E10":"SUM(E6:E9)","E23":"SUM(E16:E22)","E26":"E10+E23","E27":"$E$10+E$23+$E6","E28":"E6+E7"} },
+    { "id": "batch-before-subtotal", "feature": "plain", "boundary": 22, "count": 2, "template": 16, "firstData": 16, "subtotal": 22, "supported": true, "excelReference": "pending", "expectedFormulas": {"E10":"SUM(E6:E9)","E24":"SUM(E16:E23)","E27":"E10+E24","E28":"$E$10+E$24+$E6","E29":"E6+E7"} },
+    { "id": "merged-heading", "feature": "merge", "boundary": 22, "count": 1, "template": 16, "firstData": 16, "subtotal": 22, "supported": false, "excelReference": "pending-negative-control", "expectedFormulas": {} },
+    { "id": "defined-name", "feature": "name", "boundary": 22, "count": 1, "template": 16, "firstData": 16, "subtotal": 22, "supported": false, "excelReference": "pending-negative-control", "expectedFormulas": {} },
+    { "id": "excel-table", "feature": "table", "boundary": 22, "count": 1, "template": 16, "firstData": 16, "subtotal": 22, "supported": false, "excelReference": "pending-negative-control", "expectedFormulas": {} },
+    { "id": "autofilter", "feature": "filter", "boundary": 22, "count": 1, "template": 16, "firstData": 16, "subtotal": 22, "supported": false, "excelReference": "pending-negative-control", "expectedFormulas": {} },
+    { "id": "cross-sheet", "feature": "cross-sheet", "boundary": 22, "count": 1, "template": 16, "firstData": 16, "subtotal": 22, "supported": false, "excelReference": "pending-negative-control", "expectedFormulas": {} },
+    { "id": "shared-formula", "feature": "shared", "boundary": 22, "count": 1, "template": 16, "firstData": 16, "subtotal": 22, "supported": false, "excelReference": "pending-negative-control", "expectedFormulas": {} },
+    { "id": "unknown-package-part", "feature": "unknown", "boundary": 22, "count": 1, "template": 16, "firstData": 16, "subtotal": 22, "supported": false, "excelReference": "pending-negative-control", "expectedFormulas": {} }
+  ]
+}

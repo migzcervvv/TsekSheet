@@ -15,6 +15,7 @@ export default function App() {
   const [selecting, setSelecting] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [workbooksAvailable, setWorkbooksAvailable] = useState(false);
+  const [logoAvailable, setLogoAvailable] = useState(true);
   const connected = connection === 'Connected';
   const running = runState === 'Running' || runState === 'Cancelling';
 
@@ -63,7 +64,7 @@ export default function App() {
 
   return (
     <div className="shell">
-      <header className="topbar"><span className="wordmark">TsekSheet</span><span>Desktop foundation</span><span className="local">Local application</span></header>
+      <header className="topbar"><span className="wordmark">{logoAvailable && <img className="brand-logo" src="./branding/TsekSheet-No-BG.svg" alt="" width="36" height="36" onError={() => setLogoAvailable(false)} />}TsekSheet</span><span>Desktop foundation</span><span className="local">Local application</span></header>
       <main>
         <div className="heading"><div><h1>Welcome to TsekSheet</h1><p>React frontend is running.</p></div><span className="version">{info ? `Version ${info.version}` : 'Starting up'}</span></div>
         <section className="connection" aria-labelledby="connection-title">

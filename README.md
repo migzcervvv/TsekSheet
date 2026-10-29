@@ -22,6 +22,9 @@ The [.NET 10 migration](docs/development/dotnet-10-migration.md) is verified on 
 - Controlled text, number, date, and explicit formula edits to supported populated cells, with formula-overwrite protection and isolated candidate validation.
 - Reviewed Merge of recorded cell changes into the original worksheet in memory, with stable identities, strict base/revision checks, conflict rejection, candidate validation and atomic adoption.
 - [Manual workflow planning](docs/workflows/payables-processing.md) with approved versioned JSON profiles, bounded whole-worksheet section detection, explicit multi-section/vendor choices, duplicate warnings and batch proposals. **Structural insertion remains disabled.** The synthetic Payables and Laboratory profiles share one generic planner.
+- [Structural capability diagnostics](docs/development/structural-preservation-oracle.md) distinguish blocked structures and unresolved review from experimental package preflight. An independent synthetic preservation oracle and internal row candidate editor are tested; desktop Apply and structural Merge/export remain disabled.
+- [Candidate lifecycle review and Excel reference evidence](docs/development/excel-reference-corpus.md) distinguish planning from generation, oracle verification, approval, adoption, integration and export. A separately gated internal structural Merge/export path is tested; production Apply remains disabled and native Excel comparisons retain explicit formatting limitations.
+- [Interactive candidate review](docs/development/step45-verification.md) builds isolated candidates, displays actual oracle/native-format findings and records explicit review-only approval for the narrow qualified height policy. Approval leaves workbook data/revisions unchanged; public Apply/adoption remain disabled. Seventeen additional actual Excel captures retain exact formatting successes and failures.
 - **Save As to a separate, brand-new `.xlsx` file only**, using protected staging, a no-overwrite commit, and final file identity/content verification on supported local fixed NTFS paths.
 - Automated application, workbook, protocol, frontend, filesystem, and actual Windows desktop smoke tests, with artificial reimbursement and laboratory fixtures.
 
@@ -38,6 +41,8 @@ The desktop editor changes working copies only. Review and confirm Merge to inte
 These features are planned; their presence in an architecture document or experimental project does not mean they are available in the desktop application. No database, cloud processing, or paid AI API is used.
 
 ## Technology stack
+
+Approved logo assets live in `src/TsekSheet.Frontend/public/branding/`: `TsekSheet.svg` and `TsekSheet-No-BG.svg`. The header uses the transparent version; Vite copies both unchanged into the desktop's bundled frontend assets.
 
 | Component | Current choice |
 | --- | --- |

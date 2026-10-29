@@ -13,6 +13,10 @@ public sealed class WorkbookEngine : IWorkbookEngine
     private long estimatedBytes;
     internal Func<byte[], byte[]>? CandidateFaultForTesting { get; set; }
     internal CommitFaults? CommitFaultsForTesting { get; set; }
+    internal bool StructuralExperimentsEnabled { get; set; }
+    internal Action<StructuralStage>? StructuralFaultForTesting { get; set; }
+    internal bool StructuralIntegrationExperimentsEnabled { get; set; }
+    internal Action<StructuralLifecycleStage>? StructuralLifecycleFaultForTesting { get; set; }
 
     public WorkbookEngine(WorkbookLimits? limits = null)
     {

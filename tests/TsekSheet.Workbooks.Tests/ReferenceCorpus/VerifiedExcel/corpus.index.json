@@ -1,0 +1,764 @@
+{
+  "schemaVersion": 1,
+  "fixtureKind": "generated-artificial-ledger-only",
+  "specificationSha256": "5B3C043F3821F6CFED956D280033EF7EA64F6C7E682081280A44935FBFD07747",
+  "fixtureGeneratorSha256": "1C13B8F58FAB8DB6641CB41A2D83168AE36F5298F5778C4584A10AE73211B38E",
+  "fixtureGenerator": "ClosedXML 0.105.1; NOT Microsoft Excel",
+  "editorSha256": "81FB6B575F7136D3BCD46A1F987724326AD15B60BB80064A6C86893DEE8C5FDB",
+  "oracleSha256": "FAA45186A24BCAF2E36E54597B762E59797B154421B1C0FE80347806DCF34B8C",
+  "excelProcedureSha256": "49C30943159E51387977299B6A102A64B017EB29C11969CC3A39A5747360C98F",
+  "dotnetVersion": "10.0.14",
+  "cases": [
+    {
+      "spec": {
+        "id": "within-vendor-group",
+        "feature": "vendor-group",
+        "boundary": 7,
+        "count": 1,
+        "template": 6,
+        "firstData": 6,
+        "subtotal": 10,
+        "supported": true,
+        "excelReference": "pending",
+        "expectedFormulas": {
+          "E11": "SUM(E6:E10)",
+          "E23": "SUM(E17:E22)",
+          "E26": "E11\u002BE23",
+          "E27": "$E$11\u002BE$23\u002B$E6",
+          "E28": "E6\u002BE8"
+        }
+      },
+      "inputFile": "within-vendor-group.input.xlsx",
+      "inputSha256": "BAE0FF67D3C87C3499A6F0FB2C12C665DB1481E3DEF863E77E4269449F0B4DEF",
+      "candidateFile": "within-vendor-group.tseksheet.xlsx",
+      "candidateSha256": "E4BE985E6CBED3306D63D6D4069EABB7C76D319E0E5928B4D68DF21BBDAB0E67",
+      "manifest": {
+        "worksheet": "Ledger",
+        "boundary": 7,
+        "templateRow": 6,
+        "firstDataRow": 6,
+        "subtotalRow": 10,
+        "records": [
+          {
+            "fields": [
+              {
+                "column": 1,
+                "kind": "text",
+                "value": "Artificial Vendor 1"
+              },
+              {
+                "column": 2,
+                "kind": "text",
+                "value": "New artificial record"
+              },
+              {
+                "column": 3,
+                "kind": "text",
+                "value": "NEW-1"
+              },
+              {
+                "column": 4,
+                "kind": "text",
+                "value": ""
+              },
+              {
+                "column": 5,
+                "kind": "decimal",
+                "value": "25"
+              },
+              {
+                "column": 6,
+                "kind": "date",
+                "value": "2026-10-29"
+              }
+            ]
+          }
+        ],
+        "count": 1
+      },
+      "candidateProvenance": "TsekSheet editor; NOT Microsoft Excel"
+    },
+    {
+      "spec": {
+        "id": "after-final-vendor-record",
+        "feature": "plain",
+        "boundary": 8,
+        "count": 1,
+        "template": 6,
+        "firstData": 6,
+        "subtotal": 10,
+        "supported": true,
+        "excelReference": "pending",
+        "expectedFormulas": {
+          "E11": "SUM(E6:E10)",
+          "E23": "SUM(E17:E22)",
+          "E26": "E11\u002BE23",
+          "E27": "$E$11\u002BE$23\u002B$E6",
+          "E28": "E6\u002BE7"
+        }
+      },
+      "inputFile": "after-final-vendor-record.input.xlsx",
+      "inputSha256": "04B008FD176E127551A8C272C7BCD6086C5A974110DDEA5032F351F71FB0F4BF",
+      "candidateFile": "after-final-vendor-record.tseksheet.xlsx",
+      "candidateSha256": "6DC49DA9AF393A3A62332D0EB2079029038F8B1A9E26DB5B0FE47D7871247735",
+      "manifest": {
+        "worksheet": "Ledger",
+        "boundary": 8,
+        "templateRow": 6,
+        "firstDataRow": 6,
+        "subtotalRow": 10,
+        "records": [
+          {
+            "fields": [
+              {
+                "column": 1,
+                "kind": "text",
+                "value": "Artificial Vendor 1"
+              },
+              {
+                "column": 2,
+                "kind": "text",
+                "value": "New artificial record"
+              },
+              {
+                "column": 3,
+                "kind": "text",
+                "value": "NEW-1"
+              },
+              {
+                "column": 4,
+                "kind": "text",
+                "value": ""
+              },
+              {
+                "column": 5,
+                "kind": "decimal",
+                "value": "25"
+              },
+              {
+                "column": 6,
+                "kind": "date",
+                "value": "2026-10-29"
+              }
+            ]
+          }
+        ],
+        "count": 1
+      },
+      "candidateProvenance": "TsekSheet editor; NOT Microsoft Excel"
+    },
+    {
+      "spec": {
+        "id": "before-subtotal",
+        "feature": "plain",
+        "boundary": 22,
+        "count": 1,
+        "template": 16,
+        "firstData": 16,
+        "subtotal": 22,
+        "supported": true,
+        "excelReference": "pending",
+        "expectedFormulas": {
+          "E10": "SUM(E6:E9)",
+          "E23": "SUM(E16:E22)",
+          "E26": "E10\u002BE23",
+          "E27": "$E$10\u002BE$23\u002B$E6",
+          "E28": "E6\u002BE7"
+        }
+      },
+      "inputFile": "before-subtotal.input.xlsx",
+      "inputSha256": "7B4202280148B3C9A6423EFDA1F7663E9F6072AC5F9041AF9AE6A00174C9C4D9",
+      "candidateFile": "before-subtotal.tseksheet.xlsx",
+      "candidateSha256": "E2C2E16B11541E9C3FB02B3B65D779AA5DFF7F76D637D0F8A7BCF832AE092939",
+      "manifest": {
+        "worksheet": "Ledger",
+        "boundary": 22,
+        "templateRow": 16,
+        "firstDataRow": 16,
+        "subtotalRow": 22,
+        "records": [
+          {
+            "fields": [
+              {
+                "column": 1,
+                "kind": "text",
+                "value": "Artificial Vendor 1"
+              },
+              {
+                "column": 2,
+                "kind": "text",
+                "value": "New artificial record"
+              },
+              {
+                "column": 3,
+                "kind": "text",
+                "value": "NEW-1"
+              },
+              {
+                "column": 4,
+                "kind": "text",
+                "value": ""
+              },
+              {
+                "column": 5,
+                "kind": "decimal",
+                "value": "25"
+              },
+              {
+                "column": 6,
+                "kind": "date",
+                "value": "2026-10-29"
+              }
+            ]
+          }
+        ],
+        "count": 1
+      },
+      "candidateProvenance": "TsekSheet editor; NOT Microsoft Excel"
+    },
+    {
+      "spec": {
+        "id": "batch-before-subtotal",
+        "feature": "plain",
+        "boundary": 22,
+        "count": 2,
+        "template": 16,
+        "firstData": 16,
+        "subtotal": 22,
+        "supported": true,
+        "excelReference": "pending",
+        "expectedFormulas": {
+          "E10": "SUM(E6:E9)",
+          "E24": "SUM(E16:E23)",
+          "E27": "E10\u002BE24",
+          "E28": "$E$10\u002BE$24\u002B$E6",
+          "E29": "E6\u002BE7"
+        }
+      },
+      "inputFile": "batch-before-subtotal.input.xlsx",
+      "inputSha256": "209E1298BD43D7C79BB66F61F8EF0A43B6D55FADD82DF9C452D954A65AF6930C",
+      "candidateFile": "batch-before-subtotal.tseksheet.xlsx",
+      "candidateSha256": "375FD18431D45C4C29E282048E5CAA3E9972B0AAF6EF78F70AAA78B20BEBA3A9",
+      "manifest": {
+        "worksheet": "Ledger",
+        "boundary": 22,
+        "templateRow": 16,
+        "firstDataRow": 16,
+        "subtotalRow": 22,
+        "records": [
+          {
+            "fields": [
+              {
+                "column": 1,
+                "kind": "text",
+                "value": "Artificial Vendor 1"
+              },
+              {
+                "column": 2,
+                "kind": "text",
+                "value": "New artificial record"
+              },
+              {
+                "column": 3,
+                "kind": "text",
+                "value": "NEW-1"
+              },
+              {
+                "column": 4,
+                "kind": "text",
+                "value": ""
+              },
+              {
+                "column": 5,
+                "kind": "decimal",
+                "value": "25"
+              },
+              {
+                "column": 6,
+                "kind": "date",
+                "value": "2026-10-29"
+              }
+            ]
+          },
+          {
+            "fields": [
+              {
+                "column": 1,
+                "kind": "text",
+                "value": "Artificial Vendor 2"
+              },
+              {
+                "column": 2,
+                "kind": "text",
+                "value": "New artificial record"
+              },
+              {
+                "column": 3,
+                "kind": "text",
+                "value": "NEW-2"
+              },
+              {
+                "column": 4,
+                "kind": "text",
+                "value": ""
+              },
+              {
+                "column": 5,
+                "kind": "decimal",
+                "value": "25"
+              },
+              {
+                "column": 6,
+                "kind": "date",
+                "value": "2026-10-29"
+              }
+            ]
+          }
+        ],
+        "count": 2
+      },
+      "candidateProvenance": "TsekSheet editor; NOT Microsoft Excel"
+    },
+    {
+      "spec": {
+        "id": "merged-heading",
+        "feature": "merge",
+        "boundary": 22,
+        "count": 1,
+        "template": 16,
+        "firstData": 16,
+        "subtotal": 22,
+        "supported": false,
+        "excelReference": "pending-negative-control",
+        "expectedFormulas": {}
+      },
+      "inputFile": "merged-heading.input.xlsx",
+      "inputSha256": "94DBEB6B38CD04C46BBE428B377C99D3D77694C41DBB86351C0C2BD8CDB1D959",
+      "candidateFile": null,
+      "candidateSha256": null,
+      "manifest": {
+        "worksheet": "Ledger",
+        "boundary": 22,
+        "templateRow": 16,
+        "firstDataRow": 16,
+        "subtotalRow": 22,
+        "records": [
+          {
+            "fields": [
+              {
+                "column": 1,
+                "kind": "text",
+                "value": "Artificial Vendor 1"
+              },
+              {
+                "column": 2,
+                "kind": "text",
+                "value": "New artificial record"
+              },
+              {
+                "column": 3,
+                "kind": "text",
+                "value": "NEW-1"
+              },
+              {
+                "column": 4,
+                "kind": "text",
+                "value": ""
+              },
+              {
+                "column": 5,
+                "kind": "decimal",
+                "value": "25"
+              },
+              {
+                "column": 6,
+                "kind": "date",
+                "value": "2026-10-29"
+              }
+            ]
+          }
+        ],
+        "count": 1
+      },
+      "candidateProvenance": "negative control; editor rejected; no accepted candidate"
+    },
+    {
+      "spec": {
+        "id": "defined-name",
+        "feature": "name",
+        "boundary": 22,
+        "count": 1,
+        "template": 16,
+        "firstData": 16,
+        "subtotal": 22,
+        "supported": false,
+        "excelReference": "pending-negative-control",
+        "expectedFormulas": {}
+      },
+      "inputFile": "defined-name.input.xlsx",
+      "inputSha256": "F44966D41063F70A3FFC2BDFA512B4A6BFEC5956ED4058FB59F4FC569D7CA808",
+      "candidateFile": null,
+      "candidateSha256": null,
+      "manifest": {
+        "worksheet": "Ledger",
+        "boundary": 22,
+        "templateRow": 16,
+        "firstDataRow": 16,
+        "subtotalRow": 22,
+        "records": [
+          {
+            "fields": [
+              {
+                "column": 1,
+                "kind": "text",
+                "value": "Artificial Vendor 1"
+              },
+              {
+                "column": 2,
+                "kind": "text",
+                "value": "New artificial record"
+              },
+              {
+                "column": 3,
+                "kind": "text",
+                "value": "NEW-1"
+              },
+              {
+                "column": 4,
+                "kind": "text",
+                "value": ""
+              },
+              {
+                "column": 5,
+                "kind": "decimal",
+                "value": "25"
+              },
+              {
+                "column": 6,
+                "kind": "date",
+                "value": "2026-10-29"
+              }
+            ]
+          }
+        ],
+        "count": 1
+      },
+      "candidateProvenance": "negative control; editor rejected; no accepted candidate"
+    },
+    {
+      "spec": {
+        "id": "excel-table",
+        "feature": "table",
+        "boundary": 22,
+        "count": 1,
+        "template": 16,
+        "firstData": 16,
+        "subtotal": 22,
+        "supported": false,
+        "excelReference": "pending-negative-control",
+        "expectedFormulas": {}
+      },
+      "inputFile": "excel-table.input.xlsx",
+      "inputSha256": "AB838B1B1BC709C14AE10E866596EA6BDF1FC5A9F60FAC83784DCDBDE1983682",
+      "candidateFile": null,
+      "candidateSha256": null,
+      "manifest": {
+        "worksheet": "Ledger",
+        "boundary": 22,
+        "templateRow": 16,
+        "firstDataRow": 16,
+        "subtotalRow": 22,
+        "records": [
+          {
+            "fields": [
+              {
+                "column": 1,
+                "kind": "text",
+                "value": "Artificial Vendor 1"
+              },
+              {
+                "column": 2,
+                "kind": "text",
+                "value": "New artificial record"
+              },
+              {
+                "column": 3,
+                "kind": "text",
+                "value": "NEW-1"
+              },
+              {
+                "column": 4,
+                "kind": "text",
+                "value": ""
+              },
+              {
+                "column": 5,
+                "kind": "decimal",
+                "value": "25"
+              },
+              {
+                "column": 6,
+                "kind": "date",
+                "value": "2026-10-29"
+              }
+            ]
+          }
+        ],
+        "count": 1
+      },
+      "candidateProvenance": "negative control; editor rejected; no accepted candidate"
+    },
+    {
+      "spec": {
+        "id": "autofilter",
+        "feature": "filter",
+        "boundary": 22,
+        "count": 1,
+        "template": 16,
+        "firstData": 16,
+        "subtotal": 22,
+        "supported": false,
+        "excelReference": "pending-negative-control",
+        "expectedFormulas": {}
+      },
+      "inputFile": "autofilter.input.xlsx",
+      "inputSha256": "355073E9B120611177FDE6F36BAB29E96AA6CE07B397FBCE3B47B1D8C2B3EBA1",
+      "candidateFile": null,
+      "candidateSha256": null,
+      "manifest": {
+        "worksheet": "Ledger",
+        "boundary": 22,
+        "templateRow": 16,
+        "firstDataRow": 16,
+        "subtotalRow": 22,
+        "records": [
+          {
+            "fields": [
+              {
+                "column": 1,
+                "kind": "text",
+                "value": "Artificial Vendor 1"
+              },
+              {
+                "column": 2,
+                "kind": "text",
+                "value": "New artificial record"
+              },
+              {
+                "column": 3,
+                "kind": "text",
+                "value": "NEW-1"
+              },
+              {
+                "column": 4,
+                "kind": "text",
+                "value": ""
+              },
+              {
+                "column": 5,
+                "kind": "decimal",
+                "value": "25"
+              },
+              {
+                "column": 6,
+                "kind": "date",
+                "value": "2026-10-29"
+              }
+            ]
+          }
+        ],
+        "count": 1
+      },
+      "candidateProvenance": "negative control; editor rejected; no accepted candidate"
+    },
+    {
+      "spec": {
+        "id": "cross-sheet",
+        "feature": "cross-sheet",
+        "boundary": 22,
+        "count": 1,
+        "template": 16,
+        "firstData": 16,
+        "subtotal": 22,
+        "supported": false,
+        "excelReference": "pending-negative-control",
+        "expectedFormulas": {}
+      },
+      "inputFile": "cross-sheet.input.xlsx",
+      "inputSha256": "EF9B3656FB4BCDFCE4AF8F1BB6E77B29B0772B835B5F481D6CE6C7C6B1C214D4",
+      "candidateFile": null,
+      "candidateSha256": null,
+      "manifest": {
+        "worksheet": "Ledger",
+        "boundary": 22,
+        "templateRow": 16,
+        "firstDataRow": 16,
+        "subtotalRow": 22,
+        "records": [
+          {
+            "fields": [
+              {
+                "column": 1,
+                "kind": "text",
+                "value": "Artificial Vendor 1"
+              },
+              {
+                "column": 2,
+                "kind": "text",
+                "value": "New artificial record"
+              },
+              {
+                "column": 3,
+                "kind": "text",
+                "value": "NEW-1"
+              },
+              {
+                "column": 4,
+                "kind": "text",
+                "value": ""
+              },
+              {
+                "column": 5,
+                "kind": "decimal",
+                "value": "25"
+              },
+              {
+                "column": 6,
+                "kind": "date",
+                "value": "2026-10-29"
+              }
+            ]
+          }
+        ],
+        "count": 1
+      },
+      "candidateProvenance": "negative control; editor rejected; no accepted candidate"
+    },
+    {
+      "spec": {
+        "id": "shared-formula",
+        "feature": "shared",
+        "boundary": 22,
+        "count": 1,
+        "template": 16,
+        "firstData": 16,
+        "subtotal": 22,
+        "supported": false,
+        "excelReference": "pending-negative-control",
+        "expectedFormulas": {}
+      },
+      "inputFile": "shared-formula.input.xlsx",
+      "inputSha256": "165C1AFF8B67F45545F7E846014F7903A15D4513D4E9791AEBC396B7594199EF",
+      "candidateFile": null,
+      "candidateSha256": null,
+      "manifest": {
+        "worksheet": "Ledger",
+        "boundary": 22,
+        "templateRow": 16,
+        "firstDataRow": 16,
+        "subtotalRow": 22,
+        "records": [
+          {
+            "fields": [
+              {
+                "column": 1,
+                "kind": "text",
+                "value": "Artificial Vendor 1"
+              },
+              {
+                "column": 2,
+                "kind": "text",
+                "value": "New artificial record"
+              },
+              {
+                "column": 3,
+                "kind": "text",
+                "value": "NEW-1"
+              },
+              {
+                "column": 4,
+                "kind": "text",
+                "value": ""
+              },
+              {
+                "column": 5,
+                "kind": "decimal",
+                "value": "25"
+              },
+              {
+                "column": 6,
+                "kind": "date",
+                "value": "2026-10-29"
+              }
+            ]
+          }
+        ],
+        "count": 1
+      },
+      "candidateProvenance": "negative control; editor rejected; no accepted candidate"
+    },
+    {
+      "spec": {
+        "id": "unknown-package-part",
+        "feature": "unknown",
+        "boundary": 22,
+        "count": 1,
+        "template": 16,
+        "firstData": 16,
+        "subtotal": 22,
+        "supported": false,
+        "excelReference": "pending-negative-control",
+        "expectedFormulas": {}
+      },
+      "inputFile": "unknown-package-part.input.xlsx",
+      "inputSha256": "953FF7815664B6D87287AB8D376AD62DBD1B9EC7EF07B7D3F07AC575B9039619",
+      "candidateFile": null,
+      "candidateSha256": null,
+      "manifest": {
+        "worksheet": "Ledger",
+        "boundary": 22,
+        "templateRow": 16,
+        "firstDataRow": 16,
+        "subtotalRow": 22,
+        "records": [
+          {
+            "fields": [
+              {
+                "column": 1,
+                "kind": "text",
+                "value": "Artificial Vendor 1"
+              },
+              {
+                "column": 2,
+                "kind": "text",
+                "value": "New artificial record"
+              },
+              {
+                "column": 3,
+                "kind": "text",
+                "value": "NEW-1"
+              },
+              {
+                "column": 4,
+                "kind": "text",
+                "value": ""
+              },
+              {
+                "column": 5,
+                "kind": "decimal",
+                "value": "25"
+              },
+              {
+                "column": 6,
+                "kind": "date",
+                "value": "2026-10-29"
+              }
+            ]
+          }
+        ],
+        "count": 1
+      },
+      "candidateProvenance": "negative control; editor rejected; no accepted candidate"
+    }
+  ]
+}

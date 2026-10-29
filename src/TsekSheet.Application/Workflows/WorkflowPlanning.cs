@@ -15,11 +15,15 @@ public sealed record RecordInsertionProposal(string RecordId, string Vendor, str
     int? BaseInsertionRow, int? ProposedRow, int AffectedThroughRow, IReadOnlyList<MappedField> Fields, IReadOnlyList<DuplicateWarning> Duplicates);
 public sealed record WorkflowPlan(Guid SessionId, Guid WorksheetId, int Revision, string SourceSha256, string ProfileId, string ProfileHash,
     bool ReadyForReview, bool CanApply, string InsertionBlockedReason, IReadOnlyList<string> RequiredConfirmations,
-    IReadOnlyList<string> IntegrityConcerns, IReadOnlyList<RecordInsertionProposal> Records);
+    IReadOnlyList<string> IntegrityConcerns, IReadOnlyList<RecordInsertionProposal> Records)
+{
+    public string StructuralStatus { get; init; } = "production-disabled";
+    public WorkflowReviewState Review => WorkflowReviewState.Planning(ReadyForReview, StructuralStatus);
+}
 
 public static class WorkflowPlanning
 {
-    public const string InsertionBlock = "Row insertion is disabled: generic reference, formula, range, table, merge and style preservation has not been proven.";
+    public const string InsertionBlock = "Apply is disabled. A bounded structural oracle and internal candidate experiment exist; production structural Merge, export and Excel compatibility remain unverified.";
 
     public static WorkflowPlan Prepare(IWorkbookSession session, WorkflowPlanRequest request, CancellationToken token = default)
     {
@@ -28,7 +32,10 @@ public static class WorkflowPlanning
         var profile = WorkflowProfiles.Get(request.ProfileId);
         if (request.ProfileHash != WorkflowProfiles.Hash(profile)) throw WorkflowProfiles.Error("STALE_PROFILE", "Refresh the approved workflow profile before planning.");
         var analysis = WorksheetAnalysisReader.Read(session, request.WorksheetId, request.ExpectedRevision, profile, token);
-        return Plan(analysis, profile, request.Records, token);
+        var plan = Plan(analysis, profile, request.Records, token);
+        if (!plan.ReadyForReview) return plan with { StructuralStatus = "ambiguous-destination" };
+        if (plan.Records.Any(r => r.Duplicates.Count > 0)) return plan with { StructuralStatus = "duplicate-review-required" };
+        return session.InspectStructuralInsertion(plan, token);
     }
 
     public static WorkflowPlan Plan(WorksheetAnalysis analysis, WorkflowProfile profile, IReadOnlyList<WorkflowRecord> records, CancellationToken token = default)
@@ -99,7 +106,7 @@ public static class WorkflowPlanning
         }
         return new(analysis.SessionId, analysis.WorksheetId, analysis.Revision, analysis.SourceSha256, profile.Id, analysis.ProfileHash, ready, false, InsertionBlock,
             Array.AsReadOnly(new[] { "Review destination, entity identity, mapped values and affected rows", "Explicitly choose ambiguous entity/section matches", "Review every duplicate warning without automatic discard", "Explicit approval before any future structural mutation" }),
-            Array.AsReadOnly(new[] { "Formula, name and table expansion requires an independent structural preservation oracle", "Merged ranges, relationships, styles and lower content must be validated before adoption", "New rows must use an explicit clean template; no neighboring record content may be copied", "This proposal neither modifies nor saves the workbook" }), proposals.AsReadOnly());
+            Array.AsReadOnly(new[] { "The experimental oracle supports only plain rows and restricted same-sheet formulas", "Names, tables, merges and advanced structures block structural experiments", "New rows require a uniform explicit style template with unrelated constants cleared", "This proposal neither modifies nor saves the workbook; production Apply remains disabled" }), proposals.AsReadOnly());
     }
 
     private static Dictionary<string, string> ValidateValues(WorkflowRecord record, WorkflowProfile profile)

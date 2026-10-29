@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "provenance": "Microsoft Excel COM automation on generated isolated fixtures",
+  "excelVersion": "16.0",
+  "excelBuild": "20326",
+  "executableVersion": "16.0.20326.20232",
+  "scriptSha256": "49C30943159E51387977299B6A102A64B017EB29C11969CC3A39A5747360C98F",
+  "indexSha256": "078CA5B5053A0A00BEEF5F2BF3696E647A9B119FF74CB83CADC1BAEC68275371",
+  "generatedUtc": "2026-10-29T02:29:46.7241898Z",
+  "cases": [
+    {
+      "id": "within-vendor-group",
+      "outputFile": "within-vendor-group.excel.xlsx",
+      "inputSha256": "BAE0FF67D3C87C3499A6F0FB2C12C665DB1481E3DEF863E77E4269449F0B4DEF",
+      "outputSha256": "47B65F37CC2DA4BEA7B0286A5271389988C6F6A3C5E1488240425D65BEBB3846",
+      "rawAfterInsertionFormulas": {
+        "E23": "=SUM(E17:E22)",
+        "E11": "=SUM(E6:E10)",
+        "E26": "=E11+E23",
+        "E27": "=$E$11+E$23+$E6",
+        "E28": "=E6+E8"
+      },
+      "formatObservations": {
+        "amountFormat": "#,##0.00",
+        "dateFormat": "yyyy-mm-dd",
+        "insertedRowHeight": 22.0
+      },
+      "calculatedTotals": {
+        "selectedSection": 225.0,
+        "grandSummary": 425.0,
+        "verification": "Excel CalculateFullRebuild on this generated fixture only"
+      },
+      "status": "Excel-generated; semantic cross-check required"
+    },
+    {
+      "id": "after-final-vendor-record",
+      "outputFile": "after-final-vendor-record.excel.xlsx",
+      "inputSha256": "04B008FD176E127551A8C272C7BCD6086C5A974110DDEA5032F351F71FB0F4BF",
+      "outputSha256": "2734DE217EAFFC0AD52A4ABB9CE3B5335418E2F43EE1AE43CC7CD74EF40E3EA9",
+      "rawAfterInsertionFormulas": {
+        "E23": "=SUM(E17:E22)",
+        "E11": "=SUM(E6:E10)",
+        "E26": "=E11+E23",
+        "E27": "=$E$11+E$23+$E6",
+        "E28": "=E6+E7"
+      },
+      "formatObservations": {
+        "amountFormat": "#,##0.00",
+        "dateFormat": "yyyy-mm-dd",
+        "insertedRowHeight": 22.0
+      },
+      "calculatedTotals": {
+        "selectedSection": 225.0,
+        "grandSummary": 425.0,
+        "verification": "Excel CalculateFullRebuild on this generated fixture only"
+      },
+      "status": "Excel-generated; semantic cross-check required"
+    },
+    {
+      "id": "before-subtotal",
+      "outputFile": "before-subtotal.excel.xlsx",
+      "inputSha256": "7B4202280148B3C9A6423EFDA1F7663E9F6072AC5F9041AF9AE6A00174C9C4D9",
+      "outputSha256": "A0E5D6750D68DCF4D58518B6E096EDCC56B2A6AE68A45802F5C3650B24B56F64",
+      "rawAfterInsertionFormulas": {
+        "E23": "=SUM(E16:E21)",
+        "E28": "=E6+E7",
+        "E26": "=E10+E23",
+        "E27": "=$E$10+E$23+$E6",
+        "E10": "=SUM(E6:E9)"
+      },
+      "formatObservations": {
+        "amountFormat": "#,##0.00",
+        "dateFormat": "yyyy-mm-dd",
+        "insertedRowHeight": 22.0
+      },
+      "calculatedTotals": {
+        "selectedSection": 225.0,
+        "grandSummary": 425.0,
+        "verification": "Excel CalculateFullRebuild on this generated fixture only"
+      },
+      "status": "Excel-generated; semantic cross-check required"
+    },
+    {
+      "id": "batch-before-subtotal",
+      "outputFile": "batch-before-subtotal.excel.xlsx",
+      "inputSha256": "209E1298BD43D7C79BB66F61F8EF0A43B6D55FADD82DF9C452D954A65AF6930C",
+      "outputSha256": "EEEC0807AF4D6A32A9BF3EC6760345B348D4358D9350AAEC16FA958129B50420",
+      "rawAfterInsertionFormulas": {
+        "E24": "=SUM(E16:E21)",
+        "E28": "=$E$10+E$24+$E6",
+        "E29": "=E6+E7",
+        "E27": "=E10+E24",
+        "E10": "=SUM(E6:E9)"
+      },
+      "formatObservations": {
+        "amountFormat": "#,##0.00",
+        "dateFormat": "yyyy-mm-dd",
+        "insertedRowHeight": 22.0
+      },
+      "calculatedTotals": {
+        "selectedSection": 250.0,
+        "grandSummary": 450.0,
+        "verification": "Excel CalculateFullRebuild on this generated fixture only"
+      },
+      "status": "Excel-generated; semantic cross-check required"
+    }
+  ]
+}

@@ -95,6 +95,35 @@ public sealed class WorkbookWorkspace(IWorkbookEngine engine, Func<CancellationT
         return TsekSheet.Application.Workflows.WorkflowPlanning.Prepare(session, request, token);
     }, token));
 
+    public Task<TsekSheet.Application.Workflows.StructuralCandidateReview> GenerateCandidateAsync(Guid destinationId, int destinationRevision, TsekSheet.Application.Workflows.WorkflowPlanRequest request) => Run(token => Task.Run(() =>
+    {
+        IWorkbookSession copy; IWorkbookSession destination;
+        lock (gate)
+        {
+            copy = RequireSession(request.SessionId); destination = RequireSession(destinationId);
+            if (!copies.ContainsKey(request.SessionId) || !ReferenceEquals(destination, active)) throw new WorkbookException("WORKING_COPY_REQUIRED", "Create and select an isolated working copy before generating a candidate.");
+        }
+        return copy.PrepareCandidateReview(destination, request, destinationRevision, token);
+    }, token));
+
+    public Task<TsekSheet.Application.Workflows.StructuralCandidateReview> ApproveCandidateAsync(TsekSheet.Application.Workflows.CandidateReviewApproval request) => Run(token => Task.Run(() =>
+    {
+        IWorkbookSession copy; IWorkbookSession destination;
+        lock (gate)
+        {
+            copy = RequireSession(request.SessionId); destination = RequireSession(request.DestinationSessionId);
+            if (!copies.ContainsKey(request.SessionId) || !ReferenceEquals(destination, active)) throw new WorkbookException("INVALID_WORKING_COPY", "Review approval must target the active original and its copy.");
+        }
+        return copy.ApproveCandidateReview(destination, request, token);
+    }, token));
+
+    public Task<string> CancelCandidateAsync(Guid sessionId, Guid candidateId, int expectedRevision) => Run(token => Task.Run(() =>
+    {
+        IWorkbookSession copy; lock (gate) copy = RequireSession(sessionId);
+        if (!copies.ContainsKey(sessionId)) throw new WorkbookException("INVALID_WORKING_COPY", "Only copy reviews can be cancelled.");
+        token.ThrowIfCancellationRequested(); copy.CancelCandidateReview(candidateId, expectedRevision); return "cancelled";
+    }, token));
+
     public Task<WorksheetIntegrationPreview> PreviewIntegrationAsync(Guid sessionId, WorksheetIntegrationRequest request) => Run(token => Task.Run(() =>
     {
         IWorkbookSession destination; IWorkbookSession copy;

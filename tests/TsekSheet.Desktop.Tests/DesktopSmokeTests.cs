@@ -27,6 +27,11 @@ public sealed class DesktopSmokeTests
             async Task Click(string label) => _ = await web.ExecuteScriptAsync($"Array.from(document.querySelectorAll('button')).find(b=>b.textContent==={JsonSerializer.Serialize(label)}).click()");
             async Task Select(string label, string value) => _ = await web.ExecuteScriptAsync($"(()=>{{const el=document.querySelector('select[aria-label={JsonSerializer.Serialize(label)}]'); el.value={JsonSerializer.Serialize(value)}; el.dispatchEvent(new Event('change',{{bubbles:true}}));}})()");
             await Until(async () => web.CoreWebView2 != null && await web.ExecuteScriptAsync("document.querySelector('[role=status]')?.textContent") == "\"Connected\"", "Host did not connect.");
+            await Until(async () => await web.ExecuteScriptAsync("(()=>{const img=document.querySelector('header .brand-logo');return !!img && img.complete && img.naturalWidth>0 && new URL(img.src).origin==='https://tseksheet.local';})()") == "true", "Bundled header logo did not load.");
+            await web.ExecuteScriptAsync("window.brandAssetsLoaded=null;Promise.all(['TsekSheet.svg','TsekSheet-No-BG.svg'].map(name=>new Promise(resolve=>{const img=new Image();img.onload=()=>resolve(true);img.onerror=()=>resolve(false);img.src='./branding/'+name;}))).then(results=>window.brandAssetsLoaded=results.every(Boolean))");
+            await Until(async () => await web.ExecuteScriptAsync("window.brandAssetsLoaded") == "true", "Bundled brand assets did not load.");
+            using (var brandingCapture = File.Create(Path.Combine(AppContext.BaseDirectory, "branding-header.png")))
+                await web.CoreWebView2.CapturePreviewAsync(Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png, brandingCapture);
             await Click("Open workbook");
             await Until(async () => await web.ExecuteScriptAsync("!!document.querySelector('select[aria-label=\"Workflow profile\"] option[value=\"synthetic-payables\"]')") == "true", "Profile catalog did not load.");
             await Select("Workflow profile", "synthetic-payables");
@@ -36,9 +41,12 @@ public sealed class DesktopSmokeTests
             await Click("Preview payable destination");
             await Until(async () => await web.ExecuteScriptAsync("!!document.querySelector('select[aria-label=\"Destination section\"]') && document.body.textContent.includes('Potential duplicates')") == "true", "Multi-section matches or duplicate warning missing.");
             Assert.AreEqual("\"\"", await web.ExecuteScriptAsync("document.querySelector('select[aria-label=\"Destination section\"]').value"));
+            Assert.AreEqual("true", await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Structural insertion status\"]').textContent.includes('Ambiguous destination')"));
             await Select("Destination section", "internal"); await Click("Preview payable destination");
             await Until(async () => await web.ExecuteScriptAsync("document.body.textContent.includes('insert at base row 9, proposed final row 9')") == "true", "Explicit section choice did not yield the expected vendor boundary.");
             Assert.AreEqual("true", await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Apply row insertion — unavailable').disabled"));
+            Assert.AreEqual("true", await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Structural insertion status\"]').textContent.includes('Duplicate warning')"));
+            Assert.AreEqual("true", await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Candidate lifecycle review\"]').textContent.includes('Candidate: not generated') && document.querySelector('[aria-label=\"Candidate lifecycle review\"]').textContent.includes('Structural integration: production disabled')"));
             Assert.AreEqual("true", await web.ExecuteScriptAsync("document.body.textContent.includes('No pending changes')"));
             foreach (var width in new[] { 390d, 768d, 1100d })
             {
@@ -55,6 +63,44 @@ public sealed class DesktopSmokeTests
     });
 
     private static readonly List<string> Profiles = [];
+    [TestMethod,TestCategory("WindowsSmoke")]
+    [DataRow(21)][DataRow(22)]
+    public Task ActualCandidateReviewApprovesOnlyQualifiedHeightWithoutApplying(int height)=>OnDesktop(async()=>
+    {
+        var path=Path.Combine(AppContext.BaseDirectory,"Fixtures",height==21?"review21.xlsx":"review22.xlsx");
+        var hash=Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(path)));
+        var browser=Path.Combine(Path.GetTempPath(),"TsekSheet-smoke",Guid.NewGuid().ToString("N"));Profiles.Add(browser);
+        var window=new MainWindow(null,browser,null,_=>Task.FromResult<string?>(path)){ShowInTaskbar=false};
+        try
+        {
+            window.Show();var web=(WebView2)window.FindName("FrontendWebView");
+            async Task Click(string label)=>_=await web.ExecuteScriptAsync($"Array.from(document.querySelectorAll('button')).find(b=>b.textContent==={JsonSerializer.Serialize(label)}).click()");
+            await Until(async()=>web.CoreWebView2!=null&&await web.ExecuteScriptAsync("document.querySelector('[role=status]')?.textContent")=="\"Connected\"","Host did not connect.");
+            await Click("Open workbook");await Until(async()=>await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Create working copy')?.disabled===false")=="true","Copy not ready.");
+            await Click("Create working copy");await Until(async()=>await web.ExecuteScriptAsync("document.querySelector('select[aria-label=\"Workbook view\"]')?.value!=='original' && !!document.querySelector('select[aria-label=\"Workflow profile\"] option[value=\"synthetic-payables\"]')")=="true","Copy/profile unavailable.");
+            await web.ExecuteScriptAsync("(()=>{const s=document.querySelector('select[aria-label=\"Workflow profile\"]');s.value='synthetic-payables';s.dispatchEvent(new Event('change',{bubbles:true}));})()");
+            await Until(async()=>await web.ExecuteScriptAsync("!!document.querySelector('input[aria-label=\"Payable Vendor name\"]')")=="true","Fields unavailable.");
+            foreach(var(label,value)in new[]{("Vendor name","Other Tools Ltd"),("RFP number","R2"),("Amount","25")})
+                await web.ExecuteScriptAsync($"(()=>{{const el=document.querySelector('input[aria-label={JsonSerializer.Serialize("Payable "+label)}]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,{JsonSerializer.Serialize(value)});el.dispatchEvent(new Event('input',{{bubbles:true}}));}})()");
+            await Click("Preview payable destination");await Until(async()=>await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Generate candidate for review')?.disabled===false")=="true","Candidate construction blocked unexpectedly.");
+            await Click("Generate candidate for review");await Until(async()=>await web.ExecuteScriptAsync("!!document.querySelector('[aria-label=\"Generated candidate review\"]')")=="true","Actual candidate review did not appear.");
+            Assert.AreEqual("true",await web.ExecuteScriptAsync("document.body.textContent.includes('preservation oracle accepted') && Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Apply row insertion — unavailable').disabled"));
+            if(height==21)
+            {
+                Assert.AreEqual("true",await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Approve reviewed candidate').disabled"));
+                await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Generated candidate review\"] input[type=checkbox]').click()");
+                Assert.AreEqual("true",await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Approve reviewed candidate').disabled"));
+                await web.ExecuteScriptAsync("document.querySelectorAll('[aria-label=\"Generated candidate review\"] input[type=checkbox]')[1].click()");
+                await Click("Approve reviewed candidate");await Until(async()=>await web.ExecuteScriptAsync("document.body.textContent.includes('user approved review')")=="true","Explicit approval did not complete.");
+            }
+            else Assert.AreEqual("true",await web.ExecuteScriptAsync("document.body.textContent.includes('has height 22') && Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Approve reviewed candidate').disabled"));
+            Assert.AreEqual("true",await web.ExecuteScriptAsync("document.body.textContent.includes('No pending changes') && document.body.textContent.includes('Working-copy adoption, structural integration and export have not occurred')"));
+            foreach(var width in new[]{390d,768d,1100d}){window.Width=width;await Task.Delay(100);Assert.AreEqual("true",await web.ExecuteScriptAsync("document.documentElement.scrollWidth<=document.documentElement.clientWidth"));}
+            await Click("Cancel candidate review");await Until(async()=>await web.ExecuteScriptAsync("!document.querySelector('[aria-label=\"Generated candidate review\"]')")=="true","Review cancellation did not clear state.");
+        }
+        finally{window.Close();}
+        Assert.AreEqual(hash,Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(path))));
+    });
     private static async Task OnDesktop(Func<Task> test)
     {
         var finished = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);

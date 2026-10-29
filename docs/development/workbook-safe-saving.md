@@ -1,5 +1,17 @@
 # Workbook safe-saving foundation
 
+## Step 45 review is not exportable content
+
+Generating or approving a public review changes no accepted workbook data/revision/dirty state and creates no structural export proof. The review-only invariant prevents those candidates from being adopted or integrated, even with experimental flags. Ordinary Save As continues to export accepted main-session bytes only and excludes unmerged/unapplied reviews. The internally tested structural export path below remains separate. No automatic save, source write or overwrite is introduced. [Step 45](step45-verification.md) preserves all commit, rollback and fingerprint checks.
+
+## Step 44 structural export experiment
+
+Normal new-file-only Save As and native commit restrictions remain unchanged. An internally integrated structural main session additionally retains its pre-insertion package, reviewed manifest, exact accepted candidate SHA-256 and destination revision. Export requires the internal integration capability, the exact integrated revision/bytes, normal reopen/whole-workbook validation and a fresh preservation-oracle comparison against that original package/manifest before native file commitment.
+
+The output is copied from accepted bytes; it is not reconstructed from cell history. Any stale proof, disabled capability, post-integration edit, changed candidate or failed semantic verification blocks disk commitment. Tests reopen exported files and rerun the oracle; candidate/integrated/exported hashes match. The native commit independently verifies staged/final byte hashes and file identity. Semantic success is not inferred from serialization alone, and disk files changed externally after the commit boundary are outside that point-in-time guarantee.
+
+Unmerged working-copy changes remain excluded, direct copy exports still reject, dirty/source-binding semantics remain unchanged, source/existing destination overwrite remains forbidden, and saving is never automatic. Structural construction/validation, destination collision, native boundary failure, cancellation, staging cleanup and retry are exercised end to end. Production structural Apply is still disabled; this path is reachable only through internal experimental integration. See [Step 44 evidence](step44-verification.md).
+
 Status: new-file-only Save As is enabled for the supported Windows x64/local fixed NTFS policy. Existing-file Save and replacement remain unavailable. Phase 2 is incomplete.
 
 Current follow-up: [Step 40 .NET 10 migration](dotnet-10-migration.md) preserves this implementation and restrictions. All workbook/save regressions, 600 native rename checks and 390 managed commit checks pass on SDK 10.0.403/runtime 10.0.14. Older framework/tool paths and results below describe the original saving milestone.

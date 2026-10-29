@@ -1,5 +1,19 @@
 # Payables processing — Step 42
 
+## Step 45 desktop workflow
+
+The manual flow now supports **Generate candidate for review** from a clean selected working copy after a resolved preview. The final review shows source/profile/workbook/worksheet, vendor and section, exact rows/fields/template, formula/subtotal and style impacts, actual oracle acceptance, native-format blockers, fingerprints and intended independent copy/destination revisions. A plan never appears as a generated candidate.
+
+Only explicitly fixed 21-point templates with tested plain defaults may receive review-only approval. General and duplicate-warning acknowledgments are explicit; the backend independently validates all bindings. Height 22 remains blocked because Excel saves 21.95 even without insertion. Input/choice/profile/view/revision changes invalidate the review; cancellation retracts tickets and late replies are discarded.
+
+**Approve reviewed candidate records review metadata only. Production Apply is disabled for every case.** No workbook rows, dirty state, accepted revision, integration or export change. Public tickets cannot use internal flags as an adoption bypass. Cell editing, ordinary Merge and separate new-file Save As retain their restrictions. Manual entry remains single-record; backend batch support and native batch evidence do not add a batch-entry editor. See [Step 45 evidence and remaining gates](../development/step45-verification.md); earlier descriptions below are historical.
+
+Step 44 adds a lifecycle review to the manual preview. It explicitly separates planner resolution, preflight, candidate generation, oracle verification, approval, working-copy adoption, integration and export. Desktop plans always report **candidate not generated / oracle not run / approval not requested / adoption not performed**; an experimental preflight is never shown as a completed insertion. A future generated candidate must identify exact bytes, field/section/row mappings, template and formula impacts and independent intended copy/destination revisions before approval.
+
+The internal generated-candidate contract and one-operation Merge/export experiment are tested, including explicit multi-section choice and duplicate approval, but have no production bridge command or UI approval button. Apply remains disabled. Four actual Excel reference cases provide qualified evidence, with measured row-height differences still unresolved. [Step 44 verification](../development/step44-verification.md) and [reference provenance](../development/excel-reference-corpus.md) define the current boundary; older milestone paragraphs below are historical.
+
+Step 43 adds structural capability diagnostics to the preview: unresolved destination, duplicate review, unsupported package structure, stale proposal or experimental preflight only. **Apply remains disabled for every desktop operation.** An independent OOXML oracle and internal synthetic candidate editor exist, but production structural Merge/export and native Excel compatibility are unverified. A passing package preflight does not mean the candidate passed validation. See [structural envelope](../development/structural-preservation-oracle.md) and [current verification](../development/step43-verification.md). The original accounting workbook is still unavailable for compatibility qualification.
+
 Status (2026-10-29): manual analysis and proposals are implemented. Structural insertion is disabled in both the application contract and desktop. No OCR or automatic posting is available. Phase 2 is incomplete.
 
 ## Reference and business rules
@@ -28,4 +42,4 @@ Review all matching sections, duplicate explanations, field-to-column mappings, 
 
 Only approved embedded JSON profiles are selectable. Import/editing of profiles, repeated header layouts, complex accounting rows without literal identifiers, OCR, structural insertion, worksheet Replace/Create New and existing-file replacement remain unsupported. Formula-derived vendor/identifier values are rejected; cached formula results are not trusted as identity. See [profiles](../development/workflow-profiles.md), [section detection](../development/worksheet-section-detection.md) and [insertion safety and verification](../development/safe-row-insertion.md).
 
-Next milestone: a bounded structural change specification and independent preservation oracle, followed by candidate insertion tests that prove formula/subtotal expansion, names, tables, merges, clean row templates and unrelated package preservation before enabling Apply.
+Step 43 supplies the bounded specification, independent oracle and internal synthetic candidate tests. Step 44 requires external Excel reference evidence and a separately verified structural Merge/export transaction before production Apply. Names, tables and merges remain rejected rather than implicitly supported.

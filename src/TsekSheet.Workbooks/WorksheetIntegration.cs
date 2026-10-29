@@ -26,6 +26,7 @@ internal sealed partial class WorkbookSession
     {
         ObjectDisposedException.ThrowIf(disposed, this); ObjectDisposedException.ThrowIf(copy.disposed, copy);
         var conflicts = new List<CompatibilityFinding>();
+        if (copy.structuralExperiment) conflicts.Add(new("STRUCTURAL_MERGE_DISABLED", "Experimental row changes cannot be replayed through cell-only Merge."));
         void Reject(string code, string message) => conflicts.Add(new(code, message));
         var destination = info.Worksheets.SingleOrDefault(s => s.Id == request.DestinationWorksheetId);
         if (request.Operation != WorksheetIntegrationOperation.Merge)
@@ -42,7 +43,7 @@ internal sealed partial class WorkbookSession
             || copy.copyBaseBytes == null || !copy.copyBaseBytes.AsSpan().SequenceEqual(currentBytes))
             Reject("DESTINATION_CONFLICT", "The original session differs from the copy's base. Create a fresh copy; no changes were merged.");
         EnsureEditable(); copy.EnsureEditable();
-        var count = destination == null || copy.workingSheet != destination.Id ? 0 : EffectiveChanges(copy, destination.Id).Length;
+        var count = copy.structuralExperiment || destination == null || copy.workingSheet != destination.Id ? 0 : EffectiveChanges(copy, destination.Id).Length;
         return new(request, destination?.Name ?? "", count, conflicts.Count == 0, conflicts.AsReadOnly());
     }
 

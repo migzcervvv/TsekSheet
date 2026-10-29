@@ -1,5 +1,38 @@
 # TsekSheet Implementation Roadmap
 
+## Step 45 implementation plan (2026-10-29)
+
+1. Preserve all Step 43/44 changes and immutable native reference artifacts. Inspect raw row/default/custom-height attributes and reproduce no-op saves, row insertion, explicit heights and repeated operations using new isolated Excel fixtures. Record pre-save, saved XML and reopened observations; infer no numeric equivalence from tolerance.
+2. Retain exact OOXML preservation. Add an explicit native-format policy rejecting unproven heights for approval, expand independently specified Excel cases and negative controls, and strengthen oracle defect tests without widening formula grammar.
+3. Expose bounded read-only candidate generation and explicit candidate-bound review approval through application/workspace/bridge/UI. Bind parent/source/copy/destination/profile/manifest/oracle and fingerprints. Mark these tickets review-only and unconditionally block their adoption/integration, independent of experimental flags. Keep production Apply disabled unless all production gates are proven.
+4. Preserve separately gated internal adoption/Merge/export and normal cell operations. Add stale/replay/cancellation/tampering/formatting and actual WPF/WebView2 review tests. Run locked restores, full regression, independent harnesses, native reference verification and self-contained publish; report exact support and remaining blockers.
+
+Step 45 result: [17 new actual Excel captures](docs/development/step45-verification.md) isolate save serialization from insertion: 22 -> 21.95 and 20 -> 20.100000000000001 occur on no-op saves despite unchanged COM observations. Exact 21-point insertion cases match the tested projection; no tolerance or automatic normalization was introduced. Real desktop candidate generation and explicit review-only approval are wired with complete fingerprints/revisions/oracle binding; all public tickets unconditionally reject adoption/integration. Production Apply stays disabled. Final checks: 266 .NET (47/208/11), 31 frontend, 13 evaluation safety, three toolchain, 600 native/390 managed checks, locked restores, normal Release build and self-contained publish pass. Source hashes and dependencies are unchanged; matrix remains 22/24/26, five advisories remain visible, real workbook untested and Phase 2 incomplete.
+
+## Step 44 implementation plan (2026-10-29)
+
+1. Preserve the complete dirty Step 43 tree. Define a versioned synthetic reference specification with literal expectations, negative controls and explicit hand-authored/TsekSheet/Excel/pending provenance. Generate only owned artificial artifacts; use the registered local Excel only through controlled isolated automation, with macros/events/links disabled and source hashes checked.
+2. Separate candidate generation, oracle acceptance, exact candidate/review-hash approval and working-copy adoption. Bind each transition to session/source/profile/base revision and immutable package/manifest fingerprints. Preserve the eight Step 43 transaction fault stages.
+3. Add an internal, separately gated structural integration transaction for one reviewed operation on a clean copy whose base package/revision exactly equals the destination. Reopen and run the oracle before atomic destination adoption; never replay structural rows as cell edits.
+4. Retain a structural export proof on the integrated main session. Reopen and re-run semantic validation before the existing new-file-only NTFS commit, reject stale/diverged proof, and test the whole insertion/review/adoption/Merge/export chain and failures.
+5. Expose explicit lifecycle review states in the manual Payables preview while keeping production Apply disabled. Add provenance, defective candidate, conflict, stale approval, cancellation/retry/export tests. Run all existing verification and document exact Excel evidence, limitations and unchanged research failures.
+
+Experimental Merge/export requires separate internal capability and accepted reviewed bytes; no production bridge command enables it. Supported feature coverage does not expand beyond Step 43.
+
+Step 44 result: [four actual Excel references and seven pending negative controls](docs/development/excel-reference-corpus.md), candidate-bound review/approval/adoption and a separately gated internal structural Merge/export chain are implemented. [Final verification](docs/development/step44-verification.md): 229 solution tests (47/173/9), including 34 new lifecycle cases and two corpus methods; 13 evaluation safety, 25 frontend, three toolchain, 600 native/390 managed checks, normal Release build and self-contained publish pass. Sources are unchanged; matrix remains 22/24/26 and five evaluation advisories remain visible. Native content/formula/compared styles agree with declared operations, but saved row heights differ (21.95 versus 22). Production Apply remains disabled, real copy.xlsx untested and Phase 2 incomplete.
+
+## Step 43 implementation plan (2026-10-29)
+
+1. Freeze a narrow experimental envelope before mutation: whole-package safety validation, one visible selected sheet, bounded plain rows, uniform explicit record styles, no defined names/tables/merges/filters/hidden dimensions/advanced content, and only same-sheet SUM ranges or addition of A1 references. Reject all other formulas and dependencies.
+2. Add a standalone OOXML preservation oracle with an explicit insertion manifest. Independently derive expected row/cell/reference changes; compare every package part, row attribute, cell and worksheet structure. Report categorized differences and reject unverifiable packages.
+3. Add an internal, capability-gated candidate experiment on isolated working copies. Re-plan from the original request under the session lock, check provenance/revision/review, serialize and reopen, evaluate the oracle, then atomically adopt. Keep structural Merge and production Apply disabled.
+4. Add independent literal expectations, adversarial candidate tampering, unsupported-structure fixtures, deterministic stage failures/cancellation and source hashes. Verify actual cells and repeated/batch insertion ordering.
+5. Run locked restores, Release build/full tests, evaluation and commit harnesses, frontend/toolchain checks and win-x64 publish. Record exact evidence and limitations; retain known research failures.
+
+Production Apply is intentionally outside this milestone's enabled scope. An internal experiment must not become an unreviewed route into cell-only Merge or Save As.
+
+Step 43 result: [independent OOXML oracle and bounded internal candidate editor](docs/development/structural-preservation-oracle.md) implemented; production Apply and structural Merge/export remain disabled. [Verification](docs/development/step43-verification.md): 193 solution tests (47/137/9), including 52 structural tests, 13 evaluation safety tests, 25 frontend tests, 3 toolchain tests, 600 native/390 managed commit checks, normal Release build and self-contained win-x64 publish passed. Source hashes are unchanged. Research matrix remains 22 passes/24 known failures/26 unexecuted. Phase 2 remains incomplete; native Excel semantics and real workbook compatibility are unverified.
+
 ## Basis and Execution Rules
 
 This roadmap follows [AGENTS.md](AGENTS.md), [GOALS.md](GOALS.md), the [architecture overview](docs/architecture/overview.md), and accepted decisions [ADR-0001](docs/architecture/decisions/ADR-0001-desktop-framework.md), [ADR-0002](docs/architecture/decisions/ADR-0002-local-first.md), and [ADR-0003](docs/architecture/decisions/ADR-0003-generic-template-engine.md).

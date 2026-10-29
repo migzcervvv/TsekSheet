@@ -1,0 +1,1795 @@
+{
+  "verifierSha256": "CCCB405467A43C189536C11606610B8B4623A23D3842EF862AE1D10A4B2D069B",
+  "editorSha256": "0B3F3992C4DDE3CCF62E4416171B506BAB5F082A58912CBB665BF9CD632DAA0C",
+  "oracleSha256": "FAA45186A24BCAF2E36E54597B762E59797B154421B1C0FE80347806DCF34B8C",
+  "provenance": "actual Microsoft Excel, direct saved OOXML and independent read-only projection",
+  "results": [
+    {
+      "id": "noop-height-fifteen",
+      "height": "15",
+      "mode": "noop",
+      "exactHeightMatch": true,
+      "differences": [],
+      "source": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "15",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=15;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "15",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=15;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "15",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=15;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "15",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=15;r=17;spans=1:8"
+          }
+        ]
+      },
+      "candidate": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "15",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=15;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "15",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=15;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "15",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=15;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "15",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=15;r=17;spans=1:8"
+          }
+        ]
+      },
+      "excel": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:1570:{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent4:0.25]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "15",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=15;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "15",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=15;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "15",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=15;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "15",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=15;r=17;spans=1:8"
+          }
+        ]
+      },
+      "qualification": "compared projection exact"
+    },
+    {
+      "id": "noop-height-eighteen",
+      "height": "18",
+      "mode": "noop",
+      "exactHeightMatch": true,
+      "differences": [],
+      "source": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "18",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=18;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "18",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=18;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "18",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=18;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "18",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=18;r=17;spans=1:8"
+          }
+        ]
+      },
+      "candidate": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "18",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=18;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "18",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=18;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "18",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=18;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "18",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=18;r=17;spans=1:8"
+          }
+        ]
+      },
+      "excel": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:1570:{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent4:0.25]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "18",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=18;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "18",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=18;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "18",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=18;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "18",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=18;r=17;spans=1:8"
+          }
+        ]
+      },
+      "qualification": "compared projection exact"
+    },
+    {
+      "id": "noop-height-twenty",
+      "height": "20",
+      "mode": "noop",
+      "exactHeightMatch": false,
+      "differences": [
+        "height/Ledger/16: 20 \u003C\u003E 20.1",
+        "height/Ledger/17: 20 \u003C\u003E 20.1",
+        "height/Ledger/6: 20 \u003C\u003E 20.1",
+        "height/Ledger/7: 20 \u003C\u003E 20.1"
+      ],
+      "source": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "20",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=20;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "20",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=20;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "20",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=20;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "20",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=20;r=17;spans=1:8"
+          }
+        ]
+      },
+      "candidate": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "20",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=20;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "20",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=20;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "20",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=20;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "20",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=20;r=17;spans=1:8"
+          }
+        ]
+      },
+      "excel": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:1570:{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent4:0.25]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "20.100000000000001",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=20.100000000000001;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "20.100000000000001",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=20.100000000000001;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "20.100000000000001",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=20.100000000000001;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "20.100000000000001",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=20.100000000000001;r=17;spans=1:8"
+          }
+        ]
+      },
+      "qualification": "native saved height differs; blocked, no tolerance"
+    },
+    {
+      "id": "noop-height-twentyone",
+      "height": "21",
+      "mode": "noop",
+      "exactHeightMatch": true,
+      "differences": [],
+      "source": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=17;spans=1:8"
+          }
+        ]
+      },
+      "candidate": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=17;spans=1:8"
+          }
+        ]
+      },
+      "excel": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:1570:{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent4:0.25]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=17;spans=1:8"
+          }
+        ]
+      },
+      "qualification": "compared projection exact"
+    },
+    {
+      "id": "noop-height-twentytwo",
+      "height": "22",
+      "mode": "noop",
+      "exactHeightMatch": false,
+      "differences": [
+        "height/Ledger/16: 22 \u003C\u003E 21.95",
+        "height/Ledger/17: 22 \u003C\u003E 21.95",
+        "height/Ledger/6: 22 \u003C\u003E 21.95",
+        "height/Ledger/7: 22 \u003C\u003E 21.95"
+      ],
+      "source": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "22",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=22;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "22",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=22;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "22",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=22;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "22",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=22;r=17;spans=1:8"
+          }
+        ]
+      },
+      "candidate": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "22",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=22;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "22",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=22;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "22",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=22;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "22",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=22;r=17;spans=1:8"
+          }
+        ]
+      },
+      "excel": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:1570:{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent4:0.25]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "21.95",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21.95;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "21.95",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21.95;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "21.95",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21.95;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "21.95",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21.95;r=17;spans=1:8"
+          }
+        ]
+      },
+      "qualification": "native saved height differs; blocked, no tolerance"
+    },
+    {
+      "id": "noop-height-half",
+      "height": "22.5",
+      "mode": "noop",
+      "exactHeightMatch": true,
+      "differences": [],
+      "source": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "22.5",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=22.5;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "22.5",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=22.5;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "22.5",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=22.5;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "22.5",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=22.5;r=17;spans=1:8"
+          }
+        ]
+      },
+      "candidate": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "22.5",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=22.5;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "22.5",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=22.5;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "22.5",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=22.5;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "22.5",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=22.5;r=17;spans=1:8"
+          }
+        ]
+      },
+      "excel": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:1570:{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent4:0.25]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "22.5",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=22.5;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "22.5",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=22.5;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "22.5",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=22.5;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "22.5",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=22.5;r=17;spans=1:8"
+          }
+        ]
+      },
+      "qualification": "compared projection exact"
+    },
+    {
+      "id": "noop-height-twentyfour",
+      "height": "24",
+      "mode": "noop",
+      "exactHeightMatch": true,
+      "differences": [],
+      "source": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "24",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=24;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "24",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=24;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "24",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=24;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "24",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=24;r=17;spans=1:8"
+          }
+        ]
+      },
+      "candidate": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "24",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=24;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "24",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=24;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "24",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=24;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "24",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=24;r=17;spans=1:8"
+          }
+        ]
+      },
+      "excel": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:1570:{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent4:0.25]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "24",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=24;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "24",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=24;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "24",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=24;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "24",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=24;r=17;spans=1:8"
+          }
+        ]
+      },
+      "qualification": "compared projection exact"
+    },
+    {
+      "id": "noop-height-thirty",
+      "height": "30",
+      "mode": "noop",
+      "exactHeightMatch": true,
+      "differences": [],
+      "source": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "30",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=30;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "30",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=30;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "30",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=30;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "30",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=30;r=17;spans=1:8"
+          }
+        ]
+      },
+      "candidate": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "30",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=30;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "30",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=30;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "30",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=30;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "30",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=30;r=17;spans=1:8"
+          }
+        ]
+      },
+      "excel": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:1570:{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent4:0.25]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "30",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=30;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "30",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=30;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "30",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=30;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "30",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=30;r=17;spans=1:8"
+          }
+        ]
+      },
+      "qualification": "compared projection exact"
+    },
+    {
+      "id": "after-vendor-twentyone",
+      "height": "21",
+      "mode": "insert",
+      "exactHeightMatch": true,
+      "differences": [],
+      "source": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=17;spans=1:8"
+          }
+        ]
+      },
+      "candidate": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=7;spans=1:8"
+          },
+          {
+            "row": 8,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=8"
+          },
+          {
+            "row": 17,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=17;spans=1:8"
+          },
+          {
+            "row": 18,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=18;spans=1:8"
+          }
+        ]
+      },
+      "excel": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:1570:{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent4:0.25]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=7;spans=1:8"
+          },
+          {
+            "row": 8,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=8;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=17;spans=1:8"
+          },
+          {
+            "row": 18,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=18;spans=1:8"
+          }
+        ]
+      },
+      "qualification": "compared projection exact"
+    },
+    {
+      "id": "subtotal-twentyone",
+      "height": "21",
+      "mode": "insert",
+      "exactHeightMatch": true,
+      "differences": [],
+      "source": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=17;spans=1:8"
+          }
+        ]
+      },
+      "candidate": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=17;spans=1:8"
+          },
+          {
+            "row": 22,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=22"
+          }
+        ]
+      },
+      "excel": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:1570:{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent4:0.25]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=17;spans=1:8"
+          },
+          {
+            "row": 22,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=22;spans=1:8"
+          }
+        ]
+      },
+      "qualification": "compared projection exact"
+    },
+    {
+      "id": "batch-three-twentyone",
+      "height": "21",
+      "mode": "insert",
+      "exactHeightMatch": true,
+      "differences": [],
+      "source": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=17;spans=1:8"
+          }
+        ]
+      },
+      "candidate": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=17;spans=1:8"
+          },
+          {
+            "row": 22,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=22"
+          },
+          {
+            "row": 23,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=23"
+          },
+          {
+            "row": 24,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=24"
+          }
+        ]
+      },
+      "excel": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:1570:{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent4:0.25]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=17;spans=1:8"
+          },
+          {
+            "row": 22,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=22;spans=1:8"
+          },
+          {
+            "row": 23,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=23;spans=1:8"
+          },
+          {
+            "row": 24,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=24;spans=1:8"
+          }
+        ]
+      },
+      "qualification": "compared projection exact"
+    },
+    {
+      "id": "repeated-twentyone",
+      "height": "21",
+      "mode": "insert",
+      "exactHeightMatch": true,
+      "differences": [],
+      "source": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=17;spans=1:8"
+          }
+        ]
+      },
+      "candidate": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=17;spans=1:8"
+          },
+          {
+            "row": 22,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=22"
+          },
+          {
+            "row": 23,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=23"
+          }
+        ]
+      },
+      "excel": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:1570:{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent4:0.25]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=17;spans=1:8"
+          },
+          {
+            "row": 22,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=22;spans=1:8"
+          },
+          {
+            "row": 23,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=23;spans=1:8"
+          }
+        ]
+      },
+      "qualification": "compared projection exact"
+    },
+    {
+      "id": "subtotal-twentyfour",
+      "height": "24",
+      "mode": "insert",
+      "exactHeightMatch": true,
+      "differences": [],
+      "source": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "24",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=24;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "24",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=24;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "24",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=24;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "24",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=24;r=17;spans=1:8"
+          }
+        ]
+      },
+      "candidate": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "24",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=24;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "24",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=24;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "24",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=24;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "24",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=24;r=17;spans=1:8"
+          },
+          {
+            "row": 22,
+            "height": "24",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=24;r=22"
+          }
+        ]
+      },
+      "excel": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:1570:{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent4:0.25]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "24",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=24;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "24",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=24;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "24",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=24;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "24",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=24;r=17;spans=1:8"
+          },
+          {
+            "row": 22,
+            "height": "24",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=24;r=22;spans=1:8"
+          }
+        ]
+      },
+      "qualification": "compared projection exact"
+    },
+    {
+      "id": "subtotal-thirty",
+      "height": "30",
+      "mode": "insert",
+      "exactHeightMatch": true,
+      "differences": [],
+      "source": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "30",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=30;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "30",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=30;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "30",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=30;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "30",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=30;r=17;spans=1:8"
+          }
+        ]
+      },
+      "candidate": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "30",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=30;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "30",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=30;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "30",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=30;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "30",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=30;r=17;spans=1:8"
+          },
+          {
+            "row": 22,
+            "height": "30",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=30;r=22"
+          }
+        ]
+      },
+      "excel": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:1570:{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent4:0.25]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "30",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=30;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "30",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=30;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "30",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=30;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "30",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=30;r=17;spans=1:8"
+          },
+          {
+            "row": 22,
+            "height": "30",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=30;r=22;spans=1:8"
+          }
+        ]
+      },
+      "qualification": "compared projection exact"
+    },
+    {
+      "id": "blank-template-twentyone",
+      "height": "21",
+      "mode": "insert",
+      "exactHeightMatch": true,
+      "differences": [],
+      "source": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=17;spans=1:8"
+          },
+          {
+            "row": 21,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=21;spans=1:8"
+          }
+        ]
+      },
+      "candidate": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=17;spans=1:8"
+          },
+          {
+            "row": 21,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=21;spans=1:8"
+          },
+          {
+            "row": 22,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=22"
+          }
+        ]
+      },
+      "excel": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:1570:{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent4:0.25]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=17;spans=1:8"
+          },
+          {
+            "row": 21,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=21;spans=1:8"
+          },
+          {
+            "row": 22,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=22;spans=1:8"
+          }
+        ]
+      },
+      "qualification": "compared projection exact"
+    },
+    {
+      "id": "custom-currency-twentyone",
+      "height": "21",
+      "mode": "insert",
+      "exactHeightMatch": true,
+      "differences": [],
+      "source": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=17;spans=1:8"
+          }
+        ]
+      },
+      "candidate": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=17;spans=1:8"
+          },
+          {
+            "row": 22,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=22"
+          }
+        ]
+      },
+      "excel": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:1570:{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent4:0.25]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=17;spans=1:8"
+          },
+          {
+            "row": 22,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=22;spans=1:8"
+          }
+        ]
+      },
+      "qualification": "compared projection exact"
+    },
+    {
+      "id": "decorated-twentyone",
+      "height": "21",
+      "mode": "insert",
+      "exactHeightMatch": true,
+      "differences": [],
+      "source": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=17;spans=1:8"
+          }
+        ]
+      },
+      "candidate": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:15]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=17;spans=1:8"
+          },
+          {
+            "row": 22,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "customHeight=1;ht=21;r=22"
+          }
+        ]
+      },
+      "excel": {
+        "defaults": "72:{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetFormatPr[16:defaultRowHeight2:1570:{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent4:0.25]{}",
+        "rows": [
+          {
+            "row": 6,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=6;spans=1:8"
+          },
+          {
+            "row": 7,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=7;spans=1:8"
+          },
+          {
+            "row": 16,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=16;spans=1:8"
+          },
+          {
+            "row": 17,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.25;customHeight=1;ht=21;r=17;spans=1:8"
+          },
+          {
+            "row": 22,
+            "height": "21",
+            "customHeight": "1",
+            "attributes": "{http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac}dyDescent=0.3;customHeight=1;ht=21;r=22;spans=1:8;thickBot=1"
+          }
+        ]
+      },
+      "qualification": "compared projection exact"
+    }
+  ]
+}
