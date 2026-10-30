@@ -10,6 +10,72 @@ namespace TsekSheet.Workbooks.Tests;
 public sealed class SectionReviewIntegrationTests
 {
     [TestMethod]
+    public void InspectionRetainsUnexplainedAmountsHiddenRowsUncachedFormulasAndTruncatedContext()
+    {
+        using var fixture = new SectionReviewFixture();
+        var path = fixture.Path + ".coverage.xlsx";
+        string Hash(string file) => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(file)));
+        var fixtureHash = Hash(fixture.Path);
+        try
+        {
+            // Build a separate artificial test input; never rewrite the fixture being read.
+            using (var workbook = new ClosedXML.Excel.XLWorkbook(fixture.Path))
+            {
+                var sheet = workbook.Worksheet(1);
+                sheet.Cell(13, 6).Value = 125.50;
+                sheet.Cell(21, 6).Value = 0;
+                sheet.Cell(24, 6).Value = -125.50;
+                sheet.Row(24).Hide();
+                sheet.Cell(25, 6).FormulaA1 = "F13";
+                sheet.Cell(26, 6).Value = new string('7', 1100);
+                using var output = new FileStream(path, FileMode.CreateNew);
+                workbook.SaveAs(output, new ClosedXML.Excel.SaveOptions { EvaluateFormulasBeforeSaving = false, GenerateCalculationChain = false });
+            }
+            using (var zip = System.IO.Compression.ZipFile.Open(path, System.IO.Compression.ZipArchiveMode.Update))
+            {
+                var entry = zip.GetEntry("xl/worksheets/sheet1.xml")!;
+                System.Xml.Linq.XDocument xml;
+                using (var input = entry.Open()) xml = System.Xml.Linq.XDocument.Load(input);
+                System.Xml.Linq.XNamespace ns = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+                xml.Descendants(ns + "c").Single(c => (string?)c.Attribute("r") == "F25").Element(ns + "v")?.Remove();
+                entry.Delete();
+                using var output = zip.CreateEntry("xl/worksheets/sheet1.xml").Open();
+                xml.Save(output);
+            }
+            var sourceHash = Hash(path);
+            using (var session = new WorkbookEngine().Inspect(path))
+            {
+                var sheet = session.Info.Worksheets[0].Id;
+                var capture = ((IInspectionAnalysisSession)session).CaptureInspectionRegion(new(session.Info.SessionId, sheet, 0,
+                    session.Info.SourceSha256, 1, 32, SectionReviewFixture.Profile.Columns));
+                var formula = capture.Cells.Single(c => c.Row == 25 && c.Column == 6);
+                Assert.AreEqual("F13", formula.Formula);
+                Assert.AreEqual("", formula.Value);
+                Assert.IsTrue(capture.Cells.Single(c => c.Row == 26 && c.Column == 6).Truncated);
+                CollectionAssert.Contains(capture.HiddenRows.ToArray(), 24);
+                var review = new SectionReview(session, sheet, 0, SectionReviewFixture.Profile).Snapshot;
+                foreach (var row in new[] { 13, 21, 24, 25, 26 })
+                {
+                    CollectionAssert.Contains(review.Report.UnassignedRows.ToArray(), row);
+                    Assert.IsFalse(review.Report.Records.Any(r => r.Row == row));
+                }
+                Assert.AreEqual(review.Report.UnassignedRows.Count, review.After.UnassignedMeaningfulRows);
+                Assert.IsFalse(review.Report.Coverage.RecordCoverageComplete);
+                Assert.IsFalse(review.Report.Coverage.RoleColumnsComplete);
+                Assert.IsFalse(review.Report.IdentitiesVerified);
+                Assert.IsFalse(review.PreservationVerified);
+                Assert.IsFalse(review.CanInsert);
+                Assert.IsFalse(session.Info.EditingAllowed);
+                Assert.IsFalse(session.Info.IsDirty);
+                Assert.AreEqual(0, session.Info.Revision);
+            }
+            Assert.AreEqual(sourceHash, Hash(path));
+            Assert.AreEqual(fixtureHash, Hash(fixture.Path));
+        }
+        finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
+    [TestMethod]
     public async Task RealInspectionWorkspaceReviewLifecycleAndSourcePreservation()
     {
         using var f=new SectionReviewFixture();string Hash()=>Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(f.Path)));var before=Hash();

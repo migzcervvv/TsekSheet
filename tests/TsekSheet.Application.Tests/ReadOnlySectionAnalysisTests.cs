@@ -45,6 +45,111 @@ public sealed class ReadOnlySectionAnalysisTests
         Assert.IsTrue(r.SummaryDependencies.All(d => !d.Complete)); Assert.IsTrue(r.SummaryDependencies.Any(d => d.Row == 31 && d.LocalReferences.Contains("F20")));
     }
     [TestMethod]
+    public void LiteralAmountOnlyRowInsideSectionCannotDisappearFromCoverage()
+    {
+        var region = Region(c => c[(13, 6)] = c[(13, 6)] with { Value = "125.50", Kind = "Number" });
+        var report = ReadOnlySectionAnalysis.Analyze(region, Profile());
+
+        CollectionAssert.Contains(report.UnassignedRows.ToArray(), 13);
+        Assert.IsFalse(report.Coverage.RecordCoverageComplete);
+        Assert.IsFalse(report.HierarchyVerified);
+        Assert.IsFalse(report.Records.Any(r => r.Row == 13), "An unexplained amount is not automatically a payable.");
+    }
+
+    [TestMethod]
+    [DataRow(13, "125.50")]
+    [DataRow(13, "0")]
+    [DataRow(13, "-125.50")]
+    [DataRow(21, "125.50")]
+    [DataRow(21, "0")]
+    [DataRow(21, "-125.50")]
+    public void AmountOnlyRowsRemainUnresolvedRegardlessOfSectionSignOrVisibility(int row, string amount)
+    {
+        var region = Region(c => c[(row, 6)] = c[(row, 6)] with { Value = amount, Kind = "Number" });
+        region = region with { HiddenRows = region.HiddenRows.Append(row).ToArray() };
+        var baseline = ReadOnlySectionAnalysis.Analyze(Region(), Profile());
+        var report = ReadOnlySectionAnalysis.Analyze(region, Profile());
+
+        CollectionAssert.AreEqual(new[] { row }, report.UnassignedRows.ToArray());
+        Assert.IsTrue(report.Diagnostics.Any(d => d.Code == "UNCLASSIFIED_ROW" && d.Row == row));
+        Assert.IsTrue(report.Coverage.EntireWorksheetRowsCaptured);
+        Assert.IsTrue(report.Coverage.RoleColumnsComplete);
+        Assert.AreEqual(baseline.Coverage.HiddenRowsIncluded + 1, report.Coverage.HiddenRowsIncluded);
+        Assert.IsFalse(report.Coverage.RecordCoverageComplete);
+        Assert.IsFalse(report.HierarchyVerified);
+        Assert.IsFalse(report.IdentitiesVerified);
+        Assert.AreEqual(baseline.Records.Count, report.Records.Count);
+        CollectionAssert.AreEqual(baseline.Vendors.Select(v => v.Entity).ToArray(), report.Vendors.Select(v => v.Entity).ToArray());
+        Assert.IsFalse(report.CanInsert);
+        Assert.IsTrue(report.SummaryDependencies.All(d => !d.Complete));
+        Assert.AreEqual(amount, region.Cells.Single(c => c.Row == row && c.Column == 6).Value);
+    }
+
+    [TestMethod]
+    [DataRow(13)]
+    [DataRow(21)]
+    public void ContextFormulaWithoutCachedValueRemainsUnresolved(int row)
+    {
+        var region = Region(c => c[(row, 6)] = c[(row, 6)] with { Formula = "F4", Kind = "Number" });
+        var report = ReadOnlySectionAnalysis.Analyze(region, Profile());
+        CollectionAssert.AreEqual(new[] { row }, report.UnassignedRows.ToArray());
+        Assert.IsFalse(report.Coverage.RecordCoverageComplete);
+        Assert.IsFalse(report.Records.Any(r => r.Row == row));
+        Assert.AreEqual("", region.Cells.Single(c => c.Row == row && c.Column == 6).Value);
+        if (row == 21) Assert.IsTrue(report.Diagnostics.Any(d => d.Code == "UNCLASSIFIED_SUMMARY" && d.Row == row));
+    }
+
+    [TestMethod]
+    [DataRow(13, "123")]
+    [DataRow(13, "")]
+    [DataRow(21, "123")]
+    [DataRow(21, "")]
+    public void TruncatedContextCannotDisappearEvenWhenRetainedTextIsEmpty(int row, string value)
+    {
+        var report = ReadOnlySectionAnalysis.Analyze(Region(c => c[(row, 6)] = c[(row, 6)] with { Value = value, Truncated = true }), Profile());
+        CollectionAssert.AreEqual(new[] { row }, report.UnassignedRows.ToArray());
+        Assert.IsFalse(report.Coverage.RoleColumnsComplete);
+        Assert.IsFalse(report.Coverage.RecordCoverageComplete);
+        Assert.IsFalse(report.IdentitiesVerified);
+    }
+
+    [TestMethod]
+    public void UnmappedCapturedColumnContentIsUnresolvedButBlankAndStyledRowsStayEmpty()
+    {
+        var baseline = ReadOnlySectionAnalysis.Analyze(Region(), Profile());
+        Assert.IsFalse(baseline.UnassignedRows.Contains(13));
+        var styled = ReadOnlySectionAnalysis.Analyze(Region(c => c[(13, 6)] = c[(13, 6)] with { Format = new("0.00", 2, true, false, "") }), Profile());
+        Assert.IsFalse(styled.UnassignedRows.Contains(13));
+        var report = ReadOnlySectionAnalysis.Analyze(Region(c => c[(13, 1)] = c[(13, 1)] with { Value = "Unexplained captured note", Kind = "Text" }), Profile());
+        CollectionAssert.AreEqual(new[] { 13 }, report.UnassignedRows.ToArray());
+        Assert.IsFalse(report.Coverage.RecordCoverageComplete);
+    }
+
+    [TestMethod]
+    public void ExplicitSummaryAssertionResolvesAmountCoverageWithoutCertifyingAggregation()
+    {
+        var region = Region(c => c[(13, 6)] = c[(13, 6)] with { Value = "125.50", Kind = "Number" });
+        using var source = new InspectionStub(region);
+        var review = new SectionReview(source, region.WorksheetId, 0, Profile());
+        var initial = review.Snapshot;
+        Assert.AreEqual(1, initial.After.UnassignedMeaningfulRows);
+        var decision = new SectionReviewDecision(Guid.NewGuid(), "summary", 13, null, null, null, null, "Artificial amount row explicitly reviewed as a summary");
+        var updated = review.Decide(new(initial.Binding, decision));
+        Assert.AreEqual(0, updated.After.UnassignedMeaningfulRows);
+        Assert.IsTrue(updated.Report.SummaryRows.Contains(13));
+        Assert.IsTrue(updated.Report.Coverage.RecordCoverageComplete);
+        Assert.AreEqual(initial.Before.RecordShapedRows, updated.After.RecordShapedRows);
+        Assert.AreEqual(initial.Before.UncertainIdentities, updated.After.UncertainIdentities);
+        Assert.IsFalse(updated.Report.IdentitiesVerified, "The unrelated missing vendor remains unresolved.");
+        Assert.IsFalse(updated.PreservationVerified);
+        Assert.IsFalse(updated.CanInsert);
+        Assert.IsTrue(updated.Report.SummaryDependencies.All(d => !d.Complete));
+        var retracted = review.Retract(new(updated.Binding, decision.Id));
+        Assert.AreEqual(1, retracted.After.UnassignedMeaningfulRows);
+        Assert.IsFalse(retracted.Report.Coverage.RecordCoverageComplete);
+    }
+
+    [TestMethod]
     public void RecordsOutsideConfiguredRegionsInvalidateCoverageInsteadOfNarrowingSearch()
     {
         var region = Region(c => { c[(21, 3)] = c[(4, 3)] with { Row = 21 }; c[(21, 4)] = c[(4, 4)] with { Row = 21 }; });
