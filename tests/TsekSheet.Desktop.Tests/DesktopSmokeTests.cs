@@ -95,7 +95,11 @@ public sealed class DesktopSmokeTests
         try
         {
             window.Show(); var web = (WebView2)window.FindName("FrontendWebView");
-            async Task Click(string label) => _ = await web.ExecuteScriptAsync($"Array.from(document.querySelectorAll('button')).find(b=>b.textContent==={JsonSerializer.Serialize(label)}).click()");
+            async Task Click(string label)
+            {
+                await Until(async () => await web.ExecuteScriptAsync($"Array.from(document.querySelectorAll('button')).some(b=>b.textContent==={JsonSerializer.Serialize(label)}&&!b.disabled)") == "true", "Button unavailable: " + label);
+                _ = await web.ExecuteScriptAsync($"Array.from(document.querySelectorAll('button')).find(b=>b.textContent==={JsonSerializer.Serialize(label)}).click()");
+            }
             async Task Select(string label, string value) => _ = await web.ExecuteScriptAsync($"(()=>{{const el=document.querySelector('select[aria-label={JsonSerializer.Serialize(label)}]'); el.value={JsonSerializer.Serialize(value)}; el.dispatchEvent(new Event('change',{{bubbles:true}}));}})()");
             await Until(async () => web.CoreWebView2 != null && await web.ExecuteScriptAsync("document.querySelector('[role=status]')?.textContent") == "\"Connected\"", "Host did not connect.");
             await Until(async () => await web.ExecuteScriptAsync("(()=>{const img=document.querySelector('header .brand-logo');return !!img && img.complete && img.naturalWidth>0 && new URL(img.src).origin==='https://tseksheet.local';})()") == "true", "Bundled header logo did not load.");
