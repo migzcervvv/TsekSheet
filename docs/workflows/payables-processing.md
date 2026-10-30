@@ -1,5 +1,9 @@
 # Payables processing — Step 42
 
+Step 50 real Payables qualification is UNEXECUTED because no authorized input exists. Business rules and production Apply restrictions are unchanged; precision evidence is synthetic only. See [verification](../development/step50-verification.md).
+
+Step 49 has no real Payables workbook qualification because no authorized input directory exists. Native display comparisons use artificial data only; production Apply remains disabled. See [verification](../development/step49-verification.md).
+
 ## Step 45 desktop workflow
 
 The manual flow now supports **Generate candidate for review** from a clean selected working copy after a resolved preview. The final review shows source/profile/workbook/worksheet, vendor and section, exact rows/fields/template, formula/subtotal and style impacts, actual oracle acceptance, native-format blockers, fingerprints and intended independent copy/destination revisions. A plan never appears as a generated candidate.

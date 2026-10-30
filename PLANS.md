@@ -1,5 +1,38 @@
 # TsekSheet Implementation Roadmap
 
+## Step 50 plan
+
+Preserve the dirty 947ddea baseline and existing native evidence. Check only authorized ignored input paths. If absent, mark real qualification unexecuted. Capture an additional isolated synthetic precision corpus in native Excel, retain exact discrepancies, correct or explicitly reject proven display problems, then run the complete regression/publish and fingerprint checks. No mutation, cache, dependency or UI expansion.
+
+## Step 49 plan
+
+Preserve the dirty 947ddea baseline. Check only ignored authorized inputs; if absent keep qualification unexecuted. Capture isolated synthetic Excel Text/Value2/NumberFormat observations with source fingerprints and no links/macros/events. Compare literal expectations and inspector output, retain divergences, fix only proven issues, and run full regression/publish and bounded probes. Keep every mutation and private-data boundary unchanged.
+
+Step 48 result: 17 new accounting-display cases and 357 solution tests pass. No private inputs supplied; bounded cache retained and production mutation gates unchanged. See [verification](docs/development/step48-verification.md).
+
+## Step 48 plan
+
+Preserve the dirty Step 46/47 tree. Inspect only explicitly supplied ignored local-test-workbooks inputs. Add an independently tested small accounting-number grammar, preserve raw/blank distinctions, retain conservative formulas and the bounded cache, run full regressions and document private-file availability and measured limits. No mutation gate, dependency or branding changes.
+
+Step 47 implements bounded date/time and shared-formula interpretation plus measured recent-window caching. Real accounting workbooks remain unavailable for qualification; no ZIP row-location index is enabled. [Verification](docs/development/step47-verification.md) records synthetic evidence and limitations. Phase 2 remains incomplete and production Apply stays disabled.
+
+## Step 47 implementation plan
+
+1. Preserve the complete dirty Step 46 tree at 947ddea. Locate authorized real workbooks by filename only and retain synthetic qualification if absent. Keep source hashing, package budgets and all mutation gates intact.
+2. Add bounded style/date interpretation with raw values retained, explicit 1900/1904 handling and unsupported-format warnings. Independently test literal expectations, including fictitious serial 60.
+3. Add a read-only shared-formula parser for a narrow same-sheet grammar. Validate anchors/ranges/groups before reconstructing relative, absolute and mixed references; reject unsupported or inconsistent forms without evaluating caches.
+4. Validate row structure and benchmark streaming navigation. Do not confuse decompressed XML positions with ZIP seek offsets; prefer a bounded recent-viewport cache if a safe useful index is not established.
+5. Expose inspection cell details using existing components, run synthetic correctness/performance and desktop tests, full regression/harnesses/publish, then document measured capabilities, private-workbook availability and Step 48 blockers.
+
+Step 46 result: separate bounded metadata inspection and a selected-sheet raw-value viewport are implemented. Full editable admission and every Step 45 review/adoption/Apply restriction remain unchanged. See [verification](docs/development/step46-verification.md). Phase 2 remains incomplete.
+
+## Step 46 implementation plan (2026-10-29)
+
+1. Preserve the dirty Step 45 and branding tree. Document the editable guard's binary, sheet and stored-cell limits without widening them.
+2. Add a separate bounded ZIP/XML metadata inspector and read-only session. Retain a read-only source handle, validate package paths/relationships without resolving external targets, hash the source, and avoid ClosedXML. Read only selected worksheet data with cancellation, byte/element/time limits and a single viewport cache. Report unmeasured counts explicitly.
+3. Expose a path-free inspection command and focused compatibility report in the existing viewer. Keep inspection sessions incapable of snapshots, copies, editing, Merge, structural review/adoption or export. Preserve production Apply and branding.
+4. Exercise synthetic many-sheet, sparse, styled, shared-string, formula and adversarial packages; measure bounded performance and source hashes. Run existing regression, harnesses and publish checks. Record prototype limits and unexecuted real-workbook/manual acceptance honestly.
+
 ## Step 45 implementation plan (2026-10-29)
 
 1. Preserve all Step 43/44 changes and immutable native reference artifacts. Inspect raw row/default/custom-height attributes and reproduce no-op saves, row insertion, explicit heights and repeated operations using new isolated Excel fixtures. Record pre-save, saved XML and reopened observations; infer no numeric equivalence from tolerance.

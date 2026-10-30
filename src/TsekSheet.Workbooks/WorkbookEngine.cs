@@ -26,6 +26,9 @@ public sealed class WorkbookEngine : IWorkbookEngine
             throw new ArgumentOutOfRangeException(nameof(limits));
     }
 
+    public IWorkbookSession Inspect(string path, CancellationToken cancellationToken = default)
+        => new WorkbookInspection().Open(path, cancellationToken);
+
     public IWorkbookSession Open(string path, CancellationToken cancellationToken = default)
     {
         try

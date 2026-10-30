@@ -41,7 +41,7 @@ internal static class PackageGuard
             if (lower.Contains("vbaproject") || lower.Contains("activex") || lower.Contains("macrosheets") || lower.Contains("externallinks") || lower.Contains("connections") || lower.StartsWith("_xmlsignatures/"))
                 throw Reject("UNSUPPORTED_FEATURE", "Macros, active content, signatures and external data links are unsupported. Supply a plain .xlsx copy.");
             if (!lower.EndsWith(".xml") && !lower.EndsWith(".rels") && !lower.EndsWith(".psmdcp"))
-                throw Reject("UNSUPPORTED_FEATURE", "This workbook contains unsupported binary or embedded content.");
+                throw Reject("UNSUPPORTED_FEATURE", "Editing rejects non-XML binary or embedded parts, including images, because preservation is unverified. Use Inspect workbook read-only for categorized metadata and bounded cells.");
             using var stream = entry.Open();
             using var bounded = new CountingStream(stream, count =>
             {
@@ -78,8 +78,8 @@ internal static class PackageGuard
                         throw Reject("UNSUPPORTED_FEATURE", "Macro or chart-sheet content is outside the read-only compatibility scope.");
                 }
                 if (element == "c" && reader.NamespaceURI == "http://schemas.openxmlformats.org/spreadsheetml/2006/main" && ++cells > limits.MaxCells)
-                    throw Reject("LIMIT_EXCEEDED", "Workbook has too many stored cells for an in-memory session.");
-                if (element == "sheet" && ++sheets > limits.MaxWorksheets) throw Reject("LIMIT_EXCEEDED", "Workbook has too many worksheets.");
+                    throw Reject("LIMIT_EXCEEDED", $"Editable validation stopped at {cells} stored cell elements (including styled empty cells); the limit is {limits.MaxCells}. Use Inspect workbook read-only. The full workbook count is not measured.");
+                if (element == "sheet" && ++sheets > limits.MaxWorksheets) throw Reject("LIMIT_EXCEEDED", $"Editable validation stopped at {sheets} worksheet declarations; the limit is {limits.MaxWorksheets}. Use Inspect workbook read-only for metadata and bounded browsing.");
                 if (element == "xf" && ++styles > limits.MaxStyles) throw Reject("LIMIT_EXCEEDED", "Workbook has too many styles.");
                 if (element is "extLst" or "conditionalFormatting" or "dataValidations" or "drawing" or "pivotTable" || (element == "f" && reader.GetAttribute("t") is "array" or "shared"))
                     findings["ADVANCED_CONTENT"] = new("ADVANCED_CONTENT", "Advanced or extension content is present. Only basic cell inspection is available; future mutations require separate compatibility tests.");

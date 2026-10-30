@@ -1,5 +1,9 @@
 # Read-only workbook engine foundation
 
+Step 47 extends only the inspection boundary with bounded style/date interpretation, an independent shared-formula parser, row validation and recent-window caching. See [interpretation policy](read-only-cell-interpretation.md) and [verification](step47-verification.md). Editable limits and mutation gates are unchanged.
+
+Step 46 adds an independent metadata/selected-sheet inspection path through `WorkbookInspection`; this document’s full-session limits still govern Open workbook and mutation. See [compatibility analyzer](workbook-compatibility-analyzer.md) for precise rejection causes, raw-view limitations and resource budgets.
+
 This document describes the earlier read-only milestone. Later behavior is documented in [workbook editing](workbook-editing-foundation.md), [new-file Save As](workbook-safe-saving.md) and [Merge integration](worksheet-integration.md). Historical tool paths/counts below are superseded by the [current environment and migration handoff](dotnet-10-migration.md).
 
 The current adapter targets .NET 10 after [Step 40](dotnet-10-migration.md); read-only opening, source fingerprints, compatibility rejection and all existing workbook regressions pass without changing their integrity checks.

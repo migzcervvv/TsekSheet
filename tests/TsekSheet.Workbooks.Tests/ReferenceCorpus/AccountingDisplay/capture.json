@@ -1,0 +1,263 @@
+{
+  "excelVersion": "16.0",
+  "excelBuild": 20326.0,
+  "provenance": "Actual Excel COM; synthetic only; links disabled, events disabled, AutomationSecurity=3; 48-character column",
+  "workbooks": [
+    {
+      "date1904": false,
+      "file": "1900.output.xlsx",
+      "inputSha256": "DF1716F3251DD354E68F1F1B5EA39D184B361C25975859672DEDC300D3FF932F",
+      "outputSha256": "1D57EAF1B59A2CAD97E697D5D97504BBE4447EE3699359F9BD1408C74679D2FF",
+      "rows": [
+        {
+          "row": 1,
+          "expected": "1,234.50",
+          "text": "1,234.50",
+          "value2": 1234.5,
+          "numberFormat": "#,##0.00",
+          "formula": "1234.5"
+        },
+        {
+          "row": 2,
+          "expected": "(1,234.50)",
+          "text": "(1,234.50)",
+          "value2": -1234.5,
+          "numberFormat": "#,##0.00;(#,##0.00)",
+          "formula": "-1234.5"
+        },
+        {
+          "row": 3,
+          "expected": "₱ 1,234.50",
+          "text": "₱ 1,234.50",
+          "value2": 1234.5,
+          "numberFormat": "\"₱\" #,##0.00",
+          "formula": "1234.5"
+        },
+        {
+          "row": 4,
+          "expected": "(₱ 1,234.50)",
+          "text": "(₱ 1,234.50)",
+          "value2": -1234.5,
+          "numberFormat": "\"₱\" #,##0.00;(\"₱\" #,##0.00)",
+          "formula": "-1234.5"
+        },
+        {
+          "row": 5,
+          "expected": "-",
+          "text": "-",
+          "value2": 0.0,
+          "numberFormat": "0.00;(0.00);\"-\"",
+          "formula": "0"
+        },
+        {
+          "row": 6,
+          "expected": "",
+          "text": "",
+          "value2": 0.0,
+          "numberFormat": "0.00;(0.00);\"\"",
+          "formula": "0"
+        },
+        {
+          "row": 7,
+          "expected": "12.50%",
+          "text": "12.50%",
+          "value2": 0.125,
+          "numberFormat": "0.00%",
+          "formula": "0.125"
+        },
+        {
+          "row": 8,
+          "expected": "(12.5%)",
+          "text": "(12.5%)",
+          "value2": -0.125,
+          "numberFormat": "0.0%;(0.0%)",
+          "formula": "-0.125"
+        },
+        {
+          "row": 9,
+          "expected": "1.24",
+          "text": "1.24",
+          "value2": 1.235,
+          "numberFormat": "0.00",
+          "formula": "1.235"
+        },
+        {
+          "row": 10,
+          "expected": "0000123",
+          "text": "0000123",
+          "value2": "0000123",
+          "numberFormat": "@",
+          "formula": "0000123"
+        },
+        {
+          "row": 11,
+          "expected": "1900-03-01",
+          "text": "1900-03-01",
+          "value2": 61.0,
+          "numberFormat": "yyyy-mm-dd",
+          "formula": "61"
+        },
+        {
+          "row": 12,
+          "expected": "1900-03-01 12:00:00",
+          "text": "1900-03-01 12:00:00",
+          "value2": 61.5,
+          "numberFormat": "yyyy-mm-dd hh:mm:ss",
+          "formula": "61.5"
+        },
+        {
+          "row": 13,
+          "expected": "12.50",
+          "text": "12.50",
+          "value2": 12.5,
+          "numberFormat": "[$-409]#,##0.00",
+          "formula": "12.5"
+        },
+        {
+          "row": 14,
+          "expected": "",
+          "text": "",
+          "value2": 0.0,
+          "numberFormat": "0.00;(0.00);",
+          "formula": "0"
+        },
+        {
+          "row": 15,
+          "expected": "2.00",
+          "text": "2.00",
+          "value2": 2.0,
+          "numberFormat": "0.00",
+          "formula": "=1+1"
+        }
+      ]
+    },
+    {
+      "date1904": true,
+      "file": "1904.output.xlsx",
+      "inputSha256": "CFACD0C49A856A064552ABEF3BBC12C3EA22826BB006B9256D91F101FE39F803",
+      "outputSha256": "28F6C48379BC9A3F53649D376D0298D5F35DD33885CEC37D77F4CF7A258846C6",
+      "rows": [
+        {
+          "row": 1,
+          "expected": "1,234.50",
+          "text": "1,234.50",
+          "value2": 1234.5,
+          "numberFormat": "#,##0.00",
+          "formula": "1234.5"
+        },
+        {
+          "row": 2,
+          "expected": "(1,234.50)",
+          "text": "(1,234.50)",
+          "value2": -1234.5,
+          "numberFormat": "#,##0.00;(#,##0.00)",
+          "formula": "-1234.5"
+        },
+        {
+          "row": 3,
+          "expected": "₱ 1,234.50",
+          "text": "₱ 1,234.50",
+          "value2": 1234.5,
+          "numberFormat": "\"₱\" #,##0.00",
+          "formula": "1234.5"
+        },
+        {
+          "row": 4,
+          "expected": "(₱ 1,234.50)",
+          "text": "(₱ 1,234.50)",
+          "value2": -1234.5,
+          "numberFormat": "\"₱\" #,##0.00;(\"₱\" #,##0.00)",
+          "formula": "-1234.5"
+        },
+        {
+          "row": 5,
+          "expected": "-",
+          "text": "-",
+          "value2": 0.0,
+          "numberFormat": "0.00;(0.00);\"-\"",
+          "formula": "0"
+        },
+        {
+          "row": 6,
+          "expected": "",
+          "text": "",
+          "value2": 0.0,
+          "numberFormat": "0.00;(0.00);\"\"",
+          "formula": "0"
+        },
+        {
+          "row": 7,
+          "expected": "12.50%",
+          "text": "12.50%",
+          "value2": 0.125,
+          "numberFormat": "0.00%",
+          "formula": "0.125"
+        },
+        {
+          "row": 8,
+          "expected": "(12.5%)",
+          "text": "(12.5%)",
+          "value2": -0.125,
+          "numberFormat": "0.0%;(0.0%)",
+          "formula": "-0.125"
+        },
+        {
+          "row": 9,
+          "expected": "1.24",
+          "text": "1.24",
+          "value2": 1.235,
+          "numberFormat": "0.00",
+          "formula": "1.235"
+        },
+        {
+          "row": 10,
+          "expected": "0000123",
+          "text": "0000123",
+          "value2": "0000123",
+          "numberFormat": "@",
+          "formula": "0000123"
+        },
+        {
+          "row": 11,
+          "expected": "1904-03-02",
+          "text": "1904-03-02",
+          "value2": 61.0,
+          "numberFormat": "yyyy-mm-dd",
+          "formula": "61"
+        },
+        {
+          "row": 12,
+          "expected": "1904-03-02 12:00:00",
+          "text": "1904-03-02 12:00:00",
+          "value2": 61.5,
+          "numberFormat": "yyyy-mm-dd hh:mm:ss",
+          "formula": "61.5"
+        },
+        {
+          "row": 13,
+          "expected": "12.50",
+          "text": "12.50",
+          "value2": 12.5,
+          "numberFormat": "[$-409]#,##0.00",
+          "formula": "12.5"
+        },
+        {
+          "row": 14,
+          "expected": "",
+          "text": "",
+          "value2": 0.0,
+          "numberFormat": "0.00;(0.00);",
+          "formula": "0"
+        },
+        {
+          "row": 15,
+          "expected": "2.00",
+          "text": "2.00",
+          "value2": 2.0,
+          "numberFormat": "0.00",
+          "formula": "=1+1"
+        }
+      ]
+    }
+  ]
+}

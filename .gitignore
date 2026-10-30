@@ -70,3 +70,4 @@ secrets.json
 .tseksheet-recovery/
 
 # Keep source, synthetic .xlsx fixtures, documentation and dependency lockfiles.
+local-test-workbooks/

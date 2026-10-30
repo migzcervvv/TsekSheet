@@ -1,0 +1,553 @@
+{
+  "excelVersion": "16.0",
+  "excelBuild": 20326.0,
+  "provenance": "Actual Excel COM; synthetic only; links disabled, events disabled, AutomationSecurity=3; 48-character column",
+  "workbooks": [
+    {
+      "date1904": false,
+      "file": "1900.output.xlsx",
+      "inputSha256": "96D0787C8088B12836DA258F8C00002702ECABDBCD284DB106E3743A7BBA1D0E",
+      "outputSha256": "AB16A458AB18DE6AA501A3A9295D773756D910853964B782EF081B6DB8D29335",
+      "rows": [
+        {
+          "row": 1,
+          "expected": "1,234.50",
+          "text": "1,234.50",
+          "value2": 1234.5,
+          "numberFormat": "#,##0.00",
+          "formula": "1234.5"
+        },
+        {
+          "row": 2,
+          "expected": "(1,234.50)",
+          "text": "(1,234.50)",
+          "value2": -1234.5,
+          "numberFormat": "#,##0.00;(#,##0.00)",
+          "formula": "-1234.5"
+        },
+        {
+          "row": 3,
+          "expected": "₱ 1,234.50",
+          "text": "₱ 1,234.50",
+          "value2": 1234.5,
+          "numberFormat": "\"₱\" #,##0.00",
+          "formula": "1234.5"
+        },
+        {
+          "row": 4,
+          "expected": "(₱ 1,234.50)",
+          "text": "(₱ 1,234.50)",
+          "value2": -1234.5,
+          "numberFormat": "\"₱\" #,##0.00;(\"₱\" #,##0.00)",
+          "formula": "-1234.5"
+        },
+        {
+          "row": 5,
+          "expected": "-",
+          "text": "-",
+          "value2": 0.0,
+          "numberFormat": "0.00;(0.00);\"-\"",
+          "formula": "0"
+        },
+        {
+          "row": 6,
+          "expected": "",
+          "text": "",
+          "value2": 0.0,
+          "numberFormat": "0.00;(0.00);\"\"",
+          "formula": "0"
+        },
+        {
+          "row": 7,
+          "expected": "12.50%",
+          "text": "12.50%",
+          "value2": 0.125,
+          "numberFormat": "0.00%",
+          "formula": "0.125"
+        },
+        {
+          "row": 8,
+          "expected": "(12.5%)",
+          "text": "(12.5%)",
+          "value2": -0.125,
+          "numberFormat": "0.0%;(0.0%)",
+          "formula": "-0.125"
+        },
+        {
+          "row": 9,
+          "expected": "1.24",
+          "text": "1.24",
+          "value2": 1.235,
+          "numberFormat": "0.00",
+          "formula": "1.235"
+        },
+        {
+          "row": 10,
+          "expected": "0000123",
+          "text": "0000123",
+          "value2": "0000123",
+          "numberFormat": "@",
+          "formula": "0000123"
+        },
+        {
+          "row": 11,
+          "expected": "1900-03-01",
+          "text": "1900-03-01",
+          "value2": 61.0,
+          "numberFormat": "yyyy-mm-dd",
+          "formula": "61"
+        },
+        {
+          "row": 12,
+          "expected": "1900-03-01 12:00:00",
+          "text": "1900-03-01 12:00:00",
+          "value2": 61.5,
+          "numberFormat": "yyyy-mm-dd hh:mm:ss",
+          "formula": "61.5"
+        },
+        {
+          "row": 13,
+          "expected": "12.50",
+          "text": "12.50",
+          "value2": 12.5,
+          "numberFormat": "[$-409]#,##0.00",
+          "formula": "12.5"
+        },
+        {
+          "row": 14,
+          "expected": "",
+          "text": "",
+          "value2": 0.0,
+          "numberFormat": "0.00;(0.00);",
+          "formula": "0"
+        },
+        {
+          "row": 15,
+          "expected": "2.00",
+          "text": "2.00",
+          "value2": 2.0,
+          "numberFormat": "0.00",
+          "formula": "=1+1"
+        },
+        {
+          "row": 16,
+          "expected": "1.01",
+          "text": "1.01",
+          "value2": 1.005,
+          "numberFormat": "0.00",
+          "formula": "1.005"
+        },
+        {
+          "row": 17,
+          "expected": "-1.01",
+          "text": "-1.01",
+          "value2": -1.005,
+          "numberFormat": "0.00",
+          "formula": "-1.005"
+        },
+        {
+          "row": 18,
+          "expected": "2.68",
+          "text": "2.68",
+          "value2": 2.675,
+          "numberFormat": "0.00",
+          "formula": "2.675"
+        },
+        {
+          "row": 19,
+          "expected": "-2.68",
+          "text": "-2.68",
+          "value2": -2.675,
+          "numberFormat": "0.00",
+          "formula": "-2.675"
+        },
+        {
+          "row": 20,
+          "expected": "1.235",
+          "text": "1.235",
+          "value2": 1.2345,
+          "numberFormat": "0.000",
+          "formula": "1.2345"
+        },
+        {
+          "row": 21,
+          "expected": "-1.235",
+          "text": "-1.235",
+          "value2": -1.2345,
+          "numberFormat": "0.000",
+          "formula": "-1.2345"
+        },
+        {
+          "row": 22,
+          "expected": "1.2345",
+          "text": "1.2345",
+          "value2": 1.23445,
+          "numberFormat": "0.0000",
+          "formula": "1.23445"
+        },
+        {
+          "row": 23,
+          "expected": "0.00",
+          "text": "0.00",
+          "value2": 1E-05,
+          "numberFormat": "0.00",
+          "formula": "0.00001"
+        },
+        {
+          "row": 24,
+          "expected": "0.00",
+          "text": "0.00",
+          "value2": -1E-05,
+          "numberFormat": "0.00",
+          "formula": "-0.00001",
+          "originalExpected": "-0.00"
+        },
+        {
+          "row": 25,
+          "expected": "(0.00)",
+          "text": "(0.00)",
+          "value2": -1E-05,
+          "numberFormat": "0.00;(0.00)",
+          "formula": "-0.00001"
+        },
+        {
+          "row": 26,
+          "expected": "1,000,000,000.00",
+          "text": "1,000,000,000.00",
+          "value2": 999999999.995,
+          "numberFormat": "#,##0.00",
+          "formula": "999999999.995"
+        },
+        {
+          "row": 27,
+          "expected": "0.13%",
+          "text": "0.13%",
+          "value2": 0.00125,
+          "numberFormat": "0.00%",
+          "formula": "0.00125"
+        },
+        {
+          "row": 28,
+          "expected": "-0.13%",
+          "text": "-0.13%",
+          "value2": -0.00125,
+          "numberFormat": "0.00%",
+          "formula": "-0.00125"
+        },
+        {
+          "row": 29,
+          "expected": "1.00",
+          "text": "1.00",
+          "value2": 1.004999999,
+          "numberFormat": "0.00",
+          "formula": "1.004999999"
+        },
+        {
+          "row": 30,
+          "expected": "1.01",
+          "text": "1.01",
+          "value2": 1.005000001,
+          "numberFormat": "0.00",
+          "formula": "1.005000001"
+        },
+        {
+          "row": 31,
+          "expected": "-",
+          "text": "-",
+          "value2": 0.0,
+          "numberFormat": "0.00;(0.00);\"-\";@",
+          "formula": "0"
+        },
+        {
+          "row": 32,
+          "expected": "",
+          "text": "",
+          "value2": 0.0,
+          "numberFormat": "\"₱\" #,##0.00;(\"₱\" #,##0.00);\"\"",
+          "formula": "0"
+        },
+        {
+          "row": 33,
+          "expected": "0000000000001",
+          "text": "0000000000001",
+          "value2": "0000000000001",
+          "numberFormat": "@",
+          "formula": "0000000000001"
+        }
+      ]
+    },
+    {
+      "date1904": true,
+      "file": "1904.output.xlsx",
+      "inputSha256": "199037EEBC9552D550ED4F51BE37595F2605AD76D7B3D0B486F813EC990E6CC4",
+      "outputSha256": "AACB947DC7065851D6EB79A8465C7A9A68AB9C9074AAE401C25419724005C450",
+      "rows": [
+        {
+          "row": 1,
+          "expected": "1,234.50",
+          "text": "1,234.50",
+          "value2": 1234.5,
+          "numberFormat": "#,##0.00",
+          "formula": "1234.5"
+        },
+        {
+          "row": 2,
+          "expected": "(1,234.50)",
+          "text": "(1,234.50)",
+          "value2": -1234.5,
+          "numberFormat": "#,##0.00;(#,##0.00)",
+          "formula": "-1234.5"
+        },
+        {
+          "row": 3,
+          "expected": "₱ 1,234.50",
+          "text": "₱ 1,234.50",
+          "value2": 1234.5,
+          "numberFormat": "\"₱\" #,##0.00",
+          "formula": "1234.5"
+        },
+        {
+          "row": 4,
+          "expected": "(₱ 1,234.50)",
+          "text": "(₱ 1,234.50)",
+          "value2": -1234.5,
+          "numberFormat": "\"₱\" #,##0.00;(\"₱\" #,##0.00)",
+          "formula": "-1234.5"
+        },
+        {
+          "row": 5,
+          "expected": "-",
+          "text": "-",
+          "value2": 0.0,
+          "numberFormat": "0.00;(0.00);\"-\"",
+          "formula": "0"
+        },
+        {
+          "row": 6,
+          "expected": "",
+          "text": "",
+          "value2": 0.0,
+          "numberFormat": "0.00;(0.00);\"\"",
+          "formula": "0"
+        },
+        {
+          "row": 7,
+          "expected": "12.50%",
+          "text": "12.50%",
+          "value2": 0.125,
+          "numberFormat": "0.00%",
+          "formula": "0.125"
+        },
+        {
+          "row": 8,
+          "expected": "(12.5%)",
+          "text": "(12.5%)",
+          "value2": -0.125,
+          "numberFormat": "0.0%;(0.0%)",
+          "formula": "-0.125"
+        },
+        {
+          "row": 9,
+          "expected": "1.24",
+          "text": "1.24",
+          "value2": 1.235,
+          "numberFormat": "0.00",
+          "formula": "1.235"
+        },
+        {
+          "row": 10,
+          "expected": "0000123",
+          "text": "0000123",
+          "value2": "0000123",
+          "numberFormat": "@",
+          "formula": "0000123"
+        },
+        {
+          "row": 11,
+          "expected": "1904-03-02",
+          "text": "1904-03-02",
+          "value2": 61.0,
+          "numberFormat": "yyyy-mm-dd",
+          "formula": "61"
+        },
+        {
+          "row": 12,
+          "expected": "1904-03-02 12:00:00",
+          "text": "1904-03-02 12:00:00",
+          "value2": 61.5,
+          "numberFormat": "yyyy-mm-dd hh:mm:ss",
+          "formula": "61.5"
+        },
+        {
+          "row": 13,
+          "expected": "12.50",
+          "text": "12.50",
+          "value2": 12.5,
+          "numberFormat": "[$-409]#,##0.00",
+          "formula": "12.5"
+        },
+        {
+          "row": 14,
+          "expected": "",
+          "text": "",
+          "value2": 0.0,
+          "numberFormat": "0.00;(0.00);",
+          "formula": "0"
+        },
+        {
+          "row": 15,
+          "expected": "2.00",
+          "text": "2.00",
+          "value2": 2.0,
+          "numberFormat": "0.00",
+          "formula": "=1+1"
+        },
+        {
+          "row": 16,
+          "expected": "1.01",
+          "text": "1.01",
+          "value2": 1.005,
+          "numberFormat": "0.00",
+          "formula": "1.005"
+        },
+        {
+          "row": 17,
+          "expected": "-1.01",
+          "text": "-1.01",
+          "value2": -1.005,
+          "numberFormat": "0.00",
+          "formula": "-1.005"
+        },
+        {
+          "row": 18,
+          "expected": "2.68",
+          "text": "2.68",
+          "value2": 2.675,
+          "numberFormat": "0.00",
+          "formula": "2.675"
+        },
+        {
+          "row": 19,
+          "expected": "-2.68",
+          "text": "-2.68",
+          "value2": -2.675,
+          "numberFormat": "0.00",
+          "formula": "-2.675"
+        },
+        {
+          "row": 20,
+          "expected": "1.235",
+          "text": "1.235",
+          "value2": 1.2345,
+          "numberFormat": "0.000",
+          "formula": "1.2345"
+        },
+        {
+          "row": 21,
+          "expected": "-1.235",
+          "text": "-1.235",
+          "value2": -1.2345,
+          "numberFormat": "0.000",
+          "formula": "-1.2345"
+        },
+        {
+          "row": 22,
+          "expected": "1.2345",
+          "text": "1.2345",
+          "value2": 1.23445,
+          "numberFormat": "0.0000",
+          "formula": "1.23445"
+        },
+        {
+          "row": 23,
+          "expected": "0.00",
+          "text": "0.00",
+          "value2": 1E-05,
+          "numberFormat": "0.00",
+          "formula": "0.00001"
+        },
+        {
+          "row": 24,
+          "expected": "0.00",
+          "text": "0.00",
+          "value2": -1E-05,
+          "numberFormat": "0.00",
+          "formula": "-0.00001",
+          "originalExpected": "-0.00"
+        },
+        {
+          "row": 25,
+          "expected": "(0.00)",
+          "text": "(0.00)",
+          "value2": -1E-05,
+          "numberFormat": "0.00;(0.00)",
+          "formula": "-0.00001"
+        },
+        {
+          "row": 26,
+          "expected": "1,000,000,000.00",
+          "text": "1,000,000,000.00",
+          "value2": 999999999.995,
+          "numberFormat": "#,##0.00",
+          "formula": "999999999.995"
+        },
+        {
+          "row": 27,
+          "expected": "0.13%",
+          "text": "0.13%",
+          "value2": 0.00125,
+          "numberFormat": "0.00%",
+          "formula": "0.00125"
+        },
+        {
+          "row": 28,
+          "expected": "-0.13%",
+          "text": "-0.13%",
+          "value2": -0.00125,
+          "numberFormat": "0.00%",
+          "formula": "-0.00125"
+        },
+        {
+          "row": 29,
+          "expected": "1.00",
+          "text": "1.00",
+          "value2": 1.004999999,
+          "numberFormat": "0.00",
+          "formula": "1.004999999"
+        },
+        {
+          "row": 30,
+          "expected": "1.01",
+          "text": "1.01",
+          "value2": 1.005000001,
+          "numberFormat": "0.00",
+          "formula": "1.005000001"
+        },
+        {
+          "row": 31,
+          "expected": "-",
+          "text": "-",
+          "value2": 0.0,
+          "numberFormat": "0.00;(0.00);\"-\";@",
+          "formula": "0"
+        },
+        {
+          "row": 32,
+          "expected": "",
+          "text": "",
+          "value2": 0.0,
+          "numberFormat": "\"₱\" #,##0.00;(\"₱\" #,##0.00);\"\"",
+          "formula": "0"
+        },
+        {
+          "row": 33,
+          "expected": "0000000000001",
+          "text": "0000000000001",
+          "value2": "0000000000001",
+          "numberFormat": "@",
+          "formula": "0000000000001"
+        }
+      ]
+    }
+  ]
+}

@@ -22,12 +22,12 @@ public sealed class WorkbookWorkspace(IWorkbookEngine engine, Func<CancellationT
         finally { operation.Release(); }
     }
 
-    public Task<WorkbookOpenResult> OpenAsync() => Run(async token =>
+    public Task<WorkbookOpenResult> OpenAsync(bool inspectOnly = false) => Run(async token =>
     {
         lock (gate) if (HasPendingChangesLocked()) throw new WorkbookException("UNSAVED_CHANGES", "Discard pending changes before opening another workbook.");
         var path = await selectWorkbook(token);
         if (path == null) return new WorkbookOpenResult("cancelled");
-        var candidate = await Task.Run(() => engine.Open(path, token), token);
+        var candidate = await Task.Run(() => inspectOnly ? engine.Inspect(path, token) : engine.Open(path, token), token);
         IWorkbookSession? previous;
         try
         {
@@ -92,6 +92,7 @@ public sealed class WorkbookWorkspace(IWorkbookEngine engine, Func<CancellationT
     public Task<TsekSheet.Application.Workflows.WorkflowPlan> PlanRecordsAsync(TsekSheet.Application.Workflows.WorkflowPlanRequest request) => Run(token => Task.Run(() =>
     {
         IWorkbookSession session; lock (gate) session = RequireSession(request.SessionId);
+        if (session.Info.Compatibility != null) throw new WorkbookException("READ_ONLY_INSPECTION", "Workflow planning requires the validated workbook path; package inspection only supports bounded cell views.");
         return TsekSheet.Application.Workflows.WorkflowPlanning.Prepare(session, request, token);
     }, token));
 

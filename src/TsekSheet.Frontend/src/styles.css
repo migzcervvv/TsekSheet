@@ -58,6 +58,7 @@ select:focus-visible, .cell-window:focus-visible { outline: 3px solid #29705b; o
 .cell-window th, .cell-window td { border: 1px solid #e0e6e1; height: 28px; padding: 5px 8px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .cell-window th { background: #f3f6f3; font-weight: 500; color: #59655c; }
 .cell-window th:first-child { width: 48px; }
+.cell-window.inspection th:first-child { width: 76px; }
 .cell-window td { color: #202623; }
 .formula-marker { color: #29705b; margin-right: 5px; }
 .formula-text { color: #58645b; font-size: 11px; }

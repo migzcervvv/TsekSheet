@@ -1,5 +1,7 @@
 # TsekSheet Architecture Overview
 
+Step 46 implements a separate package-inspection boundary alongside the editable engine. It retains a read-only source handle and bounded viewport cache, and cannot authorize mutation. The existing editable-session architecture remains in force. See [analyzer architecture and limits](../development/workbook-compatibility-analyzer.md).
+
 ## Status and Requirements
 
 This document proposes an architecture; it does not describe an implemented system. [AGENTS.md](../../AGENTS.md) and [GOALS.md](../../GOALS.md) are authoritative. Implementation must follow their workbook safety, local processing, human verification, and testing requirements.

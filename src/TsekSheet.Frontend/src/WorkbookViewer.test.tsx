@@ -18,7 +18,7 @@ function viewport(payload: Record<string, unknown>): Viewport {
 const clients: BridgeClient[] = [];
 configure({ asyncUtilTimeout: 5000 });
 afterEach(() => { cleanup(); clients.forEach(c => c.dispose()); clients.length = 0; });
-function setup() {
+function setup(inspect = false, unsafeCapability = false) {
   const listeners = new Set<(event: { data: unknown }) => void>();
   let mode = 'opened';
   let changed = false;
@@ -29,19 +29,24 @@ function setup() {
       queueMicrotask(() => {
         const error = (m.command === 'workbook.open' && mode === 'error') || (m.command === 'workbook.editCopy' && (mode === 'edit-error' || mode === 'edit-timeout')) || (m.command === 'workbook.saveAsNew' && (mode === 'save-error' || mode === 'save-uncertain')) || (m.command === 'workbook.merge' && mode === 'merge-error');
         let result: unknown;
-        if (m.command === 'workbook.open') result = mode === 'opened' ? { status: 'opened', workbook: book } : { status: 'cancelled' };
+        if (m.command === 'workbook.inspect') result = { status: 'opened', workbook: { ...book, editingAllowed: false,
+          worksheets: Array.from({ length: 250 }, (_, i) => ({ ...book.worksheets[0], id: `${String(i + 1).padStart(8, '0')}-1111-1111-1111-111111111111`, name: `Sheet ${i + 1}`, order: i + 1, visibility: i === 249 ? 'Hidden' : 'Visible' })),
+          compatibility: { fileBytes: 12345, compressedPartBytes: 12000, expandedPartBytes: 50000, partCount: 255, definedNames: 2, relationships: 252, externalLinks: true,
+            categories: [{ category: 'Embedded OLE/objects (ignored)', count: 1 }], countStatus: '250 tabs; editable limit 32. Counts unmeasured until selected-sheet scan.',
+            capabilities: ['Metadata inspection', 'Read-only browsing', 'Worksheet selection', 'Cell editing', 'Working copies', 'Structural insertion', 'Merge', 'Structural Merge', 'Export'].map((operation, i) => ({ operation, allowed: i < 3 || unsafeCapability, reason: i < 3 ? 'Bounded inspection.' : 'Reopen and pass full editable validation.' })) } } };
+        else if (m.command === 'workbook.open') result = mode === 'opened' ? { status: 'opened', workbook: book } : { status: 'cancelled' };
         else if (m.command === 'workbook.close' || m.command === 'workbook.discard') result = { status: 'closed' };
         else if (m.command === 'workbook.createCopy') result = { sessionId: copyId, sourceWorksheetId: sheetId, baseRevision: 0, revision: 0, isDirty: false, changeCount: 0 };
         else if (m.command === 'workbook.previewMerge') result = { destinationName: 'Data', pendingCells: changed ? 1 : 0, canApply: mode !== 'merge-conflict', conflicts: mode === 'merge-conflict' ? [{ code: 'DESTINATION_CONFLICT', message: 'Create a fresh copy.' }] : [] };
         else if (m.command === 'workbook.merge') result = { workbook: { ...book, revision: changed ? 1 : 0, isDirty: changed }, appliedCells: changed ? 1 : 0 };
         else if (m.command === 'workbook.editCopy') { if (!error) changed = true; result = { sessionId: copyId, sourceWorksheetId: sheetId, baseRevision: 0, revision: 1, isDirty: true, changeCount: 1 }; }
         else if (m.command === 'workbook.saveAsNew') result = mode === 'save-cancel' ? { status: 'cancelled' } : { status: 'saved', receipt: { status: 'saved', sessionId, savedRevision: 0, sourceStillDirty: false, rebound: false, cancellationAfterCommit: false, destinationSha256: 'B'.repeat(64), displayName: 'export.xlsx' } };
-        else { const v = viewport(m.payload); if (changed && m.payload.sessionId === copyId) { const cell = v.cells.find(c => c.row === 5 && c.column === 1); if (cell) cell.value = 'Copy-only value'; } result = v; }
+        else { const v = viewport(m.payload); if (inspect) { v.cells[0] = { ...v.cells[0], value: '61', kind: 'Number', interpretation: { rawValue: '61', displayValue: '1900-03-01', resolvedType: 'Date', confidence: 'Supported subset', warning: 'Normalized ISO display.', formulaStatus: 'No formula' } }; v.cells[1] = { ...v.cells[1], value: '123', formula: 'A2+$A$1', interpretation: { rawValue: '123', displayValue: '123', resolvedType: 'Number', confidence: 'Stored', warning: '', formulaStatus: 'Reconstructed shared formula; cached value is unverified.' } }; } if (inspect) v.scan = { declaredDimension: 'A1:XFD1048576', dimensionReliability: 'Untrusted declaration', storedCells: 125000, nonemptyValues: 2, formulas: 1, styledCells: 124998, lastRow: 125000, lastColumn: 6, potentialInflation: true, warnings: ['Raw values only.'] }; if (changed && m.payload.sessionId === copyId) { const cell = v.cells.find(c => c.row === 5 && c.column === 1); if (cell) cell.value = 'Copy-only value'; } result = v; }
         listeners.forEach(l => l({ data: { protocolVersion: 1, type: 'response', requestId: m.requestId, ok: !error, result, error: error ? { code: 'REJECTED', message: mode === 'save-error' ? 'Choose a new filename. Existing files cannot be replaced.' : mode === 'save-uncertain' ? 'The commit occurred but final verification failed. Inspect the selected file before retrying.' : mode === 'edit-error' ? 'This cell contains a formula. Choose an explicit formula edit instead.' : mode === 'edit-timeout' ? 'Desktop request timed out. Its outcome is unknown.' : 'Unsupported workbook.' } : undefined } }));
       });
     },
   };
-  const client = new BridgeClient(host); clients.push(client);
+  const client = new BridgeClient(host, unsafeCapability ? 100 : 30000); clients.push(client);
   return { client, mode: (value: string) => { mode = value; } };
 }
 
@@ -209,3 +214,44 @@ test('malformed and duplicate-cell viewport responses cannot resolve a pending r
   await Promise.resolve(); expect(resolved).toBe(false);
   send(valid); expect(await pending.promise).toEqual(valid);
 });
+
+test('inspection reports measured limits, prevents mutation and navigates 250 sheets', async () => {
+  const { client } = setup(true); render(<WorkbookViewer bridge={client} available />);
+  fireEvent.click(screen.getByRole('button', { name: 'Inspect workbook read-only' }));
+  await screen.findByText(/Compatibility Report/); await screen.findByLabelText('Selected worksheet diagnostics');
+  expect(screen.getByText(/250 tabs; editable limit 32/)).toBeDefined();
+  expect(screen.getByText(/125,000 stored cell elements/)).toBeDefined();
+  expect((screen.getByRole('button', { name: 'Create working copy' }) as HTMLButtonElement).disabled).toBe(true);
+  expect((screen.getByRole('button', { name: 'Save As' }) as HTMLButtonElement).disabled).toBe(true);
+  expect(screen.queryByText('Payables Processing')).toBeNull();
+  const select = screen.getByRole('combobox', { name: 'Worksheet' }) as HTMLSelectElement;
+  await waitFor(() => expect(select.disabled).toBe(false)); expect(select.options.length).toBe(250);
+  expect(select.options[249].text).toBe('Sheet 250 (Hidden)');
+  fireEvent.change(select, { target: { value: select.options[249].value } });
+  await screen.findByText(/Sheet 250 · Rows/);
+  await waitFor(() => expect((screen.getByLabelText('Inspection start row') as HTMLInputElement).disabled).toBe(false));
+  fireEvent.change(screen.getByLabelText('Inspection start row'), { target: { value: '900000' } });
+  await screen.findByText(/Rows 900000–900019/);
+}, 15000);
+
+test('inspection capability responses cannot authorize mutation', async () => {
+  const { client } = setup(true, true); render(<WorkbookViewer bridge={client} available />);
+  fireEvent.click(screen.getByRole('button', { name: 'Inspect workbook read-only' }));
+  await screen.findByRole('alert'); expect(screen.queryByRole('table')).toBeNull();
+});
+
+
+test('inspection cell details distinguish raw dates, display values and unverified formula caches', async () => {
+  const { client } = setup(true); render(<WorkbookViewer bridge={client} available />);
+  fireEvent.click(screen.getByRole('button', { name: 'Inspect workbook read-only' }));
+  const date = await screen.findByRole('button', { name: 'Inspect A1' });
+  expect(date.textContent).toBe('1900-03-01'); fireEvent.click(date);
+  expect(screen.getByText('Raw value: 61')).toBeDefined(); expect(screen.getByText('Display value: 1900-03-01')).toBeDefined();
+  expect(screen.getByText('Normalized ISO display.')).toBeDefined();
+  fireEvent.click(screen.getByRole('button', { name: 'Inspect B1' }));
+  expect(screen.getByText('Formula text: A2+$A$1')).toBeDefined(); expect(screen.getByText('Stored cached value (may be stale): 123')).toBeDefined();
+  expect(screen.queryByRole('button', { name: 'Apply to working copy' })).toBeNull();
+  await waitFor(() => expect((screen.getByRole('button', { name: 'Next rows' }) as HTMLButtonElement).disabled).toBe(false));
+  fireEvent.click(screen.getByRole('button', { name: 'Next rows' }));
+  await screen.findByText(/Rows 21–40/); expect(screen.queryByLabelText('Read-only cell details')).toBeNull();
+}, 15000);

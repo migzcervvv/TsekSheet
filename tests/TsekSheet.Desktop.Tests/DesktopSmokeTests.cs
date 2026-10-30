@@ -63,6 +63,61 @@ public sealed class DesktopSmokeTests
     });
 
     private static readonly List<string> Profiles = [];
+    [TestMethod, TestCategory("WindowsSmoke")]
+    public Task InspectionDatesSharedFormulasAndDistantNavigationStayReadOnly() => OnDesktop(async () =>
+    {
+        using var fixture = new TsekSheet.TestFixtures.InspectionFixture();
+        var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(fixture.Path)));
+        var profile = Path.Combine(Path.GetTempPath(), "TsekSheet-smoke", Guid.NewGuid().ToString("N")); Profiles.Add(profile);
+        var window = new MainWindow(null, profile, null, _ => Task.FromResult<string?>(fixture.Path)) { ShowInTaskbar = false };
+        try
+        {
+            window.Show(); var web = (WebView2)window.FindName("FrontendWebView");
+            async Task Click(string label) => _ = await web.ExecuteScriptAsync($"Array.from(document.querySelectorAll('button')).find(b=>b.textContent==={JsonSerializer.Serialize(label)}).click()");
+            async Task Cell(string address) => _ = await web.ExecuteScriptAsync($"document.querySelector('button[aria-label=\"Inspect {address}\"]').click()");
+            await Until(async () => web.CoreWebView2 != null && await web.ExecuteScriptAsync("document.querySelector('[role=status]')?.textContent") == "\"Connected\"", "Host not connected.");
+            await Click("Inspect workbook read-only");
+            await Until(async () => await web.ExecuteScriptAsync("document.querySelector('button[aria-label=\"Inspect A1\"]')?.textContent") == "\"1900-03-01\"", "Date display missing.");
+            await Cell("A1"); Assert.AreEqual("true", await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Read-only cell details\"]').textContent.includes('Raw value: 61')"));
+            await Cell("B2"); Assert.AreEqual("true", await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Read-only cell details\"]').textContent.includes('A2+$A$1') && document.body.textContent.includes('Stored cached value (may be stale): 123')"));
+            await Cell("C1"); Assert.AreEqual("true", await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Read-only cell details\"]').textContent.includes('Unsupported')"));
+            await web.ExecuteScriptAsync("(()=>{const s=document.querySelector('select[aria-label=Worksheet]');s.value=s.options[1].value;s.dispatchEvent(new Event('change',{bubbles:true}));})()");
+            await Until(async () => await web.ExecuteScriptAsync("document.querySelector('caption')?.textContent.includes('Hidden context') && !document.querySelector('input[aria-label=\"Inspection start row\"]').disabled") == "true", "Hidden sheet not ready.");
+            await web.ExecuteScriptAsync("(()=>{const el=document.querySelector('input[aria-label=\"Inspection start row\"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,'900000');el.dispatchEvent(new Event('input',{bubbles:true}));})()");
+            await Until(async () => await web.ExecuteScriptAsync("document.querySelector('button[aria-label=\"Inspect A900000\"]')?.textContent") == "\"1900-03-01\"", "Distant row missing.");
+            await Cell("A900000");
+            Assert.AreEqual("true", await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Save As').disabled && Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Create working copy').disabled && !document.querySelector('.workflow-panel') && document.querySelector('header img').naturalWidth>0 && document.body.textContent.includes('No pending changes')"));
+            await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Read-only cell details\"]').scrollIntoView({block:'start'})");
+            using (var capture = File.Create(Path.Combine(AppContext.BaseDirectory, "step47-interpretation.png"))) await web.CoreWebView2.CapturePreviewAsync(Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png, capture);
+            await Click("Close workbook"); await Until(async () => await web.ExecuteScriptAsync("!document.querySelector('[aria-label=\"Worksheet viewport\"]')") == "true", "Close failed.");
+            await Click("Inspect workbook read-only"); await Until(async () => await web.ExecuteScriptAsync("!!document.querySelector('button[aria-label=\"Inspect A1\"]')") == "true", "Reopen failed.");
+        }
+        finally { window.Close(); }
+        Assert.AreEqual(hash, Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(fixture.Path))));
+    });
+    [TestMethod, TestCategory("WindowsSmoke")]
+    public Task ReadOnlyCompatibilityReportLoadsAndCannotCreateCopies() => OnDesktop(async () =>
+    {
+        using var fixture = new TsekSheet.TestFixtures.PayablesFixture();
+        var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(fixture.Path)));
+        var profile = Path.Combine(Path.GetTempPath(), "TsekSheet-smoke", Guid.NewGuid().ToString("N")); Profiles.Add(profile);
+        var window = new MainWindow(null, profile, null, _ => Task.FromResult<string?>(fixture.Path)) { ShowInTaskbar = false };
+        try
+        {
+            window.Show(); var web = (WebView2)window.FindName("FrontendWebView");
+            await Until(async () => web.CoreWebView2 != null && await web.ExecuteScriptAsync("document.querySelector('[role=status]')?.textContent") == "\"Connected\"", "Host not connected.");
+            await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Inspect workbook read-only').click()");
+            await Until(async () => await web.ExecuteScriptAsync("!!document.querySelector('[aria-label=\"Selected worksheet diagnostics\"]')") == "true", "Inspection viewport did not load.");
+            Assert.AreEqual("true", await web.ExecuteScriptAsync("document.body.textContent.includes('Compatibility Report') && Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Create working copy').disabled && Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Save As').disabled"));
+            Assert.AreEqual("true", await web.ExecuteScriptAsync("!document.querySelector('.workflow-panel') && document.querySelector('header img').naturalWidth>0"));
+            foreach (var width in new[] { 390d, 768d, 1100d }) { window.Width = width; await Task.Delay(100); Assert.AreEqual("true", await web.ExecuteScriptAsync("document.documentElement.scrollWidth<=document.documentElement.clientWidth")); }
+            await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('summary')).find(s=>s.textContent.startsWith('Compatibility Report')).scrollIntoView({block:'start'})");
+            using var capture = File.Create(Path.Combine(AppContext.BaseDirectory, "step46-compatibility.png"));
+            await web.CoreWebView2.CapturePreviewAsync(Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png, capture);
+        }
+        finally { window.Close(); }
+        Assert.AreEqual(hash, Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(fixture.Path)))) ;
+    });
     [TestMethod,TestCategory("WindowsSmoke")]
     [DataRow(21)][DataRow(22)]
     public Task ActualCandidateReviewApprovesOnlyQualifiedHeightWithoutApplying(int height)=>OnDesktop(async()=>
@@ -77,7 +132,7 @@ public sealed class DesktopSmokeTests
             async Task Click(string label)=>_=await web.ExecuteScriptAsync($"Array.from(document.querySelectorAll('button')).find(b=>b.textContent==={JsonSerializer.Serialize(label)}).click()");
             await Until(async()=>web.CoreWebView2!=null&&await web.ExecuteScriptAsync("document.querySelector('[role=status]')?.textContent")=="\"Connected\"","Host did not connect.");
             await Click("Open workbook");await Until(async()=>await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Create working copy')?.disabled===false")=="true","Copy not ready.");
-            await Click("Create working copy");await Until(async()=>await web.ExecuteScriptAsync("document.querySelector('select[aria-label=\"Workbook view\"]')?.value!=='original' && !!document.querySelector('select[aria-label=\"Workflow profile\"] option[value=\"synthetic-payables\"]')")=="true","Copy/profile unavailable.");
+            await Until(async()=>await web.ExecuteScriptAsync("(()=>{const b=Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Create working copy');if(!b||b.disabled||!document.querySelector('[aria-label=\"Worksheet viewport\"]'))return false;b.click();return true;})()") == "true", "Working-copy button/viewport never became ready.");await Until(async()=>await web.ExecuteScriptAsync("document.querySelector('select[aria-label=\"Workbook view\"]')?.value!=='original' && !!document.querySelector('select[aria-label=\"Workflow profile\"] option[value=\"synthetic-payables\"]')")=="true","Copy/profile unavailable.");
             await web.ExecuteScriptAsync("(()=>{const s=document.querySelector('select[aria-label=\"Workflow profile\"]');s.value='synthetic-payables';s.dispatchEvent(new Event('change',{bubbles:true}));})()");
             await Until(async()=>await web.ExecuteScriptAsync("!!document.querySelector('input[aria-label=\"Payable Vendor name\"]')")=="true","Fields unavailable.");
             foreach(var(label,value)in new[]{("Vendor name","Other Tools Ltd"),("RFP number","R2"),("Amount","25")})

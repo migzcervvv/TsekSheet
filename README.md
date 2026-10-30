@@ -1,5 +1,15 @@
 # TsekSheet
 
+Step 50 adds actual synthetic Excel precision evidence and rejects ambiguous over-precision monetary displays while retaining raw values. Real workbook qualification remains unexecuted. See [verification](docs/development/step50-verification.md).
+
+Step 49 retains actual synthetic native Excel accounting displays and corrects escaped saved formats and built-in percentages. See [verification](docs/development/step49-verification.md).
+
+Step 48 adds a restricted read-only accounting-number display subset and preserves intentionally blank formatted zeros. Real workbook qualification remains unavailable. See [verification](docs/development/step48-verification.md).
+
+Step 47 adds [read-only date/time and shared-formula interpretation](docs/development/read-only-cell-interpretation.md), cell details and a bounded recent-viewport cache. [Verification](docs/development/step47-verification.md) distinguishes synthetic evidence from untested real accounting files. Inspection never authorizes mutation.
+
+Step 46 adds **Inspect workbook read-only**, a separate bounded package analyzer and selected-sheet raw-value viewer. It reports compatibility without granting editing or export eligibility. See [compatibility analyzer](docs/development/workbook-compatibility-analyzer.md) and [verification](docs/development/step46-verification.md).
+
 TsekSheet is an offline-first Windows desktop application for safely working with existing Excel workbooks. Its longer-term goal is to turn scanned receipts and PDFs into human-verified spreadsheet entries using local OCR and configurable templates.
 
 The first intended workflow is accounting reimbursement. The architecture is designed for other spreadsheet workflows as well, without accounting-specific rules in the workbook engine.

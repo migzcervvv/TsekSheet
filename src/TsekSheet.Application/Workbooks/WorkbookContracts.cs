@@ -4,10 +4,18 @@ public sealed record CompatibilityFinding(string Code, string Message);
 public sealed record WorksheetInfo(Guid Id, string Name, int Order, string Visibility, int LastRow, int LastColumn);
 public sealed record WorkbookInfo(Guid SessionId, Guid? ParentSessionId, string DisplayName, string SourceSha256,
     int Revision, bool IsDirty, bool EditingAllowed, string Creator, string Title,
-    IReadOnlyList<WorksheetInfo> Worksheets, IReadOnlyList<CompatibilityFinding> Findings, int? LastExportedRevision = null, string? LastExportedSha256 = null);
+    IReadOnlyList<WorksheetInfo> Worksheets, IReadOnlyList<CompatibilityFinding> Findings, int? LastExportedRevision = null, string? LastExportedSha256 = null,
+    WorkbookCompatibilityReport? Compatibility = null);
 public sealed record CellFormat(string NumberFormat, int NumberFormatId, bool Bold, bool Italic, string FillColor);
-public sealed record CellInfo(int Row, int Column, string Value, string Kind, string? Formula, bool Truncated, CellFormat Format);
-public sealed record CellViewport(Guid SessionId, Guid WorksheetId, int StartRow, int StartColumn, int Rows, int Columns, IReadOnlyList<CellInfo> Cells);
+public sealed record CellInterpretation(string RawValue, string DisplayValue, string ResolvedType, string Confidence, string Warning, string FormulaStatus);
+public sealed record CellInfo(int Row, int Column, string Value, string Kind, string? Formula, bool Truncated, CellFormat Format, CellInterpretation? Interpretation = null);
+public sealed record CellViewport(Guid SessionId, Guid WorksheetId, int StartRow, int StartColumn, int Rows, int Columns, IReadOnlyList<CellInfo> Cells, WorksheetScan? Scan = null);
+public sealed record WorkbookCapability(string Operation, bool Allowed, string Reason);
+public sealed record PackageCategory(string Category, int Count);
+public sealed record WorkbookCompatibilityReport(long FileBytes, long CompressedPartBytes, long ExpandedPartBytes, int PartCount, int DefinedNames,
+    int Relationships, bool ExternalLinks, IReadOnlyList<PackageCategory> Categories, IReadOnlyList<WorkbookCapability> Capabilities, string CountStatus);
+public sealed record WorksheetScan(string DeclaredDimension, string DimensionReliability, long StoredCells, long NonemptyValues, long Formulas, long StyledCells,
+    int LastRow, int LastColumn, bool PotentialInflation, IReadOnlyList<string> Warnings);
 public sealed record CellEdit(Guid WorksheetId, int Row, int Column, string Kind, string Value, int ExpectedRevision);
 public sealed record CellChange(Guid WorksheetId, int Row, int Column, string Kind, string Value, int Revision);
 public sealed record WorkingCopyInfo(Guid SessionId, Guid SourceWorksheetId, int BaseRevision, int Revision, bool IsDirty, IReadOnlyList<CellChange> Changes);
@@ -46,6 +54,8 @@ public interface IWorkbookSession : IDisposable
 public interface IWorkbookEngine
 {
     IWorkbookSession Open(string path, CancellationToken cancellationToken = default);
+    IWorkbookSession Inspect(string path, CancellationToken cancellationToken = default)
+        => throw new WorkbookException("INSPECTION_UNAVAILABLE", "Read-only package inspection is unavailable.");
 }
 
 public sealed class WorkbookException(string code, string message) : Exception(message)

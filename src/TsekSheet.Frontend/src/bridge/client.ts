@@ -9,9 +9,12 @@ export interface Selection { status: 'selected' | 'cancelled'; selectionId?: str
 export interface Progress { operationId: string; completed: number; total: number }
 export class BridgeError extends Error { constructor(public readonly code: string, message: string) { super(message); } }
 export interface Worksheet { id: string; name: string; order: number; visibility: 'Visible' | 'Hidden' | 'VeryHidden'; lastRow: number; lastColumn: number }
-export interface Workbook { sessionId: string; parentSessionId: string | null; displayName: string; sourceSha256: string; revision: number; isDirty: boolean; editingAllowed: boolean; creator: string; title: string; worksheets: Worksheet[]; findings: { code: string; message: string }[] }
-export interface Cell { row: number; column: number; value: string; kind: string; formula: string | null; truncated: boolean; format: { numberFormat: string; numberFormatId: number; bold: boolean; italic: boolean; fillColor: string } }
-export interface Viewport { sessionId: string; worksheetId: string; startRow: number; startColumn: number; rows: number; columns: number; cells: Cell[] }
+export interface CompatibilityReport { fileBytes: number; compressedPartBytes: number; expandedPartBytes: number; partCount: number; definedNames: number; relationships: number; externalLinks: boolean; categories: { category: string; count: number }[]; capabilities: { operation: string; allowed: boolean; reason: string }[]; countStatus: string }
+export interface WorksheetScan { declaredDimension: string; dimensionReliability: string; storedCells: number; nonemptyValues: number; formulas: number; styledCells: number; lastRow: number; lastColumn: number; potentialInflation: boolean; warnings: string[] }
+export interface Workbook { compatibility?: CompatibilityReport | null; sessionId: string; parentSessionId: string | null; displayName: string; sourceSha256: string; revision: number; isDirty: boolean; editingAllowed: boolean; creator: string; title: string; worksheets: Worksheet[]; findings: { code: string; message: string }[] }
+export interface CellInterpretation { rawValue: string; displayValue: string; resolvedType: string; confidence: string; warning: string; formulaStatus: string }
+export interface Cell { interpretation?: CellInterpretation | null; row: number; column: number; value: string; kind: string; formula: string | null; truncated: boolean; format: { numberFormat: string; numberFormatId: number; bold: boolean; italic: boolean; fillColor: string } }
+export interface Viewport { scan?: WorksheetScan | null; sessionId: string; worksheetId: string; startRow: number; startColumn: number; rows: number; columns: number; cells: Cell[] }
 export interface WorkingCopy { sessionId: string; sourceWorksheetId: string; baseRevision: number; revision: number; isDirty: boolean; changeCount: number }
 export interface SaveReceipt { status: 'saved'; sessionId: string; savedRevision: number; sourceStillDirty: boolean; rebound: false; cancellationAfterCommit: boolean; destinationSha256: string; displayName: string }
 export interface MergePayload { sessionId: string; workingCopyId: string; worksheetId: string; expectedCopyRevision: number; expectedRevision: number; expectedBaseRevision: number }
@@ -27,6 +30,7 @@ interface Results {
   'foundation.selectFile': Selection;
   'diagnostics.run': { status: 'completed' | 'cancelled' };
   'diagnostics.cancel': { status: 'requested' | 'notRunning' };
+  'workbook.inspect': { status: 'cancelled' | 'opened'; workbook?: Workbook | null };
   'workbook.open': { status: 'cancelled' | 'opened'; workbook?: Workbook | null };
   'workbook.readViewport': Viewport;
   'workbook.close': { status: 'closed' };
@@ -48,6 +52,7 @@ interface Payloads {
   'foundation.selectFile': Record<string, never>;
   'diagnostics.run': { steps: number; delayMs: number };
   'diagnostics.cancel': { operationId: string };
+  'workbook.inspect': Record<string, never>;
   'workbook.open': Record<string, never>;
   'workbook.readViewport': { sessionId: string; worksheetId: string; startRow: number; startColumn: number; rows: number; columns: number };
   'workbook.close': { sessionId: string };
@@ -65,19 +70,34 @@ const text = (v: unknown): v is string => typeof v === 'string' && v.length <= 5
 const content = (v: unknown): v is string => typeof v === 'string' && v.length <= 1024;
 const guid = (v: unknown): v is string => typeof v === 'string' && /^[a-f\d]{8}-(?:[a-f\d]{4}-){3}[a-f\d]{12}$/i.test(v);
 const integer = (v: unknown, min: number, max: number): v is number => typeof v === 'number' && Number.isInteger(v) && v >= min && v <= max;
+function validCompatibility(v: unknown): v is CompatibilityReport {
+  return object(v) && ['fileBytes', 'compressedPartBytes', 'expandedPartBytes'].every(k => integer(v[k], 0, 536870912))
+    && integer(v.partCount, 1, 4096) && integer(v.definedNames, 0, 100000) && integer(v.relationships, 0, 16384) && typeof v.externalLinks === 'boolean' && content(v.countStatus)
+    && Array.isArray(v.categories) && v.categories.length <= 32 && v.categories.every((c: unknown) => object(c) && text(c.category) && integer(c.count, 1, 16384))
+    && Array.isArray(v.capabilities) && v.capabilities.length === 9 && v.capabilities.every((c: unknown) => object(c) && text(c.operation) && typeof c.allowed === 'boolean' && content(c.reason))
+    && ['Metadata inspection', 'Read-only browsing', 'Worksheet selection', 'Cell editing', 'Working copies', 'Structural insertion', 'Merge', 'Structural Merge', 'Export'].every(op => (v.capabilities as ObjectValue[]).filter(c => c.operation === op).length === 1)
+    && (v.capabilities as ObjectValue[]).every(c => (c.operation === 'Metadata inspection' || c.operation === 'Worksheet selection') ? c.allowed === true : c.operation === 'Read-only browsing' || c.allowed === false);
+}
+function validScan(v: unknown): boolean {
+  return object(v) && text(v.declaredDimension) && text(v.dimensionReliability) && ['storedCells', 'nonemptyValues', 'formulas', 'styledCells'].every(k => integer(v[k], 0, 2000000))
+    && integer(v.lastRow, 0, 1048576) && integer(v.lastColumn, 0, 16384) && typeof v.potentialInflation === 'boolean' && Array.isArray(v.warnings) && v.warnings.length <= 16 && v.warnings.every(content);
+}
 function validWorkbook(v: unknown): v is Workbook {
   return object(v) && guid(v.sessionId) && (v.parentSessionId === null || guid(v.parentSessionId)) && text(v.displayName) && !/[\\/]/.test(v.displayName)
     && typeof v.sourceSha256 === 'string' && /^[a-f\d]{64}$/i.test(v.sourceSha256) && integer(v.revision, 0, 2147483647) && typeof v.isDirty === 'boolean' && typeof v.editingAllowed === 'boolean'
-    && content(v.creator) && content(v.title) && Array.isArray(v.worksheets) && v.worksheets.length > 0 && v.worksheets.length <= 32
+    && (v.compatibility == null || (validCompatibility(v.compatibility) && v.editingAllowed === false && v.isDirty === false && v.revision === 0 && v.parentSessionId === null))
+    && content(v.creator) && content(v.title) && Array.isArray(v.worksheets) && v.worksheets.length > 0 && v.worksheets.length <= (v.compatibility ? 512 : 32)
     && new Set(v.worksheets.map((s: unknown) => object(s) ? s.id : null)).size === v.worksheets.length
-    && v.worksheets.every((s: unknown) => object(s) && guid(s.id) && text(s.name) && integer(s.order, 1, 32) && ['Visible', 'Hidden', 'VeryHidden'].includes(String(s.visibility)) && integer(s.lastRow, 0, 1048576) && integer(s.lastColumn, 0, 16384))
+    && v.worksheets.every((s: unknown) => object(s) && guid(s.id) && text(s.name) && integer(s.order, 1, v.compatibility ? 512 : 32) && ['Visible', 'Hidden', 'VeryHidden'].includes(String(s.visibility)) && integer(s.lastRow, 0, 1048576) && integer(s.lastColumn, 0, 16384))
     && Array.isArray(v.findings) && v.findings.length <= 32 && v.findings.every((f: unknown) => object(f) && text(f.code) && content(f.message));
 }
 function validViewport(v: ObjectValue): boolean {
+  if (v.scan != null && !validScan(v.scan)) return false;
   if (!guid(v.sessionId) || !guid(v.worksheetId) || !integer(v.startRow, 1, 1048576) || !integer(v.startColumn, 1, 16384) || !integer(v.rows, 1, 20) || !integer(v.columns, 1, 10) || v.startRow + v.rows - 1 > 1048576 || v.startColumn + v.columns - 1 > 16384 || !Array.isArray(v.cells) || v.cells.length !== v.rows * v.columns) return false;
   const keys = new Set<string>();
   return v.cells.every((c: unknown) => {
     if (!object(c) || !integer(c.row, v.startRow as number, (v.startRow as number) + (v.rows as number) - 1) || !integer(c.column, v.startColumn as number, (v.startColumn as number) + (v.columns as number) - 1) || !content(c.value) || !text(c.kind) || !(c.formula === null || content(c.formula)) || typeof c.truncated !== 'boolean' || !object(c.format) || !content(c.format.numberFormat) || !integer(c.format.numberFormatId, -1, 2147483647) || typeof c.format.bold !== 'boolean' || typeof c.format.italic !== 'boolean' || typeof c.format.fillColor !== 'string' || !/^(?:[a-f\d]{8})?$/i.test(c.format.fillColor)) return false;
+    if (c.interpretation != null && (!object(c.interpretation) || !['rawValue', 'displayValue', 'resolvedType', 'confidence', 'warning', 'formulaStatus'].every(k => content((c.interpretation as ObjectValue)[k])))) return false;
     const key = `${c.row}:${c.column}`; if (keys.has(key) || c.row !== (v.startRow as number) + Math.floor(keys.size / (v.columns as number)) || c.column !== (v.startColumn as number) + keys.size % (v.columns as number)) return false; keys.add(key); return true;
   });
 }
@@ -94,6 +114,7 @@ function validResult(command: Command, r: unknown): boolean {
     case 'foundation.selectFile': return r.status === 'cancelled' || (r.status === 'selected' && text(r.selectionId) && text(r.displayName) && !/[\\/]/.test(r.displayName));
     case 'diagnostics.run': return r.status === 'completed' || r.status === 'cancelled';
     case 'diagnostics.cancel': return r.status === 'requested' || r.status === 'notRunning';
+    case 'workbook.inspect': return r.status === 'cancelled' || (r.status === 'opened' && validWorkbook(r.workbook) && !!r.workbook.compatibility);
     case 'workbook.open': return r.status === 'cancelled' || (r.status === 'opened' && validWorkbook(r.workbook) && r.workbook.revision === 0 && !r.workbook.isDirty);
     case 'workbook.previewMerge': return text(r.destinationName) && integer(r.pendingCells, 0, 1000) && typeof r.canApply === 'boolean'
       && Array.isArray(r.conflicts) && r.conflicts.length <= 16 && r.conflicts.every((c: unknown) => object(c) && text(c.code) && content(c.message)) && r.canApply === (r.conflicts.length === 0);

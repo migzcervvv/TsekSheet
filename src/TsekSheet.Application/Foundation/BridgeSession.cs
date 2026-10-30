@@ -87,7 +87,7 @@ public sealed class BridgeSession : IDisposable
                 Success(id!, new { selectedVersion = 1, applicationName = new ApplicationMetadataService().ApplicationName, version = "0.1.0", capabilities = new { diagnostics = true, fileSelection = true, workbooks = workbooks != null, templates = false, ocr = false } });
                 return;
             }
-            if (command is not ("foundation.getInfo" or "foundation.selectFile" or "diagnostics.run" or "diagnostics.cancel" or "workbook.open" or "workbook.readViewport" or "workbook.close" or "workbook.discard" or "workbook.createCopy" or "workbook.editCopy" or "workbook.saveAsNew" or "workbook.previewMerge" or "workbook.merge" or "workflow.profiles" or "workbook.planRecords" or "workbook.generateCandidate" or "workbook.approveCandidate" or "workbook.cancelCandidate"))
+            if (command is not ("foundation.getInfo" or "foundation.selectFile" or "diagnostics.run" or "diagnostics.cancel" or "workbook.open" or "workbook.inspect" or "workbook.readViewport" or "workbook.close" or "workbook.discard" or "workbook.createCopy" or "workbook.editCopy" or "workbook.saveAsNew" or "workbook.previewMerge" or "workbook.merge" or "workflow.profiles" or "workbook.planRecords" or "workbook.generateCandidate" or "workbook.approveCandidate" or "workbook.cancelCandidate"))
             { Error(id!, "UNSUPPORTED_COMMAND", "Command is unavailable."); return; }
             if (!ready) { Error(id!, "NOT_READY", "Handshake is required."); return; }
             if (command == "workflow.profiles")
@@ -123,10 +123,10 @@ public sealed class BridgeSession : IDisposable
                     { Error(id!,"INVALID_REQUEST","Invalid review cancellation payload."); return; }
                     Success(id!,new { status = await workbooks.CancelCandidateAsync(copyId,candidateId,revision) }); return;
                 }
-                if (command == "workbook.open")
+                if (command is "workbook.open" or "workbook.inspect")
                 {
                     if (!HasOnly(payload)) { Error(id!, "INVALID_REQUEST", "Workbook opening accepts no paths or other arguments."); return; }
-                    Success(id!, await workbooks.OpenAsync()); return;
+                    Success(id!, await workbooks.OpenAsync(command == "workbook.inspect")); return;
                 }
                 var names = command switch
                 {
