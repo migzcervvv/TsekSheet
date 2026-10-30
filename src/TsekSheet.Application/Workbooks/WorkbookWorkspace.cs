@@ -1,3 +1,5 @@
+using TsekSheet.Application.Workflows;
+
 namespace TsekSheet.Application.Workbooks;
 
 public sealed record WorkbookOpenResult(string Status, WorkbookInfo? Workbook = null);
@@ -5,7 +7,8 @@ public sealed record WorkbookSaveResult(string Status, SaveReceipt? Receipt = nu
 public sealed record WorkingCopySummary(Guid SessionId, Guid SourceWorksheetId, int BaseRevision, int Revision, bool IsDirty, int ChangeCount);
 
 // One active workbook and at most two isolated working copies per page.
-public sealed class WorkbookWorkspace(IWorkbookEngine engine, Func<CancellationToken, Task<string?>> selectWorkbook, Func<CancellationToken, Task<string?>>? selectSaveDestination = null) : IDisposable
+public sealed class WorkbookWorkspace(IWorkbookEngine engine, Func<CancellationToken, Task<string?>> selectWorkbook, Func<CancellationToken, Task<string?>>? selectSaveDestination = null,
+    Func<CancellationToken, Task<string?>>? selectSectionProfile = null) : IDisposable
 {
     private readonly SemaphoreSlim operation = new(1, 1);
     private readonly CancellationTokenSource lifetime = new();
@@ -13,6 +16,53 @@ public sealed class WorkbookWorkspace(IWorkbookEngine engine, Func<CancellationT
     private IWorkbookSession? active;
     private readonly Dictionary<Guid, IWorkbookSession> copies = [];
     private bool disposed;
+    private SectionReview? sectionReview;
+    private CancellationTokenSource? reviewOperation;
+    private Guid? reviewSheet;
+    public int ReviewDecisionCount { get { lock (gate) return sectionReview?.Snapshot.Decisions.Count ?? 0; } }
+
+    public Task<SectionReviewSnapshot?> StartSectionReviewAsync(Guid sessionId, Guid worksheetId, int revision) => Run(async token =>
+    {
+        IWorkbookSession session; CancellationTokenSource cts;
+        lock (gate)
+        {
+            session = RequireSession(sessionId);
+            if (!ReferenceEquals(session, active) || session.Info.Compatibility == null) throw new WorkbookException("READ_ONLY_INSPECTION", "Section review requires an inspection session.");
+            ClearReviewLocked(); reviewSheet = worksheetId;
+            cts = CancellationTokenSource.CreateLinkedTokenSource(token); reviewOperation = cts;
+        }
+        try
+        {
+            if (selectSectionProfile == null) throw new WorkbookException("PROFILE_REQUIRED", "Section review requires a configured read-only profile.");
+            var json = await selectSectionProfile(cts.Token);
+            if (json == null) return null;
+            var profile = ReadOnlySectionAnalysis.ParseProfile(json);
+            var candidate = await Task.Run(() => new SectionReview(session, worksheetId, revision, profile, cts.Token), cts.Token);
+            lock (gate) { cts.Token.ThrowIfCancellationRequested(); ObjectDisposedException.ThrowIf(disposed, this); sectionReview = candidate; }
+            return candidate.Snapshot;
+        }
+        finally { lock (gate) { if (ReferenceEquals(reviewOperation, cts)) reviewOperation = null; } cts.Dispose(); }
+    });
+
+    public Task<SectionReviewSnapshot> DecideSectionAsync(SectionReviewRequest request) => Run(token => Task.Run(() =>
+    {
+        lock (gate) { var review = RequireReview(request.Binding); return review.Decide(request, token); }
+    }, token));
+    public Task<SectionReviewSnapshot> RetractSectionAsync(SectionReviewRetraction request) => Run(token => Task.Run(() =>
+    {
+        lock (gate) { var review = RequireReview(request.Binding); return review.Retract(request, token); }
+    }, token));
+    private SectionReview RequireReview(SectionReviewBinding binding)
+    {
+        var review = sectionReview ?? throw new WorkbookException("SECTION_REVIEW", "No active section review.");
+        review.ValidateCurrent(RequireSession(binding.SessionId)); return review;
+    }
+    // Cancellation is independent of the serialized work queue, so a capture can be interrupted.
+    public string CancelSectionReview(Guid sessionId, Guid worksheetId)
+    {
+        lock (gate) { RequireSession(sessionId); if (reviewSheet == worksheetId) ClearReviewLocked(); return "cancelled"; }
+    }
+    private void ClearReviewLocked() { reviewOperation?.Cancel(); sectionReview = null; reviewSheet = null; }
 
     private async Task<T> Run<T>(Func<CancellationToken, Task<T>> action)
     {
@@ -32,7 +82,7 @@ public sealed class WorkbookWorkspace(IWorkbookEngine engine, Func<CancellationT
         try
         {
             token.ThrowIfCancellationRequested();
-            lock (gate) { ObjectDisposedException.ThrowIf(disposed, this); previous = active; active = candidate; foreach (var copy in copies.Values) copy.Dispose(); copies.Clear(); }
+            lock (gate) { ObjectDisposedException.ThrowIf(disposed, this); ClearReviewLocked(); previous = active; active = candidate; foreach (var copy in copies.Values) copy.Dispose(); copies.Clear(); }
         }
         catch { candidate.Dispose(); throw; }
         previous?.Dispose();
@@ -42,7 +92,7 @@ public sealed class WorkbookWorkspace(IWorkbookEngine engine, Func<CancellationT
     public Task<CellViewport> ReadAsync(Guid sessionId, Guid worksheetId, int row, int column, int rows, int columns) => Run(token => Task.Run(() =>
     {
         token.ThrowIfCancellationRequested();
-        IWorkbookSession session; lock (gate) session = RequireSession(sessionId);
+        IWorkbookSession session; lock (gate) { session = RequireSession(sessionId); if (reviewSheet != null && reviewSheet != worksheetId) ClearReviewLocked(); }
         return session.ReadViewport(worksheetId, row, column, rows, columns);
     }, token));
 
@@ -149,7 +199,7 @@ public sealed class WorkbookWorkspace(IWorkbookEngine engine, Func<CancellationT
             session = RequireSession(sessionId);
             if (!ReferenceEquals(session, active)) throw new WorkbookException("SESSION_NOT_FOUND", "Close the original workbook session.");
             if (HasPendingChangesLocked() && !discardChanges) throw new WorkbookException("UNSAVED_CHANGES", "Pending changes will be discarded. Confirm before closing.");
-            active = null; children = copies.Values.ToArray(); copies.Clear();
+            ClearReviewLocked(); active = null; children = copies.Values.ToArray(); copies.Clear();
         }
         foreach (var child in children) child.Dispose(); session.Dispose(); return Task.FromResult("closed");
     });
@@ -162,7 +212,7 @@ public sealed class WorkbookWorkspace(IWorkbookEngine engine, Func<CancellationT
     public void Dispose()
     {
         IWorkbookSession? session; IWorkbookSession[] children;
-        lock (gate) { if (disposed) return; disposed = true; lifetime.Cancel(); session = active; active = null; children = copies.Values.ToArray(); copies.Clear(); }
+        lock (gate) { if (disposed) return; disposed = true; lifetime.Cancel(); ClearReviewLocked(); session = active; active = null; children = copies.Values.ToArray(); copies.Clear(); }
         foreach (var child in children) child.Dispose(); session?.Dispose(); lifetime.Dispose();
     }
 }

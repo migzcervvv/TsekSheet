@@ -21,11 +21,12 @@ public partial class MainWindow : Window
     private readonly Func<CancellationToken, Task<string?>>? workbookSelector;
     private readonly Func<bool>? confirmDiscard;
     private readonly Func<CancellationToken, Task<string?>>? saveSelector;
+    private readonly Func<CancellationToken, Task<string?>>? sectionProfileSelector;
     private bool dialogOpen;
 
     public MainWindow() : this(null, null, null) { }
 
-    internal MainWindow(string? assetDirectory, string? profileDirectory, string? browserExecutableFolder, Func<CancellationToken, Task<string?>>? workbookSelector = null, Func<bool>? confirmDiscard = null, Func<CancellationToken, Task<string?>>? saveSelector = null)
+    internal MainWindow(string? assetDirectory, string? profileDirectory, string? browserExecutableFolder, Func<CancellationToken, Task<string?>>? workbookSelector = null, Func<bool>? confirmDiscard = null, Func<CancellationToken, Task<string?>>? saveSelector = null, Func<CancellationToken, Task<string?>>? sectionProfileSelector = null)
     {
         assets = assetDirectory ?? Path.Combine(AppContext.BaseDirectory, "frontend");
         profile = profileDirectory ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TsekSheet", "WebView2");
@@ -33,13 +34,30 @@ public partial class MainWindow : Window
         this.workbookSelector = workbookSelector;
         this.confirmDiscard = confirmDiscard;
         this.saveSelector = saveSelector;
+        this.sectionProfileSelector = sectionProfileSelector;
         InitializeComponent();
         Loaded += async (_, _) => await InitializeAsync();
         Closing += (_, e) =>
         {
+            if (session?.ReviewDecisionCount is > 0 && !(confirmDiscard?.Invoke() ?? ConfirmReviewDiscard(session.ReviewDecisionCount))) { e.Cancel = true; return; }
             if (session?.HasPendingWorkbookChanges == true && !(confirmDiscard?.Invoke() ?? MessageBox.Show(this, "Discard all in-memory workbook changes and close?", "Unsaved workbook changes", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)) e.Cancel = true;
         };
         Closed += (_, _) => Shutdown();
+    }
+
+    private bool ConfirmReviewDiscard(int count)
+    {
+        var dialog = new Window { Owner = this, Title = "Discard review decisions?", Width = 460, SizeToContent = SizeToContent.Height,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner, ResizeMode = ResizeMode.NoResize, ShowInTaskbar = false };
+        var panel = new System.Windows.Controls.StackPanel { Margin = new Thickness(20) };
+        panel.Children.Add(new System.Windows.Controls.TextBlock { Text = $"{count} in-memory review decisions. Closing permanently discards them.",
+            TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 16) });
+        var keep = new System.Windows.Controls.Button { Content = "Continue Reviewing", IsDefault = true, IsCancel = true, Margin = new Thickness(0, 0, 0, 8) };
+        var discard = new System.Windows.Controls.Button { Content = "Discard & Close" };
+        keep.Click += (_, _) => dialog.DialogResult = false;
+        discard.Click += (_, _) => dialog.DialogResult = true;
+        panel.Children.Add(keep); panel.Children.Add(discard); dialog.Content = panel;
+        return dialog.ShowDialog() == true;
     }
 
     private async void RetryInitialization(object sender, RoutedEventArgs e) => await InitializeAsync();
@@ -95,7 +113,7 @@ public partial class MainWindow : Window
         if (session?.HasPendingWorkbookChanges == true && MessageBox.Show(this, "Discard all in-memory workbook changes and reload?", "Unsaved workbook changes", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) { e.Cancel = true; return; }
         session?.Dispose();
         selectedPath = null;
-        session = new BridgeSession(Send, SelectFileAsync, workbooks: new WorkbookWorkspace(workbookEngine, SelectWorkbookAsync, SelectSaveDestinationAsync));
+        session = new BridgeSession(Send, SelectFileAsync, workbooks: new WorkbookWorkspace(workbookEngine, SelectWorkbookAsync, SelectSaveDestinationAsync, SelectSectionProfileAsync));
     }
 
     internal static void ValidateAssets(string directory)
@@ -193,6 +211,41 @@ public partial class MainWindow : Window
             return Task.FromResult(selected);
         }
         finally { dialogOpen = false; }
+    }
+
+    private Task<string?> SelectSectionProfileAsync(CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        if (sectionProfileSelector != null) return sectionProfileSelector(token); // Artificial tests only.
+        if (dialogOpen) throw new WorkbookException("BUSY", "A native file dialog is already open.");
+        dialogOpen = true;
+        try
+        {
+            var dialog = new OpenFileDialog { Title = "Select configured read-only section profile", Filter = "Section profile (*.json)|*.json", CheckFileExists = true, Multiselect = false };
+            if (dialog.ShowDialog(this) != true) return Task.FromResult<string?>(null);
+            token.ThrowIfCancellationRequested();
+            return Task.FromResult<string?>(ReadSectionProfile(dialog.FileName));
+        }
+        finally { dialogOpen = false; }
+    }
+
+    internal static string ReadSectionProfile(string path)
+    {
+        var full = Path.GetFullPath(path);
+        if (new Uri(full).IsUnc) throw new WorkbookException("PROFILE_REQUIRED", "Select an ordinary local profile file.");
+        FileSystemInfo? item = new FileInfo(full);
+        if (!item.Exists || (item.Attributes & FileAttributes.Directory) != 0) throw new WorkbookException("PROFILE_REQUIRED", "Select an ordinary local profile file.");
+        while (item != null)
+        {
+            if ((item.Attributes & FileAttributes.ReparsePoint) != 0) throw new WorkbookException("PROFILE_REQUIRED", "Reparse-point profiles are unsupported.");
+            item = item is FileInfo file ? file.Directory : ((DirectoryInfo)item).Parent;
+        }
+        using var stream = new FileStream(full, FileMode.Open, FileAccess.Read, FileShare.Read);
+        if (stream.Length > 65536) throw new WorkbookException("PROFILE_REQUIRED", "Section profile exceeds its 64 KiB bound.");
+        using var reader = new StreamReader(stream, new System.Text.UTF8Encoding(false, true), true);
+        var text = reader.ReadToEnd();
+        TsekSheet.Application.Workflows.ReadOnlySectionAnalysis.ParseProfile(text);
+        return text;
     }
 
     internal static SaveFileDialog CreateSaveDialog() => new()

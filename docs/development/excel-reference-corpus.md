@@ -1,5 +1,9 @@
 # Independent Excel reference corpus — Step 44
 
+## Step 52 checkout portability
+
+The [Step 52 repair and fresh-clone procedure](step52-verification.md) fixes Step 51's one provenance failure and one native-reference skip. Narrow `.gitattributes` rules preserve LF source/spec fingerprints and the original CRLF native JSON index bindings, with binary XLSX treatment. Five new Git/remediation/evidence tests pass; all four original provenance/native comparisons now pass, including in a separate Windows autocrlf checkout. Accepted hashes, observations, row-height discrepancies and source/output files are unchanged. Verification still compares exact bytes; it does not normalize evidence. Existing-checkout remediation is explicit, preflighted and backed up.
+
 ## Step 45 extension
 
 [Step 45](step45-verification.md) adds 17 actual native formatting outputs (eight no-op saves and nine insertion/reference operations), retained under `ReferenceCorpus/VerifiedFormatting`. No-op saving reproduces actual XML height changes 22 -> 21.95 and 20 -> 20.100000000000001 while COM observations remain 22/20. Exact 21-point positive cases, custom-height flags, batch/repeated raw operations, custom currency/decorated styles and a blank template experiment are independently checked. The conversion mechanism remains unproven; affected classes stay blocked and no tolerance qualifies production edits.

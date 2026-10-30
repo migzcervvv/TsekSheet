@@ -1,5 +1,15 @@
 # TsekSheet
 
+Step 56 improves [read-only spreadsheet navigation and Section Review](docs/development/payables-section-review.md): scrollbars, wheel/trackpad browsing, Go To Cell, keyboard movement, useful-data bounds and six focused review categories. Discarding in-memory decisions requires confirmation, including worksheet/workbook changes and native window closing. Internal blank rows remain visible; the full stored range remains available. Editing, insertion, Merge and export remain unavailable in inspection. See [verification](docs/development/step56-verification.md). Phase 2 remains incomplete.
+
+Step 54 adds [conservative format isolation and separate read-only section diagnostics](docs/development/step54-verification.md). The real source is unchanged; 401 solution tests pass. Numeric support remains narrow (21 qualified of 23,452), and the incomplete hierarchy/25 blank vendors remain unverified and non-actionable. The inspector explains source/effective formats; no inspection editing, Apply or export is enabled. [A reviewed separate-output workflow](docs/development/reviewed-payables-output-design.md) is documented only.
+
+Step 53 [qualifies the actual authorized Payables duplicate](docs/development/step53-verification.md): all five worksheets browse read-only, source fingerprint unchanged, and 359 solution tests pass. Editing is blocked by measured cell counts and complex package preservation requirements; numeric interpretation currently falls back to raw values. Section/vendor analysis remains partial, and production Apply stays disabled.
+
+Step 52 repairs [Git provenance portability](docs/development/step52-verification.md): 359 solution tests pass with zero failures/skips, and independent Windows checkout verification passes. Retained native evidence and exact hash checks are preserved. Real-workbook qualification remains **UNEXECUTED** until an authorized duplicate is supplied in `local-test-workbooks/`; editing restrictions are unchanged.
+
+Step 51 records [diagnostic readiness](docs/development/step51-verification.md) and a [conditional compatibility strategy](docs/development/real-workbook-compatibility-strategy.md). The authorized input directory is absent, so real-workbook qualification remains **UNEXECUTED**. Current regression results include one provenance failure and one native-reference skip; production mutation restrictions are unchanged.
+
 Step 50 adds actual synthetic Excel precision evidence and rejects ambiguous over-precision monetary displays while retaining raw values. Real workbook qualification remains unexecuted. See [verification](docs/development/step50-verification.md).
 
 Step 49 retains actual synthetic native Excel accounting displays and corrects escaped saved formats and built-in percentages. See [verification](docs/development/step49-verification.md).

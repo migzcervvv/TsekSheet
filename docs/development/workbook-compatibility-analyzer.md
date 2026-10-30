@@ -1,5 +1,13 @@
 # Workbook compatibility analyzer — Step 46
 
+Step 54 adds conservative per-format isolation and a **separate bounded read-only analysis capture**: explicit source/session/sheet/revision binding, up to 2,000 rows/32 role columns/40,000 cells and 16 MiB accounted payload, with existing XML/time budgets, shared-string/formula handling and hidden/styled-row coverage. It does not widen the 20x10 public viewport, editable limits or mutation capabilities, and it creates no disk index. [Actual requalification](step54-verification.md) reports 21 qualified numeric displays and an explicitly rejected section/identity partition. [Structured section diagnostics](read-only-payables-section-analysis.md) remain independent of production planning; the desktop adds format details, not a section editor or inspection export.
+
+Step 53 [qualifies the actual authorized duplicate](step53-verification.md): all five tabs browse read-only, source hash unchanged, 439,321 stored cells, extensive names/external links and advanced package content. Actual editable validation stops at 50,001 cells. Numeric interpretation is raw-only in this run because explicit number-format ID 43 triggers the current stylesheet fallback. Layout/vendor feasibility is partial; inspection planner/copy/edit/Merge/export gates are unchanged.
+
+Step 52 repairs Git checkout portability and restores all provenance comparisons; it makes no analyzer or editing-envelope change. Real Payables qualification remains **UNEXECUTED** because the designated input directory is absent. See [verification](step52-verification.md).
+
+Step 51 checks existing readiness only: no authorized real workbook was supplied. [Verification](step51-verification.md) records current failures and exact input instructions; [strategy](real-workbook-compatibility-strategy.md) lists detection rules and conditional preservation alternatives. No inspection or editing envelope was widened.
+
 Step 50 narrows ambiguous financial display interpretation; metadata/view eligibility still grants no editing or export permission. The authorized real-input directory remains absent. See [verification](step50-verification.md).
 
 Step 49 preserves every inspection/editing boundary; native accounting display support does not certify rewrite preservation. See [verification](step49-verification.md).

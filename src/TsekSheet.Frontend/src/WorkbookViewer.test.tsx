@@ -41,7 +41,7 @@ function setup(inspect = false, unsafeCapability = false) {
         else if (m.command === 'workbook.merge') result = { workbook: { ...book, revision: changed ? 1 : 0, isDirty: changed }, appliedCells: changed ? 1 : 0 };
         else if (m.command === 'workbook.editCopy') { if (!error) changed = true; result = { sessionId: copyId, sourceWorksheetId: sheetId, baseRevision: 0, revision: 1, isDirty: true, changeCount: 1 }; }
         else if (m.command === 'workbook.saveAsNew') result = mode === 'save-cancel' ? { status: 'cancelled' } : { status: 'saved', receipt: { status: 'saved', sessionId, savedRevision: 0, sourceStillDirty: false, rebound: false, cancellationAfterCommit: false, destinationSha256: 'B'.repeat(64), displayName: 'export.xlsx' } };
-        else { const v = viewport(m.payload); if (inspect) { v.cells[0] = { ...v.cells[0], value: '61', kind: 'Number', interpretation: { rawValue: '61', displayValue: '1900-03-01', resolvedType: 'Date', confidence: 'Supported subset', warning: 'Normalized ISO display.', formulaStatus: 'No formula' } }; v.cells[1] = { ...v.cells[1], value: '123', formula: 'A2+$A$1', interpretation: { rawValue: '123', displayValue: '123', resolvedType: 'Number', confidence: 'Stored', warning: '', formulaStatus: 'Reconstructed shared formula; cached value is unverified.' } }; } if (inspect) v.scan = { declaredDimension: 'A1:XFD1048576', dimensionReliability: 'Untrusted declaration', storedCells: 125000, nonemptyValues: 2, formulas: 1, styledCells: 124998, lastRow: 125000, lastColumn: 6, potentialInflation: true, warnings: ['Raw values only.'] }; if (changed && m.payload.sessionId === copyId) { const cell = v.cells.find(c => c.row === 5 && c.column === 1); if (cell) cell.value = 'Copy-only value'; } result = v; }
+        else { const v = viewport(m.payload); if (inspect) { v.cells[0] = { ...v.cells[0], value: '61', kind: 'Number', interpretation: { rawValue: '61', displayValue: '1900-03-01', resolvedType: 'Date', confidence: 'Supported subset', warning: 'Normalized ISO display.', formulaStatus: 'No formula' } }; v.cells[0].format = { ...v.cells[0].format, numberFormatId: 14, effectiveNumberFormatId: 14, formatResolution: 'Direct cell number format' }; v.cells[0].interpretation!.classification = 'Qualified display subset'; v.cells[1] = { ...v.cells[1], value: '123', formula: 'A2+$A$1', interpretation: { rawValue: '123', displayValue: '123', resolvedType: 'Number', confidence: 'Stored', warning: '', formulaStatus: 'Reconstructed shared formula; cached value is unverified.' } }; } if (inspect) v.scan = { declaredDimension: 'A1:XFD1048576', dimensionReliability: 'Untrusted declaration', storedCells: 125000, nonemptyValues: 2, formulas: 1, styledCells: 124998, lastRow: 125000, lastColumn: 6, potentialInflation: true, warnings: ['Raw values only.'] }; if (changed && m.payload.sessionId === copyId) { const cell = v.cells.find(c => c.row === 5 && c.column === 1); if (cell) cell.value = 'Copy-only value'; } result = v; }
         listeners.forEach(l => l({ data: { protocolVersion: 1, type: 'response', requestId: m.requestId, ok: !error, result, error: error ? { code: 'REJECTED', message: mode === 'save-error' ? 'Choose a new filename. Existing files cannot be replaced.' : mode === 'save-uncertain' ? 'The commit occurred but final verification failed. Inspect the selected file before retrying.' : mode === 'edit-error' ? 'This cell contains a formula. Choose an explicit formula edit instead.' : mode === 'edit-timeout' ? 'Desktop request timed out. Its outcome is unknown.' : 'Unsupported workbook.' } : undefined } }));
       });
     },
@@ -211,6 +211,9 @@ test('malformed and duplicate-cell viewport responses cannot resolve a pending r
   const pending = client.request('workbook.readViewport', payload); let resolved = false; void pending.promise.then(() => { resolved = true; });
   const send = (result: unknown) => listener!({ data: { protocolVersion: 1, type: 'response', requestId, ok: true, result } });
   const valid = viewport(payload); send({ ...valid, rows: 999 }); send({ ...valid, cells: [valid.cells[0], valid.cells[0]] });
+  send({ ...valid, cells: [{ ...valid.cells[0], format: { ...valid.cells[0].format, effectiveNumberFormatId: -4 } }, valid.cells[1]] });
+  send({ ...valid, cells: [{ ...valid.cells[0], format: { ...valid.cells[0].format, formatResolution: {} } }, valid.cells[1]] });
+  send({ ...valid, cells: [{ ...valid.cells[0], interpretation: { rawValue: '', displayValue: '', resolvedType: 'Text', confidence: 'Stored', warning: '', formulaStatus: 'No formula', classification: 42 } }, valid.cells[1]] });
   await Promise.resolve(); expect(resolved).toBe(false);
   send(valid); expect(await pending.promise).toEqual(valid);
 });
@@ -248,10 +251,13 @@ test('inspection cell details distinguish raw dates, display values and unverifi
   expect(date.textContent).toBe('1900-03-01'); fireEvent.click(date);
   expect(screen.getByText('Raw value: 61')).toBeDefined(); expect(screen.getByText('Display value: 1900-03-01')).toBeDefined();
   expect(screen.getByText('Normalized ISO display.')).toBeDefined();
+  expect(screen.getByText('Source format ID: 14 · Effective format ID: 14')).toBeDefined();
+  expect(screen.getByText('Display classification: Qualified display subset')).toBeDefined();
+  expect(screen.getByText('Format resolution: Direct cell number format')).toBeDefined();
   fireEvent.click(screen.getByRole('button', { name: 'Inspect B1' }));
   expect(screen.getByText('Formula text: A2+$A$1')).toBeDefined(); expect(screen.getByText('Stored cached value (may be stale): 123')).toBeDefined();
   expect(screen.queryByRole('button', { name: 'Apply to working copy' })).toBeNull();
   await waitFor(() => expect((screen.getByRole('button', { name: 'Next rows' }) as HTMLButtonElement).disabled).toBe(false));
   fireEvent.click(screen.getByRole('button', { name: 'Next rows' }));
-  await screen.findByText(/Rows 21–40/); expect(screen.queryByLabelText('Read-only cell details')).toBeNull();
+  await screen.findByText(/Rows 21–40/); expect(screen.getByLabelText('Read-only cell details').textContent).toContain('Inspect B1');
 }, 15000);

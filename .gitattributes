@@ -1,0 +1,24 @@
+# Exact source bytes used by retained reference provenance and replay identities.
+/tests/TsekSheet.Workbooks.Tests/ReferenceCorpus/corpus-v1.json text eol=lf
+/tests/TsekSheet.Workbooks.Tests/ReferenceCorpus/formatting-v1.json text eol=lf
+/tests/TsekSheet.Workbooks.Tests/ReferenceCorpusFixture.cs text eol=lf
+/scripts/Verify-ExcelReferenceCorpus.ps1 text eol=lf
+/scripts/Verify-ExcelFormattingReferences.ps1 text eol=lf
+/src/TsekSheet.Workbooks/StructuralRowCandidate.cs text eol=lf
+/src/TsekSheet.Workbooks/StructuralPreservationOracle.cs text eol=lf
+/tests/TsekSheet.Workbooks.Tests/ReferenceCorpusTests.cs text eol=lf
+/tests/TsekSheet.Workbooks.Tests/ExcelFormattingReferenceTests.cs text eol=lf
+
+# Captured JSON was hashed as Windows CRLF. Preserve that historical convention.
+/tests/TsekSheet.Workbooks.Tests/ReferenceCorpus/VerifiedExcel/*.json text eol=crlf
+/tests/TsekSheet.Workbooks.Tests/ReferenceCorpus/VerifiedFormatting/*.json text eol=crlf
+/tests/TsekSheet.Workbooks.Tests/ReferenceCorpus/AccountingDisplay/*.json text eol=crlf
+/tests/TsekSheet.Workbooks.Tests/ReferenceCorpus/PrecisionDisplay/*.json text eol=crlf
+
+# Office reference packages are byte evidence, never text.
+/tests/TsekSheet.Workbooks.Tests/ReferenceCorpus/**/*.xlsx binary
+
+# New immutable capture bytes are stored exactly; their historical hashes never depend on checkout conversion.
+/tests/TsekSheet.Workbooks.Tests/ReferenceCorpus/FormatResolution/*.json -text
+/tests/TsekSheet.Workbooks.Tests/FormatResolutionFixture.cs text eol=lf
+/scripts/Capture-FormatResolution.ps1 text eol=lf

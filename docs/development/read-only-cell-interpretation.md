@@ -1,5 +1,7 @@
 # Read-only cell interpretation — Step 47
 
+Step 54 [isolates per-format failures](step54-verification.md). An explicit unqualified low-ID definition (including ID 43), duplicate/conflicting format, missing reference or unresolved inheritance no longer disables unrelated qualified styles. Globally malformed/over-budget stylesheets still fall back to raw. Source/effective format IDs, original bounded code, resolution, classification and warnings are visible in cell details. Only exact fixed built-in agreement and independently qualified direct/base cases are resolved; divergent or row/column inheritance stays raw. Conditional formatting is not evaluated. The accounting grammar and Step 50 over-precision policy are unchanged. See also [bounded read-only role/section analysis](read-only-payables-section-analysis.md); it grants no editing permission.
+
 Step 50 rejects non-General numeric display interpretation above 15 significant stored decimal digits. Supported numeric formats use explicit midpoint-away-from-zero display rounding; this is not general Excel binary-rounding equivalence. Raw values and original formats remain accessible. See [precision evidence](step50-verification.md).
 
 Step 49 qualifies 28 exact native displays and two rejected locale controls. Escaped parentheses, hyphens and spaces outside quotes are recognized only before the existing whitelist; percentage IDs 9/10 are mapped. See [native fidelity](accounting-display-fidelity.md).

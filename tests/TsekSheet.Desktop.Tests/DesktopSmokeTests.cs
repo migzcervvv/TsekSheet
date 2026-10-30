@@ -12,6 +12,77 @@ namespace TsekSheet.Desktop.Tests;
 [DoNotParallelize]
 public sealed class DesktopSmokeTests
 {
+    [TestMethod]
+    public void NativeSectionProfileReaderIsLocalBoundedAndStrict()
+    {
+        var folder=Path.Combine(Path.GetTempPath(),"TsekSheet-profile-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(folder);
+        var path=Path.Combine(folder,"artificial.json");
+        try
+        {
+            var text=TsekSheet.TestFixtures.SectionReviewFixture.ProfileJson;File.WriteAllText(path,text);Assert.AreEqual(text,MainWindow.ReadSectionProfile(path));
+            File.WriteAllText(path,text[..^1]+",\"approved\":true}");Assert.ThrowsExactly<TsekSheet.Application.Workbooks.WorkbookException>(()=>MainWindow.ReadSectionProfile(path));
+            File.WriteAllText(path,new string(' ',65537));Assert.ThrowsExactly<TsekSheet.Application.Workbooks.WorkbookException>(()=>MainWindow.ReadSectionProfile(path));
+            Assert.ThrowsExactly<TsekSheet.Application.Workbooks.WorkbookException>(()=>MainWindow.ReadSectionProfile(@"\\server\share\profile.json"));
+        }
+        finally{File.Delete(path);Directory.Delete(folder);}
+    }
+    [TestMethod, TestCategory("WindowsSmoke")]
+    public Task SectionReviewUsesActualReactBridgeSupportsNavigationRetractionAndCleanup() => OnDesktop(async () =>
+    {
+        using var fixture = new TsekSheet.TestFixtures.SectionReviewFixture();
+        string Hash()=>Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(fixture.Path)));var hash=Hash();
+        var profile=Path.Combine(Path.GetTempPath(),"TsekSheet-smoke",Guid.NewGuid().ToString("N"));Profiles.Add(profile);
+        bool allowClose=false;int closeWarnings=0;
+        var window=new MainWindow(null,profile,null,_=>Task.FromResult<string?>(fixture.Path),confirmDiscard:()=>{closeWarnings++;return allowClose;},sectionProfileSelector:_=>Task.FromResult<string?>(TsekSheet.TestFixtures.SectionReviewFixture.ProfileJson)){ShowInTaskbar=false};
+        try
+        {
+            window.Show();var web=(WebView2)window.FindName("FrontendWebView");
+            async Task Click(string label){await Until(async()=>await web.ExecuteScriptAsync($"Array.from(document.querySelectorAll('button')).some(b=>b.textContent==={JsonSerializer.Serialize(label)}&&!b.disabled)")=="true","Button unavailable: "+label);_=await web.ExecuteScriptAsync($"Array.from(document.querySelectorAll('button')).find(b=>b.textContent==={JsonSerializer.Serialize(label)}).click()");}
+            async Task Input(string label,string value)=>_=await web.ExecuteScriptAsync($"(()=>{{const el=document.querySelector('[aria-label={JsonSerializer.Serialize(label)}]');Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype,'value').set.call(el,{JsonSerializer.Serialize(value)});el.dispatchEvent(new Event('input',{{bubbles:true}}));}})()");
+            async Task Select(string label,string value)=>_=await web.ExecuteScriptAsync($"(()=>{{const el=document.querySelector('select[aria-label={JsonSerializer.Serialize(label)}]');el.value={JsonSerializer.Serialize(value)};el.dispatchEvent(new Event('change',{{bubbles:true}}));}})()");
+            await Until(async()=>web.CoreWebView2!=null&&await web.ExecuteScriptAsync("document.querySelector('[role=status]')?.textContent")=="\"Connected\"","Host did not connect");
+            await Click("Inspect workbook read-only");await Until(async()=>await web.ExecuteScriptAsync("!!document.querySelector('[aria-label=\"Read-only section review\"]') && !!document.querySelector('button[aria-label=\"Inspect C1\"]') && !document.querySelector('button[aria-label=\"Inspect C1\"]').disabled")=="true","Review entry missing");
+            await Input("Go To Cell","C25");await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Go To Cell\"]').form.requestSubmit()");
+            await Until(async()=>await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Read-only cell details\"]')?.textContent.includes('Inspect C25')")=="true","Direct cell navigation failed");
+            await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Worksheet viewport\"]').dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}))");
+            Assert.AreEqual("true",await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Read-only cell details\"]').textContent.includes('Inspect C26')"));
+            await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Worksheet viewport\"]').scrollTo(0,0)");
+            await Until(async()=>await web.ExecuteScriptAsync("!!document.querySelector('button[aria-label=\"Inspect A1\"]')&&!document.querySelector('button[aria-label=\"Inspect A1\"]').disabled")=="true","Scrollbar navigation failed");
+            Assert.AreEqual("true",await web.ExecuteScriptAsync("(()=>{const v=document.querySelector('[aria-label=\"Worksheet viewport\"]');return getComputedStyle(v).overflowX==='scroll'&&getComputedStyle(v).overflowY==='scroll'&&v.scrollHeight>v.clientHeight;})()"));
+            await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Worksheet viewport\"]').scrollIntoView({block:'start'})");
+            using(var navigationScreenshot=File.Create(Path.Combine(AppContext.BaseDirectory,"step56-navigation.png")))await web.CoreWebView2.CapturePreviewAsync(Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png,navigationScreenshot);
+            await Click("Select profile and start review");await Until(async()=>await web.ExecuteScriptAsync("!!document.querySelector('[aria-label=\"Identity case\"]')")=="true","Review profile did not load");
+            await Click("Missing Vendors");await Click("Review identity row 5");await Until(async()=>await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Read-only cell details\"]')?.textContent.includes('Inspect A5')")=="true","Row navigation failed");
+            await Input("Identity evidence row","4");await Select("Evidence column","3");await Input("Review reason","Artificial vendor evidence checked");await Click("Confirm read-only assertion");
+            await Until(async()=>await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Identity case\"]').textContent.includes('Reviewer-confirmed identity')")=="true","Supplemental identity not displayed");
+            await Click("Review History");await Click("Retract assertion row 5 identity");await Until(async()=>await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Identity case\"]').textContent.includes('Missing literal vendor identity')")=="true","Retraction did not restore missing identity");
+            await Click("Sections & Subtotals");await Click("Boundary north row 20");await Until(async()=>await web.ExecuteScriptAsync("!document.querySelector('[aria-label=\"Review reason\"]').disabled")=="true","Navigation remained busy");await Input("Review reason","Artificial final boundary reviewed");await Click("Confirm read-only assertion");
+            await Until(async()=>await web.ExecuteScriptAsync("document.body.textContent.includes('end: 20')")=="true","Boundary assertion not reflected");
+            await Click("Potential Duplicates");await Click("Inspect duplicate row 4 · section tools");await Until(async()=>await web.ExecuteScriptAsync("!document.querySelector('[aria-label=\"Review reason\"]').disabled")=="true","Duplicate navigation remained busy");await Input("Review reason","Warning inspected without uniqueness assertion");await Click("Confirm read-only assertion");
+            await Until(async()=>await web.ExecuteScriptAsync("document.body.textContent.includes('Warning reviewed; records retained')")=="true","Duplicate acknowledgment missing");
+            Assert.AreEqual("true",await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Save As').disabled && Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Create working copy').disabled && !document.querySelector('.cell-editor input') && document.body.textContent.includes('Structural insertion NOT authorized')"));
+            foreach(var width in new[]{390d,768d,1100d}){window.Width=width;await Task.Delay(100);Assert.AreEqual("true",await web.ExecuteScriptAsync("document.documentElement.scrollWidth<=document.documentElement.clientWidth"),"Review overflow at "+width);}
+            await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Read-only section review\"]').scrollIntoView({block:'start'})");
+            using(var screenshot=File.Create(Path.Combine(AppContext.BaseDirectory,"step56-section-review.png")))await web.CoreWebView2.CapturePreviewAsync(Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png,screenshot);
+            window.Close();Assert.IsTrue(window.IsVisible);Assert.AreEqual(1,closeWarnings,"Native window close must preserve decisions by default");
+            await Click("Close section review");await Until(async()=>await web.ExecuteScriptAsync("!!document.querySelector('[role=alertdialog]')")=="true","Discard confirmation missing");
+            Assert.AreEqual("true",await web.ExecuteScriptAsync("document.querySelector('[role=alertdialog]').textContent.includes('2 in-memory review decisions') && document.activeElement.textContent==='Continue Reviewing'"));
+            await Click("Continue Reviewing");Assert.AreEqual("true",await web.ExecuteScriptAsync("!!document.querySelector('[aria-label=\"Identity case\"]')"));
+            await Click("Select profile and start review");await Click("Continue Reviewing");
+            await Click("Inspect workbook read-only");await Click("Continue Reviewing");
+            await Click("Close workbook");await Click("Continue Reviewing");
+            var otherSheet=JsonSerializer.Deserialize<string>(await web.ExecuteScriptAsync("document.querySelector('select[aria-label=Worksheet]').options[1].value"))!;
+            await Select("Worksheet",otherSheet);await Click("Continue Reviewing");
+            Assert.AreEqual("true",await web.ExecuteScriptAsync("!!document.querySelector('[aria-label=\"Identity case\"]')"));
+            await Click("Close section review");await Click("Discard & Close");await Until(async()=>await web.ExecuteScriptAsync("!document.querySelector('[aria-label=\"Identity case\"]')")=="true","Review cleanup failed");
+            await Click("Select profile and start review");await Until(async()=>await web.ExecuteScriptAsync("!!document.querySelector('[aria-label=\"Identity case\"]') && document.body.textContent.includes('review revision 0')")=="true","Fresh review retained assertions");
+            await Click("Unassigned Rows");await Input("Review reason","Artificial investigation before sheet switch");await Click("Confirm read-only assertion");
+            await Until(async()=>await web.ExecuteScriptAsync("document.body.textContent.includes('review revision 1')")=="true","Investigation not recorded");
+            await Select("Worksheet",otherSheet);await Click("Discard & Close");
+            await Until(async()=>await web.ExecuteScriptAsync("!document.querySelector('[aria-label=\"Identity case\"]')")=="true","Sheet switch retained private review");
+        }
+        finally{allowClose=true;window.Close();}Assert.AreEqual(hash,Hash());
+    });
     [TestMethod, TestCategory("WindowsSmoke")]
     public Task ManualPayablesPlanningRequiresSectionChoiceAndNeverEnablesInsertion() => OnDesktop(async () =>
     {
@@ -79,6 +150,7 @@ public sealed class DesktopSmokeTests
             await Click("Inspect workbook read-only");
             await Until(async () => await web.ExecuteScriptAsync("document.querySelector('button[aria-label=\"Inspect A1\"]')?.textContent") == "\"1900-03-01\"", "Date display missing.");
             await Cell("A1"); Assert.AreEqual("true", await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Read-only cell details\"]').textContent.includes('Raw value: 61')"));
+            Assert.AreEqual("true", await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Read-only cell details\"]').textContent.includes('Source format ID: 14') && document.querySelector('[aria-label=\"Read-only cell details\"]').textContent.includes('Display classification: Qualified display subset')"));
             await Cell("B2"); Assert.AreEqual("true", await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Read-only cell details\"]').textContent.includes('A2+$A$1') && document.body.textContent.includes('Stored cached value (may be stale): 123')"));
             await Cell("C1"); Assert.AreEqual("true", await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Read-only cell details\"]').textContent.includes('Unsupported')"));
             await web.ExecuteScriptAsync("(()=>{const s=document.querySelector('select[aria-label=Worksheet]');s.value=s.options[1].value;s.dispatchEvent(new Event('change',{bubbles:true}));})()");
@@ -86,7 +158,7 @@ public sealed class DesktopSmokeTests
             await web.ExecuteScriptAsync("(()=>{const el=document.querySelector('input[aria-label=\"Inspection start row\"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,'900000');el.dispatchEvent(new Event('input',{bubbles:true}));})()");
             await Until(async () => await web.ExecuteScriptAsync("document.querySelector('button[aria-label=\"Inspect A900000\"]')?.textContent") == "\"1900-03-01\"", "Distant row missing.");
             await Cell("A900000");
-            Assert.AreEqual("true", await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Save As').disabled && Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Create working copy').disabled && !document.querySelector('.workflow-panel') && document.querySelector('header img').naturalWidth>0 && document.body.textContent.includes('No pending changes')"));
+            Assert.AreEqual("true", await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Save As').disabled && Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Create working copy').disabled && !document.querySelector('#payables-title') && !!document.querySelector('.section-review') && document.querySelector('header img').naturalWidth>0 && document.body.textContent.includes('No pending changes')"));
             await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Read-only cell details\"]').scrollIntoView({block:'start'})");
             using (var capture = File.Create(Path.Combine(AppContext.BaseDirectory, "step47-interpretation.png"))) await web.CoreWebView2.CapturePreviewAsync(Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png, capture);
             await Click("Close workbook"); await Until(async () => await web.ExecuteScriptAsync("!document.querySelector('[aria-label=\"Worksheet viewport\"]')") == "true", "Close failed.");
@@ -109,7 +181,7 @@ public sealed class DesktopSmokeTests
             await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Inspect workbook read-only').click()");
             await Until(async () => await web.ExecuteScriptAsync("!!document.querySelector('[aria-label=\"Selected worksheet diagnostics\"]')") == "true", "Inspection viewport did not load.");
             Assert.AreEqual("true", await web.ExecuteScriptAsync("document.body.textContent.includes('Compatibility Report') && Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Create working copy').disabled && Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Save As').disabled"));
-            Assert.AreEqual("true", await web.ExecuteScriptAsync("!document.querySelector('.workflow-panel') && document.querySelector('header img').naturalWidth>0"));
+            Assert.AreEqual("true", await web.ExecuteScriptAsync("!document.querySelector('#payables-title') && !!document.querySelector('.section-review') && document.querySelector('header img').naturalWidth>0"));
             foreach (var width in new[] { 390d, 768d, 1100d }) { window.Width = width; await Task.Delay(100); Assert.AreEqual("true", await web.ExecuteScriptAsync("document.documentElement.scrollWidth<=document.documentElement.clientWidth")); }
             await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('summary')).find(s=>s.textContent.startsWith('Compatibility Report')).scrollIntoView({block:'start'})");
             using var capture = File.Create(Path.Combine(AppContext.BaseDirectory, "step46-compatibility.png"));
@@ -129,7 +201,7 @@ public sealed class DesktopSmokeTests
         try
         {
             window.Show();var web=(WebView2)window.FindName("FrontendWebView");
-            async Task Click(string label)=>_=await web.ExecuteScriptAsync($"Array.from(document.querySelectorAll('button')).find(b=>b.textContent==={JsonSerializer.Serialize(label)}).click()");
+            async Task Click(string label){await Until(async()=>await web.ExecuteScriptAsync($"Array.from(document.querySelectorAll('button')).some(b=>b.textContent==={JsonSerializer.Serialize(label)}&&!b.disabled)")=="true","Button unavailable: "+label);_=await web.ExecuteScriptAsync($"Array.from(document.querySelectorAll('button')).find(b=>b.textContent==={JsonSerializer.Serialize(label)}).click()");}
             await Until(async()=>web.CoreWebView2!=null&&await web.ExecuteScriptAsync("document.querySelector('[role=status]')?.textContent")=="\"Connected\"","Host did not connect.");
             await Click("Open workbook");await Until(async()=>await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Create working copy')?.disabled===false")=="true","Copy not ready.");
             await Until(async()=>await web.ExecuteScriptAsync("(()=>{const b=Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Create working copy');if(!b||b.disabled||!document.querySelector('[aria-label=\"Worksheet viewport\"]'))return false;b.click();return true;})()") == "true", "Working-copy button/viewport never became ready.");await Until(async()=>await web.ExecuteScriptAsync("document.querySelector('select[aria-label=\"Workbook view\"]')?.value!=='original' && !!document.querySelector('select[aria-label=\"Workflow profile\"] option[value=\"synthetic-payables\"]')")=="true","Copy/profile unavailable.");

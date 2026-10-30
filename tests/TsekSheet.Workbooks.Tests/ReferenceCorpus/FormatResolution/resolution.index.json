@@ -1,0 +1,312 @@
+{
+  "schemaVersion": 1,
+  "fixtureKind": "step54-artificial-format-resolution",
+  "generatorSha256": "8A6A407A3E9D1BB3517914232099DA0537291CE328333E490ED5F13989838019",
+  "procedureSha256": "F3CC15F70E06F62C3031AC3A162B35B3EBDC9C2EBD110454D37F7C95FF322032",
+  "cases": [
+    {
+      "spec": {
+        "id": "builtin-two",
+        "formatId": 2,
+        "code": null,
+        "raw": "2468.5",
+        "expectedDisplay": "2468.50",
+        "parent": 0,
+        "baseFormat": 0,
+        "apply": null,
+        "duplicateCode": null,
+        "missing": false
+      },
+      "inputFile": "builtin-two.input.xlsx",
+      "inputSha256": "6AF329B32835E934C5A94C879C83F5CC1910BD45E20CE5C2412BBC90CE884B8B"
+    },
+    {
+      "spec": {
+        "id": "low-two-agreement",
+        "formatId": 2,
+        "code": "0.00",
+        "raw": "2468.5",
+        "expectedDisplay": "2468.50",
+        "parent": 0,
+        "baseFormat": 0,
+        "apply": null,
+        "duplicateCode": null,
+        "missing": false
+      },
+      "inputFile": "low-two-agreement.input.xlsx",
+      "inputSha256": "B09511AF56E9C24CD75080F68181CB4367280B749CF33269D707E64AFEA5A88B"
+    },
+    {
+      "spec": {
+        "id": "low-two-conflict",
+        "formatId": 2,
+        "code": "0.000",
+        "raw": "2468.5",
+        "expectedDisplay": null,
+        "parent": 0,
+        "baseFormat": 0,
+        "apply": null,
+        "duplicateCode": null,
+        "missing": false
+      },
+      "inputFile": "low-two-conflict.input.xlsx",
+      "inputSha256": "D97F061287E11E912CF4DEB08BDB5501030866E946DA1726F9982B82CD12AFD8"
+    },
+    {
+      "spec": {
+        "id": "low-forty-three",
+        "formatId": 43,
+        "code": "0.00",
+        "raw": "2468.5",
+        "expectedDisplay": null,
+        "parent": 0,
+        "baseFormat": 0,
+        "apply": null,
+        "duplicateCode": null,
+        "missing": false
+      },
+      "inputFile": "low-forty-three.input.xlsx",
+      "inputSha256": "F73FA18DFD779C4B48520FE4A62C08CAB07545E6BC8F560543C35583C80C9B73"
+    },
+    {
+      "spec": {
+        "id": "custom-accounting",
+        "formatId": 164,
+        "code": "#,##0.00;(#,##0.00)",
+        "raw": "-2468.5",
+        "expectedDisplay": "(2,468.50)",
+        "parent": 0,
+        "baseFormat": 0,
+        "apply": null,
+        "duplicateCode": null,
+        "missing": false
+      },
+      "inputFile": "custom-accounting.input.xlsx",
+      "inputSha256": "528046C6002F24F380F9FC24527A134EA09E1E284515A6FC3307ADB4B16DD44A"
+    },
+    {
+      "spec": {
+        "id": "custom-currency",
+        "formatId": 164,
+        "code": "\u0022$\u0022#,##0.00",
+        "raw": "2468.5",
+        "expectedDisplay": "$2,468.50",
+        "parent": 0,
+        "baseFormat": 0,
+        "apply": null,
+        "duplicateCode": null,
+        "missing": false
+      },
+      "inputFile": "custom-currency.input.xlsx",
+      "inputSha256": "EA81C9B24DDAFB9E6014944E429F2B3A3EF77062B839811D4A25453CEEC7462B"
+    },
+    {
+      "spec": {
+        "id": "custom-percent",
+        "formatId": 165,
+        "code": "0.00%",
+        "raw": "0.125",
+        "expectedDisplay": "12.50%",
+        "parent": 0,
+        "baseFormat": 0,
+        "apply": null,
+        "duplicateCode": null,
+        "missing": false
+      },
+      "inputFile": "custom-percent.input.xlsx",
+      "inputSha256": "CFAE9B6268F3A3628CE29B742413E8E901D3E88BACD35B8C6EF2AEFE6FFB6F5D"
+    },
+    {
+      "spec": {
+        "id": "custom-date",
+        "formatId": 164,
+        "code": "yyyy-mm-dd",
+        "raw": "61",
+        "expectedDisplay": "1900-03-01",
+        "parent": 0,
+        "baseFormat": 0,
+        "apply": null,
+        "duplicateCode": null,
+        "missing": false
+      },
+      "inputFile": "custom-date.input.xlsx",
+      "inputSha256": "EB8D9C3B86C1B70365D653FAC50ED5F7370918026EB747FE63DA31CDBB06DB70"
+    },
+    {
+      "spec": {
+        "id": "custom-time",
+        "formatId": 164,
+        "code": "hh:mm:ss",
+        "raw": "0.25",
+        "expectedDisplay": "06:00:00",
+        "parent": 0,
+        "baseFormat": 0,
+        "apply": null,
+        "duplicateCode": null,
+        "missing": false
+      },
+      "inputFile": "custom-time.input.xlsx",
+      "inputSha256": "1711E24C5E77DC3355E743B2093998B34D91C7903FFE5ABDD2AB5CED7FF3CB71"
+    },
+    {
+      "spec": {
+        "id": "inherit-agreement",
+        "formatId": 164,
+        "code": "0.00",
+        "raw": "2468.5",
+        "expectedDisplay": "2468.50",
+        "parent": 1,
+        "baseFormat": 164,
+        "apply": null,
+        "duplicateCode": null,
+        "missing": false
+      },
+      "inputFile": "inherit-agreement.input.xlsx",
+      "inputSha256": "500AB16910EE447842CAF8A03942F27167A249A233F39B2413EC5E87941830B1"
+    },
+    {
+      "spec": {
+        "id": "inherit-disabled-agreement",
+        "formatId": 164,
+        "code": "0.00",
+        "raw": "2468.5",
+        "expectedDisplay": "2468.50",
+        "parent": 1,
+        "baseFormat": 164,
+        "apply": "0",
+        "duplicateCode": null,
+        "missing": false
+      },
+      "inputFile": "inherit-disabled-agreement.input.xlsx",
+      "inputSha256": "D00492CF1D9237FDC8FE4C8ABE932E0F3C7C6517DDE597056C4D849FAEE74043"
+    },
+    {
+      "spec": {
+        "id": "inherit-conflict",
+        "formatId": 164,
+        "code": "0.00",
+        "raw": "2468.5",
+        "expectedDisplay": null,
+        "parent": 1,
+        "baseFormat": 0,
+        "apply": "0",
+        "duplicateCode": null,
+        "missing": false
+      },
+      "inputFile": "inherit-conflict.input.xlsx",
+      "inputSha256": "86E8E0307C15416651A51FAEED23EE66D7F4A70E71F41DA662472B20011A6AFE"
+    },
+    {
+      "spec": {
+        "id": "explicit-override",
+        "formatId": 164,
+        "code": "0.00",
+        "raw": "2468.5",
+        "expectedDisplay": "2468.50",
+        "parent": 1,
+        "baseFormat": 0,
+        "apply": "1",
+        "duplicateCode": null,
+        "missing": false
+      },
+      "inputFile": "explicit-override.input.xlsx",
+      "inputSha256": "9854D8F4E3CD37629858EBEC6D5F983258CD4C6E694465113BB495B65416DB42"
+    },
+    {
+      "spec": {
+        "id": "missing-parent",
+        "formatId": 164,
+        "code": "0.00",
+        "raw": "2468.5",
+        "expectedDisplay": null,
+        "parent": 9,
+        "baseFormat": 0,
+        "apply": "1",
+        "duplicateCode": null,
+        "missing": false
+      },
+      "inputFile": "missing-parent.input.xlsx",
+      "inputSha256": "6E38DD72E89AD5143F1F528C944196F183F46C1C2BCE8BCAF55C3BFD35A3D815"
+    },
+    {
+      "spec": {
+        "id": "missing-custom",
+        "formatId": 200,
+        "code": null,
+        "raw": "2468.5",
+        "expectedDisplay": null,
+        "parent": 0,
+        "baseFormat": 0,
+        "apply": null,
+        "duplicateCode": null,
+        "missing": true
+      },
+      "inputFile": "missing-custom.input.xlsx",
+      "inputSha256": "7CBCB137820DCD7A2F317FEE844F4210C6D7BEE245D075F8FFEAB7370CB9C23D"
+    },
+    {
+      "spec": {
+        "id": "duplicate-same",
+        "formatId": 164,
+        "code": "0.00",
+        "raw": "2468.5",
+        "expectedDisplay": null,
+        "parent": 0,
+        "baseFormat": 0,
+        "apply": null,
+        "duplicateCode": "0.00",
+        "missing": false
+      },
+      "inputFile": "duplicate-same.input.xlsx",
+      "inputSha256": "190989AD13C329E52BF6B175EF2EA37592EE8556995561665C9A985B2DBE33B0"
+    },
+    {
+      "spec": {
+        "id": "duplicate-conflict",
+        "formatId": 164,
+        "code": "0.00",
+        "raw": "2468.5",
+        "expectedDisplay": null,
+        "parent": 0,
+        "baseFormat": 0,
+        "apply": null,
+        "duplicateCode": "0.000",
+        "missing": false
+      },
+      "inputFile": "duplicate-conflict.input.xlsx",
+      "inputSha256": "A50823E4E637371FC6C1323E5C302F335406E3E67D6CDB224A46A5D6877934AB"
+    },
+    {
+      "spec": {
+        "id": "locale-expression",
+        "formatId": 164,
+        "code": "[$-409]0.00",
+        "raw": "2468.5",
+        "expectedDisplay": null,
+        "parent": 0,
+        "baseFormat": 0,
+        "apply": null,
+        "duplicateCode": null,
+        "missing": false
+      },
+      "inputFile": "locale-expression.input.xlsx",
+      "inputSha256": "925CFDF1E103B990F14C6A4683A710561115A11E29758C487889503E237B3B99"
+    },
+    {
+      "spec": {
+        "id": "over-precision",
+        "formatId": 164,
+        "code": "0.00",
+        "raw": "1.234567890123456",
+        "expectedDisplay": null,
+        "parent": 0,
+        "baseFormat": 0,
+        "apply": null,
+        "duplicateCode": null,
+        "missing": false
+      },
+      "inputFile": "over-precision.input.xlsx",
+      "inputSha256": "0D2B303220823BE250F1D38E73429157FCAA950BEEFCCE4BAA9E1941397DDD5C"
+    }
+  ]
+}

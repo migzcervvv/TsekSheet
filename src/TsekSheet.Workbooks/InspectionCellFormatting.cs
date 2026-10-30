@@ -3,21 +3,23 @@ using TsekSheet.Application.Workbooks;
 
 namespace TsekSheet.Workbooks;
 
-internal sealed record InspectionNumberFormat(int Id, string Code, string Warning = "");
+internal sealed record InspectionNumberFormat(int Id, string Code, string Warning = "", string Classification = "Format candidate",
+    int? EffectiveId = null, string Resolution = "Direct cell number format");
 
 internal static class InspectionCellFormatting
 {
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
     internal static CellInterpretation Interpret(string raw, string kind, InspectionNumberFormat format, bool date1904, bool truncated, string formulaStatus)
     {
-        CellInterpretation Result(string display, string type, string confidence, string warning = "") => new(raw, display, type, confidence, warning, formulaStatus);
-        CellInterpretation Unsupported(string warning) => Result(raw, kind, "Unsupported", warning);
-        if (truncated) return Unsupported("Stored text is truncated; no numeric interpretation attempted.");
+        CellInterpretation Result(string display, string type, string confidence, string warning = "", string classification = "") => new(raw, display, type, confidence, warning, formulaStatus,
+            classification.Length > 0 ? classification : confidence == "Supported subset" ? "Qualified display subset" : confidence == "Stored" ? "Raw stored value" : format.Classification, format.Resolution);
+        CellInterpretation Unsupported(string warning, string classification = "Unsupported format") => Result(raw, kind, "Unsupported", warning, classification);
+        if (truncated) return Unsupported("Stored text is truncated; no numeric interpretation attempted.", "Truncated value");
         if (kind != "Number" || raw.Length == 0) return Result(raw, kind, "Stored");
-        if (format.Warning.Length > 0) return Unsupported(format.Warning);
+        if (format.Warning.Length > 0) return Unsupported(format.Warning, format.Classification);
         var interpretedCode = UnescapeObservedLiterals(format.Code);
         var code = interpretedCode.ToLowerInvariant();
-        var mode = format.Id switch { >= 14 and <= 17 => "Date", >= 18 and <= 21 => "Time", 22 => "DateTime", _ => "" };
+        var mode = (format.EffectiveId ?? format.Id) switch { >= 14 and <= 17 => "Date", >= 18 and <= 21 => "Time", 22 => "DateTime", _ => "" };
         if (mode == "") mode = code switch
         {
             "yyyy-mm-dd" or "yyyy/mm/dd" or "dd/mm/yyyy" or "mm/dd/yyyy" or "d/m/yyyy" or "m/d/yyyy" or "dd-mmm-yyyy" => "Date",
@@ -29,7 +31,7 @@ internal static class InspectionCellFormatting
         if (mode == "")
         {
             if (number.ToString("G29", Invariant).TrimStart('-').Replace(".", "").TrimStart('0').TrimEnd('0').Length > 15)
-                return Unsupported("More than 15 significant stored digits; native display rounding is ambiguous. Raw value retained.");
+                return Unsupported("More than 15 significant stored digits; native display rounding is ambiguous. Raw value retained.", "Over-precision value");
             if (Accounting(number, interpretedCode, out var display)) return Result(display, "Number", "Supported subset", "Invariant accounting subset; native reference coverage is limited. Raw precision retained separately.");
             return Unsupported("Number format is outside the explicit display subset; raw value retained.");
         }

@@ -1,5 +1,47 @@
 # TsekSheet Implementation Roadmap
 
+## Step 56 implementation plan
+
+Result: [420 solution tests and 52 frontend tests pass](docs/development/step56-verification.md). Review loss requires default-preserving confirmation; bounded scroll/keyboard/A1 navigation and focused categories are implemented. Four actual tabs trim formatting-only tails to 20 columns; distant value/formula evidence keeps the third tab wide. Private source and all 126 fixture/logo/lock fingerprints are unchanged. Full safety harnesses and self-contained Windows publish pass. Accounting-owner acceptance remains outstanding; inspection mutation/export stays disabled and Phase 2 remains incomplete.
+
+Preserve the dirty Step 51–55 baseline and every existing mutation restriction. Add a default-preserving confirmation for memory-only review loss on close, replacement, worksheet/workbook changes and native window close. Keep disposal unconditional for resource safety.
+
+Use the existing bounded viewport bridge/cache for debounced, single-flight scrolling, direct A1 navigation and keyboard movement. Retain selection and invalidate obsolete responses without eagerly loading sheets. Extend the existing complete, budgeted worksheet scan with conservative meaningful-content bounds, retaining hidden data, formulas, distant values and internal blanks; offer the full stored range explicitly. These display bounds never affect analysis or editing admission.
+
+Group Section Review into Overview, Sections & Subtotals, Missing Vendors, Potential Duplicates, Unassigned Rows and Review History. Keep decisions separate and retractable, preserve warnings and backend validation, and move technical detail into disclosures. Verify synthetic frontend/backend/native bridge paths, private source fingerprints and bounded qualification, established full checks and Windows publish. Record measurements, failures and limitations in step56-verification.md. No persistence, dependency changes, commit or push; Phase 2 remains incomplete.
+
+## Step 55 implementation plan
+
+Result: [416 solution tests pass](docs/development/step55-verification.md). The [memory-only Section Review panel](docs/development/payables-section-review.md) supports configured profiles, source-bound assertions, retraction and independent coverage. Private qualification retains 25 uncertain identities and 484 unassigned rows with zero fabricated human decisions; source and 126 fixture/logo/lock fingerprints are unchanged. Self-contained publish and existing safety suites pass. Step 56 should obtain actual accounting-owner review; insertion/export and Phase 2 remain unavailable/incomplete.
+
+Build an independent, in-memory read-only review service around one bounded inspection capture. Keep raw facts, configured profile, reviewer assertions and recomputed diagnostics separate. Bind every decision/retraction to the inspection/source/sheet/order/capture/profile/review revisions; validate source evidence and reanalyze the whole capture atomically. Never return insertion authority.
+
+Expose native profile selection and strict review bridge commands; add a focused React panel with source navigation, section/header/boundary assertions, missing-identity and duplicate queues, retraction and independent before/after coverage. Release review state on cancellation, sheet/source switch and disposal. Preserve all existing editing/commit guards.
+
+Validate with artificial domain, workspace, bridge, frontend and real WebView2 tests, then qualify the authorized ignored duplicate without manufacturing human approvals. Run established regressions/publish, compare source/assets/fixture/lock fingerprints, audit privacy and document measured limits and remaining accounting questions.
+
+## Step 54 implementation plan
+
+Result: [401 .NET tests pass](docs/development/step54-verification.md), with ten qualified exact native format-resolution controls and nine explicit rejections. Actual numeric qualification considers all 23,452 cells but certifies only 21 displays. A separate bounded capture and hierarchical/identity analyzer recognizes both headers and rejects incomplete real coverage without hiding the 25 missing vendors. Source fingerprints and all mutation gates are unchanged. [Step 55](docs/development/read-only-payables-section-analysis.md) should review the unresolved hierarchy/identities through a narrow interface and independently qualify useful additional display grammar; [separate reviewed output](docs/development/reviewed-payables-output-design.md) remains design-only.
+
+1. Preserve all prior work; validate and privately fingerprint only the authorized duplicate and ignored diagnostics. Recheck the toolchain and immutable reference/fixture/branding/lock fingerprints.
+2. Separate bounded stylesheet parsing from effective-format resolution. Keep globally malformed/budget-exceeded stylesheets raw; isolate duplicate, low-ID collision, missing and unresolved-inheritance cases. Preserve source/effective IDs, codes and precise reasons. Obtain independent literal/native synthetic controls before widening any accepted resolution.
+3. Add a separate read-only region-capture contract and pure configurable hierarchical section/identity analyzer in the application layer. Bind session/sheet/revision/profile and explicit scan coverage; include hidden rows, cancellation and budgets. Require explicit boundary rules, reject overlap/incomplete coverage and never infer blank vendors or emit actionable insertion plans.
+4. Expose conservative format details in the existing inspector and structured section diagnostics through the backend. Requalify the private workbook with an ignored profile/report; publish only technical aggregates. Document the proposed reviewed separate-output lifecycle without implementing export.
+5. Run focused negative/safety tests, synthetic native evidence comparisons, full locked restores/build/regressions/harnesses/publish/desktop verification and final source/privacy fingerprints. Record all failures and unexecuted checks. Keep Phase 2 incomplete and every mutation gate unchanged.
+
+## Step 53 actual workbook qualification
+
+The authorized duplicate is supplied and [read-only qualification is measured](docs/development/step53-verification.md), with an unchanged private fingerprint. Five tabs browse; 439,321 stored cells, extensive names/external links, opaque parts and advanced structures block safe editing. Fields/external subtotal are visible, but missing identities and incomplete section bounds keep planning partial. No source repair, editing-limit increase or mutation occurred. All 359 solution tests and existing harnesses pass. [Current strategy](docs/development/real-workbook-compatibility-strategy.md) recommends Step 54: narrow read-only style interpretation and explicit layout/identity diagnostics, followed by a reviewed separate-output design before any direct package editing proof. Phase 2 remains incomplete.
+
+## Step 52 portability repair and qualification gate
+
+Plan: preserve Step 51 work; identify source/evidence byte conventions; add narrow Git attributes and explicit preflighted remediation; verify LF/CRLF and actual fresh checkout behavior; restore native comparison eligibility from retained evidence only; run full regression/publish; retain real-file qualification as unexecuted if input is absent. Result: [359 solution tests, five portability tests and four fresh-checkout reference tests pass](docs/development/step52-verification.md), zero solution failures/skips. No authorized workbook was supplied, no mutation envelope changed, and the conditional compatibility strategy remains unqualified. Step 53 should finish actual workbook qualification. Phase 2 is incomplete.
+
+## Step 51 diagnostic readiness
+
+The authorized `local-test-workbooks/` directory is absent: real-workbook qualification is **UNEXECUTED**. Run existing non-private readiness checks, preserve all mutation gates, and document exact supply instructions and conditional preservation alternatives without adding synthetic features. [Verification](docs/development/step51-verification.md) records 357 passing solution tests, one provenance failure and one native-reference skip; [strategy](docs/development/real-workbook-compatibility-strategy.md) separates code rules from unknown real-file findings. Step 52 must finish the real-input gate and resolve checkout-sensitive provenance before selecting an editing architecture. Phase 2 remains incomplete.
+
 ## Step 50 plan
 
 Preserve the dirty 947ddea baseline and existing native evidence. Check only authorized ignored input paths. If absent, mark real qualification unexecuted. Capture an additional isolated synthetic precision corpus in native Excel, retain exact discrepancies, correct or explicitly reject proven display problems, then run the complete regression/publish and fingerprint checks. No mutation, cache, dependency or UI expansion.

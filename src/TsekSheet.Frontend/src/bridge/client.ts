@@ -10,16 +10,22 @@ export interface Progress { operationId: string; completed: number; total: numbe
 export class BridgeError extends Error { constructor(public readonly code: string, message: string) { super(message); } }
 export interface Worksheet { id: string; name: string; order: number; visibility: 'Visible' | 'Hidden' | 'VeryHidden'; lastRow: number; lastColumn: number }
 export interface CompatibilityReport { fileBytes: number; compressedPartBytes: number; expandedPartBytes: number; partCount: number; definedNames: number; relationships: number; externalLinks: boolean; categories: { category: string; count: number }[]; capabilities: { operation: string; allowed: boolean; reason: string }[]; countStatus: string }
-export interface WorksheetScan { declaredDimension: string; dimensionReliability: string; storedCells: number; nonemptyValues: number; formulas: number; styledCells: number; lastRow: number; lastColumn: number; potentialInflation: boolean; warnings: string[] }
+export interface WorksheetScan { declaredDimension: string; dimensionReliability: string; storedCells: number; nonemptyValues: number; formulas: number; styledCells: number; lastRow: number; lastColumn: number; potentialInflation: boolean; warnings: string[]; numericValues?: number; lastRowElement?: number; meaningfulLastRow?: number | null; meaningfulLastColumn?: number | null }
 export interface Workbook { compatibility?: CompatibilityReport | null; sessionId: string; parentSessionId: string | null; displayName: string; sourceSha256: string; revision: number; isDirty: boolean; editingAllowed: boolean; creator: string; title: string; worksheets: Worksheet[]; findings: { code: string; message: string }[] }
-export interface CellInterpretation { rawValue: string; displayValue: string; resolvedType: string; confidence: string; warning: string; formulaStatus: string }
-export interface Cell { interpretation?: CellInterpretation | null; row: number; column: number; value: string; kind: string; formula: string | null; truncated: boolean; format: { numberFormat: string; numberFormatId: number; bold: boolean; italic: boolean; fillColor: string } }
+export interface CellInterpretation { rawValue: string; displayValue: string; resolvedType: string; confidence: string; warning: string; formulaStatus: string; classification?: string; formatResolution?: string }
+export interface Cell { interpretation?: CellInterpretation | null; row: number; column: number; value: string; kind: string; formula: string | null; truncated: boolean; format: { numberFormat: string; numberFormatId: number; bold: boolean; italic: boolean; fillColor: string; effectiveNumberFormatId?: number | null; formatResolution?: string | null; formatClassification?: string | null } }
 export interface Viewport { scan?: WorksheetScan | null; sessionId: string; worksheetId: string; startRow: number; startColumn: number; rows: number; columns: number; cells: Cell[] }
 export interface WorkingCopy { sessionId: string; sourceWorksheetId: string; baseRevision: number; revision: number; isDirty: boolean; changeCount: number }
 export interface SaveReceipt { status: 'saved'; sessionId: string; savedRevision: number; sourceStillDirty: boolean; rebound: false; cancellationAfterCommit: boolean; destinationSha256: string; displayName: string }
 export interface MergePayload { sessionId: string; workingCopyId: string; worksheetId: string; expectedCopyRevision: number; expectedRevision: number; expectedBaseRevision: number }
 export interface MergePreview { destinationName: string; pendingCells: number; canApply: boolean; conflicts: { code: string; message: string }[] }
+import {validSectionReview} from './sectionReview';
+import type {ReviewSnapshot, ReviewBinding, ReviewDecision} from './sectionReview';
 interface Results {
+  'sectionReview.start': {status:'started'|'cancelled';review:ReviewSnapshot|null};
+  'sectionReview.decide': ReviewSnapshot;
+  'sectionReview.retract': ReviewSnapshot;
+  'sectionReview.cancel': {status:'cancelled'};
   'workflow.profiles': { profiles: WorkflowProfile[] };
   'workbook.planRecords': WorkflowPlan;
   'workbook.generateCandidate': CandidateReview;
@@ -42,6 +48,10 @@ interface Results {
   'workbook.merge': { workbook: Workbook; appliedCells: number };
 }
 interface Payloads {
+  'sectionReview.start': {sessionId:string;worksheetId:string;expectedRevision:number};
+  'sectionReview.decide': {binding:ReviewBinding;decision:ReviewDecision};
+  'sectionReview.retract': {binding:ReviewBinding;decisionId:string};
+  'sectionReview.cancel': {sessionId:string;worksheetId:string};
   'workflow.profiles': Record<string, never>;
   'workbook.planRecords': WorkflowRequest;
   'workbook.generateCandidate': WorkflowRequest & {destinationSessionId:string; expectedDestinationRevision:number};
@@ -80,6 +90,10 @@ function validCompatibility(v: unknown): v is CompatibilityReport {
 }
 function validScan(v: unknown): boolean {
   return object(v) && text(v.declaredDimension) && text(v.dimensionReliability) && ['storedCells', 'nonemptyValues', 'formulas', 'styledCells'].every(k => integer(v[k], 0, 2000000))
+    && (v.numericValues == null || integer(v.numericValues, 0, 2000000))
+    && (v.meaningfulLastRow == null || integer(v.meaningfulLastRow, 0, 1048576))
+    && (v.meaningfulLastColumn == null || integer(v.meaningfulLastColumn, 0, 16384))
+    && (v.lastRowElement == null || integer(v.lastRowElement, 0, 1048576))
     && integer(v.lastRow, 0, 1048576) && integer(v.lastColumn, 0, 16384) && typeof v.potentialInflation === 'boolean' && Array.isArray(v.warnings) && v.warnings.length <= 16 && v.warnings.every(content);
 }
 function validWorkbook(v: unknown): v is Workbook {
@@ -98,12 +112,19 @@ function validViewport(v: ObjectValue): boolean {
   return v.cells.every((c: unknown) => {
     if (!object(c) || !integer(c.row, v.startRow as number, (v.startRow as number) + (v.rows as number) - 1) || !integer(c.column, v.startColumn as number, (v.startColumn as number) + (v.columns as number) - 1) || !content(c.value) || !text(c.kind) || !(c.formula === null || content(c.formula)) || typeof c.truncated !== 'boolean' || !object(c.format) || !content(c.format.numberFormat) || !integer(c.format.numberFormatId, -1, 2147483647) || typeof c.format.bold !== 'boolean' || typeof c.format.italic !== 'boolean' || typeof c.format.fillColor !== 'string' || !/^(?:[a-f\d]{8})?$/i.test(c.format.fillColor)) return false;
     if (c.interpretation != null && (!object(c.interpretation) || !['rawValue', 'displayValue', 'resolvedType', 'confidence', 'warning', 'formulaStatus'].every(k => content((c.interpretation as ObjectValue)[k])))) return false;
+    const format = c.format;
+    if (format.effectiveNumberFormatId != null && !integer(format.effectiveNumberFormatId, 0, 2147483647)) return false;
+    if (['formatResolution', 'formatClassification'].some(k => format[k] != null && !content(format[k]))) return false;
+    if (c.interpretation != null && ['classification', 'formatResolution'].some(k => (c.interpretation as ObjectValue)[k] != null && !content((c.interpretation as ObjectValue)[k]))) return false;
     const key = `${c.row}:${c.column}`; if (keys.has(key) || c.row !== (v.startRow as number) + Math.floor(keys.size / (v.columns as number)) || c.column !== (v.startColumn as number) + keys.size % (v.columns as number)) return false; keys.add(key); return true;
   });
 }
 function validResult(command: Command, r: unknown): boolean {
   if (!object(r)) return false;
   switch (command) {
+    case 'sectionReview.start': return r.status==='cancelled'&&r.review===null || r.status==='started'&&validSectionReview(r.review);
+    case 'sectionReview.decide': case 'sectionReview.retract': return validSectionReview(r);
+    case 'sectionReview.cancel': return r.status==='cancelled';
     case 'workflow.profiles': return validProfiles(r);
     case 'workbook.planRecords': return validWorkflowPlan(r);
     case 'workbook.generateCandidate': case 'workbook.approveCandidate': return validCandidateReview(r);
@@ -145,7 +166,7 @@ export class BridgeClient {
     const promise = new Promise<Results[C]>((resolve, reject) => {
       if (this.disposed) { reject(new Error('Desktop connection closed.')); return; }
       if (this.pending.size >= 16) { reject(new Error('Too many pending requests.')); return; }
-      const timer = setTimeout(() => { this.pending.delete(id); reject(new Error('Desktop request timed out. Its outcome is unknown.')); }, command === 'foundation.selectFile' || command === 'workbook.open' || command === 'workbook.saveAsNew' ? 120000 : this.timeoutMs);
+      const timer = setTimeout(() => { this.pending.delete(id); reject(new Error('Desktop request timed out. Its outcome is unknown.')); }, command === 'foundation.selectFile' || command === 'workbook.open' || command === 'workbook.saveAsNew' || command === 'sectionReview.start' ? 120000 : this.timeoutMs);
       this.pending.set(id, { command, resolve: value => resolve(value as Results[C]), reject, timer });
       try { this.transport.postMessage({ protocolVersion: 1, requestId: id, command, payload }); }
       catch { this.finish(id); reject(new Error('Desktop connection is unavailable.')); }

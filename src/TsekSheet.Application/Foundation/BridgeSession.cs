@@ -31,6 +31,7 @@ public sealed class BridgeSession : IDisposable
     private bool ready, selecting, disposed;
     private readonly WorkbookWorkspace? workbooks;
     public bool HasPendingWorkbookChanges => workbooks?.HasPendingChanges == true;
+    public int ReviewDecisionCount => workbooks?.ReviewDecisionCount ?? 0;
 
     public BridgeSession(Action<string> send, Func<CancellationToken, Task<FileSelection>> selectFile,
         Func<int, CancellationToken, Task>? delay = null, WorkbookWorkspace? workbooks = null)
@@ -87,9 +88,33 @@ public sealed class BridgeSession : IDisposable
                 Success(id!, new { selectedVersion = 1, applicationName = new ApplicationMetadataService().ApplicationName, version = "0.1.0", capabilities = new { diagnostics = true, fileSelection = true, workbooks = workbooks != null, templates = false, ocr = false } });
                 return;
             }
-            if (command is not ("foundation.getInfo" or "foundation.selectFile" or "diagnostics.run" or "diagnostics.cancel" or "workbook.open" or "workbook.inspect" or "workbook.readViewport" or "workbook.close" or "workbook.discard" or "workbook.createCopy" or "workbook.editCopy" or "workbook.saveAsNew" or "workbook.previewMerge" or "workbook.merge" or "workflow.profiles" or "workbook.planRecords" or "workbook.generateCandidate" or "workbook.approveCandidate" or "workbook.cancelCandidate"))
+            if (command is not ("sectionReview.start" or "sectionReview.decide" or "sectionReview.retract" or "sectionReview.cancel" or "foundation.getInfo" or "foundation.selectFile" or "diagnostics.run" or "diagnostics.cancel" or "workbook.open" or "workbook.inspect" or "workbook.readViewport" or "workbook.close" or "workbook.discard" or "workbook.createCopy" or "workbook.editCopy" or "workbook.saveAsNew" or "workbook.previewMerge" or "workbook.merge" or "workflow.profiles" or "workbook.planRecords" or "workbook.generateCandidate" or "workbook.approveCandidate" or "workbook.cancelCandidate"))
             { Error(id!, "UNSUPPORTED_COMMAND", "Command is unavailable."); return; }
             if (!ready) { Error(id!, "NOT_READY", "Handshake is required."); return; }
+            if (command!.StartsWith("sectionReview.", StringComparison.Ordinal))
+            {
+                if (workbooks == null) { Error(id!, "UNSUPPORTED_COMMAND", "Workbook host required."); return; }
+                if (command is "sectionReview.start" or "sectionReview.cancel")
+                {
+                    var names = command == "sectionReview.start" ? new[] { "sessionId", "worksheetId", "expectedRevision" } : new[] { "sessionId", "worksheetId" };
+                    if (!HasOnly(payload, names) || !Guid.TryParseExact(payload.GetProperty("sessionId").GetString(), "D", out var sid)
+                        || !Guid.TryParseExact(payload.GetProperty("worksheetId").GetString(), "D", out var wid)) throw new JsonException();
+                    if (command == "sectionReview.cancel") { Success(id!, new { status = workbooks.CancelSectionReview(sid, wid) }); return; }
+                    if (!payload.GetProperty("expectedRevision").TryGetInt32(out var revision) || revision < 0) throw new JsonException();
+                    var review = await workbooks.StartSectionReviewAsync(sid, wid, revision);
+                    Success(id!, new { status = review == null ? "cancelled" : "started", review }); return;
+                }
+                if (!HasOnly(payload, command == "sectionReview.decide" ? ["binding", "decision"] : ["binding", "decisionId"])) throw new JsonException();
+                var b = payload.GetProperty("binding");
+                if (!HasOnly(b, "reviewId", "sessionId", "worksheetId", "worksheetOrder", "captureRevision", "sourceSha256", "profileVersion", "profileSha256", "reviewRevision")) throw new JsonException();
+                if (command == "sectionReview.decide")
+                {
+                    if (!HasOnly(payload.GetProperty("decision"), "id", "kind", "row", "sectionId", "value", "evidenceRow", "evidenceColumn", "reason")) throw new JsonException();
+                    Success(id!, await workbooks.DecideSectionAsync(JsonSerializer.Deserialize<SectionReviewRequest>(payload.GetRawText(), JsonOptions)!));
+                }
+                else Success(id!, await workbooks.RetractSectionAsync(JsonSerializer.Deserialize<SectionReviewRetraction>(payload.GetRawText(), JsonOptions)!));
+                return;
+            }
             if (command == "workflow.profiles")
             {
                 if (!HasOnly(payload) || workbooks == null) { Error(id!, "INVALID_REQUEST", "Workflow catalog accepts no paths or arguments and requires a workbook host."); return; }

@@ -1,5 +1,7 @@
 # Native accounting display fidelity
 
+Step 54 retains **19 new artificial native format-resolution observations** from Excel 16.0 build 20527: ten qualified exact literal/display matches and nine explicit inspector rejections. Inputs/outputs, generator/procedure/index fingerprints and exact checkout bytes are verified; no private workbook was automated. Conflicting low IDs, missing/ambiguous inheritance, duplicates, locale and over-precision remain conservative rejections despite native displays. Existing 42/24 precision and 26/4 earlier display counts remain unchanged. [Real requalification](step54-verification.md) finds only 21 qualified numeric displays (18 dates/3 plain numbers), with 3,703 General/raw and 19,728 unsupported values; no grouped accounting/currency/percentage amount display is certified by that private run. No broad Excel-fidelity claim follows from the stylesheet isolation fix.
+
 Step 50 adds 66 native precision observations: 42 exact matches and 24 explicit rejections. The stricter stored-precision policy changes the old corpus to 26 matches/four rejections without modifying its evidence. See [verification](step50-verification.md).
 
 Step 49 retains actual Microsoft Excel 16.0 build 20326 observations in `tests/TsekSheet.Workbooks.Tests/ReferenceCorpus/AccountingDisplay/`. These are artificial workbooks only. `capture.json` records literal expected Text, observed Text, Value2, NumberFormat, Formula, workbook date system, provenance and input/output SHA-256. Two output XLSX files bind the comparison to actual saved native bytes.

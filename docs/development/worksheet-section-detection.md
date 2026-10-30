@@ -1,5 +1,7 @@
 # Worksheet section detection
 
+Step 54's [separate read-only hierarchical analyzer](read-only-payables-section-analysis.md) supports explicit repeated-header aliases and different marker/entity columns, with complete capture evidence and non-actionable ambiguity reports. It does not replace or bypass this approved flat workflow detector. The actual private partition remains rejected; [verification](step54-verification.md) distinguishes full role capture from unverified accounting ownership.
+
 Step 43's internal structural experiment re-runs this complete selected-sheet detector during execution. It requires the same resolved section and original insertion boundary, plus a fresh revision/profile/source identity and exact reviewed plan. Different boundaries/sections in one batch reject. Read-only planning can still inspect complex fixtures that the structural envelope rejects. No generic coordinates, years or vendor names are hardcoded. See [oracle and supported envelope](structural-preservation-oracle.md).
 
 Step 42 supplies a bounded read-only detector and a pure section analyzer. It does not infer arbitrary Excel layouts or mutate a worksheet.

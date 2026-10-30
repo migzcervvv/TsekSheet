@@ -92,7 +92,7 @@ public sealed class WorkbookInspection(InspectionLimits? configured = null)
     }
 }
 
-internal sealed class InspectionSession : IWorkbookSession
+internal sealed class InspectionSession : IWorkbookSession, IInspectionAnalysisSession
 {
     private const string Main = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
     private const string Rel = "http://schemas.openxmlformats.org/package/2006/relationships";
@@ -230,6 +230,35 @@ internal sealed class InspectionSession : IWorkbookSession
     }
     public WorkbookInfo Info { get { lock (gate) { ObjectDisposedException.ThrowIf(disposed, this); return info; } } }
     public WorkingCopyInfo? WorkingCopy => null;
+    public InspectionRegion CaptureInspectionRegion(InspectionRegionRequest request, CancellationToken token = default)
+    {
+        lock (gate)
+        {
+            ObjectDisposedException.ThrowIf(disposed, this);
+            token.ThrowIfCancellationRequested();
+            if (request.SessionId != info.SessionId || request.ExpectedRevision != info.Revision || request.SourceSha256 != info.SourceSha256)
+                throw WorkbookInspection.Error("Stale inspection capture identity or source fingerprint.");
+            if (!sheetParts.TryGetValue(request.WorksheetId, out var part) || part == null) throw WorkbookInspection.Error("Unknown ordinary inspection worksheet.");
+            if (request.StartRow < 1 || request.EndRow < request.StartRow || request.EndRow > 1048576 || (long)request.EndRow - request.StartRow + 1 > 2000
+                || request.Columns == null || request.Columns.Count is < 1 or > 32 || request.Columns.Distinct().Count() != request.Columns.Count
+                || request.Columns.Any(c => c is < 1 or > 16384) || ((long)request.EndRow - request.StartRow + 1) * request.Columns.Count > 40000)
+                throw WorkbookInspection.Error("Inspection analysis capture exceeds its explicit 2000-row / 32-column / 40000-cell bounds.");
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, lifetime.Token);
+            var columns = request.Columns.Order().ToArray(); var hidden = new HashSet<int>();
+            var budget = new WorkbookInspection.Budget(limits, linked.Token);
+            try
+            {
+                var view = Scan(part, request.WorksheetId, request.StartRow, columns[0], request.EndRow - request.StartRow + 1, columns.Length, budget, columns.ToHashSet(), hidden);
+                var bytes = CacheSize(view);
+                if (bytes > 16 * 1024 * 1024) throw WorkbookInspection.Error("Inspection analysis capture exceeds the 16 MiB accounted payload bound.");
+                linked.Token.ThrowIfCancellationRequested();
+                return new(info.SessionId, request.WorksheetId, info.Revision, info.SourceSha256, request.StartRow, request.EndRow,
+                    Array.AsReadOnly(columns), view.Cells, view.Scan!, Array.AsReadOnly(hidden.Order().ToArray()), bytes);
+            }
+            catch (XmlException) { throw WorkbookInspection.Error("Analysis worksheet XML is malformed; metadata remains available."); }
+            catch (InvalidDataException) { throw WorkbookInspection.Error("Analysis worksheet compression is invalid; metadata remains available."); }
+        }
+    }
     public CellViewport ReadViewport(Guid worksheetId, int startRow, int startColumn, int rows, int columns)
     {
         lock (gate)
@@ -252,58 +281,47 @@ internal sealed class InspectionSession : IWorkbookSession
             catch (InvalidDataException) { throw WorkbookInspection.Error("Selected worksheet compression is invalid; metadata remains available."); }
         }
     }
-    private static long CacheSize(CellViewport view) => 4096L + view.Cells.Sum(c => 256L + 2L * (c.Value.Length + (c.Formula?.Length ?? 0) + c.Format.NumberFormat.Length + (c.Interpretation is { } i ? i.RawValue.Length + i.DisplayValue.Length + i.Warning.Length + i.FormulaStatus.Length : 0)));
+    private static long CellSize(CellInfo c) => 256L + 2L * (c.Value.Length + (c.Formula?.Length ?? 0) + c.Format.NumberFormat.Length
+        + (c.Format.FormatResolution?.Length ?? 0) + (c.Format.FormatClassification?.Length ?? 0)
+        + (c.Interpretation is { } i ? i.RawValue.Length + i.DisplayValue.Length + i.Warning.Length + i.FormulaStatus.Length + i.Classification.Length + i.FormatResolution.Length : 0));
+    private static long CacheSize(CellViewport view) => 4096L + view.Cells.Sum(CellSize);
     private InspectionNumberFormat Format(string? style, WorkbookInspection.Budget budget)
     {
         if (numberFormats == null)
         {
             try
             {
-                var codes = new Dictionary<int, string>(); var ids = new List<(int Id, bool Ambiguous)>();
+                numberFormats = [];
                 if (stylesPart != null)
                 {
                     using var reader = Reader(zip.GetEntry(stylesPart)!, Math.Min(limits.XmlBytes, 4 * 1024 * 1024), budget);
-                    bool inCells = false, inFormats = false; int xfs = 0;
-                    while (reader.Read())
-                    {
-                        budget.Node(reader);
-                        if (reader.NodeType == XmlNodeType.EndElement && reader.Depth == 1 && reader.LocalName == "cellXfs") inCells = false;
-                        if (reader.NodeType == XmlNodeType.EndElement && reader.Depth == 1 && reader.LocalName == "numFmts") inFormats = false;
-                        if (reader.NodeType != XmlNodeType.Element) continue;
-                        if (reader.Depth == 0 && (reader.LocalName != "styleSheet" || reader.NamespaceURI != Main)) throw WorkbookInspection.Error("Invalid stylesheet.");
-                        if (reader.NamespaceURI != Main) continue;
-                        if (reader.LocalName == "cellXfs") { if (reader.Depth != 1) throw WorkbookInspection.Error("Invalid cell style nesting."); inCells = !reader.IsEmptyElement; }
-                        if (reader.LocalName == "numFmts") inFormats = reader.Depth == 1 && !reader.IsEmptyElement;
-                        if (reader.LocalName == "numFmt")
-                        {
-                            if (!inFormats || reader.Depth != 2) throw WorkbookInspection.Error("Invalid number format nesting.");
-                            var code = reader.GetAttribute("formatCode") ?? "";
-                            if (codes.Count >= 1024 || code.Length > 256 || !int.TryParse(reader.GetAttribute("numFmtId"), out var n) || n < 164 || !codes.TryAdd(n, code)) throw WorkbookInspection.Error("Unsupported or excessive custom formats.");
-                        }
-                        if (reader.LocalName == "xf")
-                        {
-                            if (++xfs > 4096) throw WorkbookInspection.Error("Style record budget exceeded.");
-                            if (inCells) { if (reader.Depth != 2) throw WorkbookInspection.Error("Invalid style nesting."); var valid = int.TryParse(reader.GetAttribute("numFmtId"), out var n) && n >= 0; ids.Add((valid ? n : -1, !valid || reader.GetAttribute("applyNumberFormat") is "0" or "false" || reader.GetAttribute("xfId") is not (null or "0"))); }
-                        }
-                    }
+                    numberFormats = InspectionStyles.Read(reader, budget.Node);
                 }
-                numberFormats = ids.Select(i => new InspectionNumberFormat(i.Id, codes.GetValueOrDefault(i.Id) ?? (i.Id switch { 0 => "General", 1 => "0", 2 => "0.00", 3 => "#,##0", 4 => "#,##0.00", 9 => "0%", 10 => "0.00%", >= 14 and <= 22 => "Built-in date/time " + i.Id, _ => "Unsupported built-in " + i.Id }), i.Ambiguous ? "Inherited or disabled number format is ambiguous; raw value retained." : "")).ToArray();
             }
             catch (Exception ex) when (ex is WorkbookException or XmlException or InvalidDataException) { numberFormats = []; styleWarning = "Styles are malformed, ambiguous or over budget; raw values retained."; }
         }
-        if (styleWarning.Length > 0) return new(-1, "", styleWarning);
+        if (styleWarning.Length > 0) return new(-1, "", styleWarning, "Malformed or over-budget stylesheet", null, "Stylesheet-wide fallback");
         if (style == null && numberFormats.Count == 0) return new(0, "General");
-        if (!int.TryParse(style ?? "0", out var index) || index < 0 || index >= numberFormats.Count) return new(-1, "", "Missing or invalid cell style; raw value retained.");
+        if (!int.TryParse(style ?? "0", out var index) || index < 0 || index >= numberFormats.Count) return new(-1, "", "Missing or invalid cell style; raw value retained.", "Missing style reference");
         return numberFormats[index];
     }
-    private CellViewport Scan(string part, Guid id, int row, int column, int rows, int columns, WorkbookInspection.Budget budget)
+    private CellViewport Scan(string part, Guid id, int row, int column, int rows, int columns, WorkbookInspection.Budget budget,
+        IReadOnlySet<int>? roleColumns = null, ISet<int>? hiddenRows = null)
     {
         var found = new Dictionary<(int, int), CellInfo>(); var shared = new Dictionary<(int, int), int>(); var warnings = new HashSet<string>();
         var textBuffer = new char[1024];
+        long captureBytes = 4096L + 256L * rows * columns;
+        void Account(CellInfo next, CellInfo? previous = null)
+        {
+            if (roleColumns == null) return;
+            captureBytes += CellSize(next) - (previous == null ? 256L : CellSize(previous));
+            if (captureBytes > 16 * 1024 * 1024) throw WorkbookInspection.Error("Inspection analysis capture exceeds the 16 MiB accounted payload bound.");
+        }
         var groups = new InspectionSharedGroups(); var sharedFormulas = new Dictionary<(int, int), string?>();
         int previousRowElement = 0, currentRow = 0;
-        bool rowOpen = false, inSheetData = false;
-        long cells = 0, nonempty = 0, formulas = 0, styled = 0; int lastRow = 0, lastColumn = 0, valueRow = 0, valueColumn = 0, previousRow = 0, previousColumn = 0;
+        bool rowOpen = false, inSheetData = false, sheetDataSeen = false, rowHidden = false, inheritedRowFormat = false, unknownColumnDefaults = false;
+        var inheritedColumns = new List<(int First, int Last)>();
+        long cells = 0, nonempty = 0, formulas = 0, styled = 0, numericValues = 0; int lastRow = 0, lastColumn = 0, valueRow = 0, valueColumn = 0, previousRow = 0, previousColumn = 0;
         string dimension = "Not declared";
         using (var reader = Reader(zip.GetEntry(part)!, limits.XmlBytes, budget))
         {
@@ -315,7 +333,15 @@ internal sealed class InspectionSession : IWorkbookSession
                 if (reader.NodeType != XmlNodeType.Element) continue;
                 if (reader.Depth == 0 && (reader.LocalName != "worksheet" || reader.NamespaceURI != Main)) throw WorkbookInspection.Error("Requested part is not an ordinary worksheet.");
                 if (reader.NamespaceURI != Main) { if (warnings.Count < 12) warnings.Add("Unknown XML extension content is not rendered."); continue; }
-                if (reader.LocalName == "sheetData" && reader.Depth == 1) inSheetData = !reader.IsEmptyElement;
+                if (reader.LocalName == "sheetData" && reader.Depth == 1) { inSheetData = !reader.IsEmptyElement; sheetDataSeen = true; }
+                if (reader.LocalName == "col" && sheetDataSeen) throw WorkbookInspection.Error("Column formatting after worksheet data is outside the qualified inspection ordering.");
+                if (reader.LocalName == "col" && reader.GetAttribute("style") is { } columnStyle && columnStyle != "0")
+                {
+                    if (inheritedColumns.Count >= 16384) throw WorkbookInspection.Error("Column style interval budget exceeded.");
+                    if (reader.Depth != 2 || !int.TryParse(reader.GetAttribute("min"), out var firstCol) || !int.TryParse(reader.GetAttribute("max"), out var lastCol)
+                        || firstCol < 1 || lastCol < firstCol || lastCol > 16384) unknownColumnDefaults = true;
+                    else inheritedColumns.Add((firstCol, lastCol));
+                }
                 if (reader.LocalName == "row")
                 {
                     if (reader.Depth != 2 || !inSheetData) throw WorkbookInspection.Error("Malformed row nesting.");
@@ -323,16 +349,22 @@ internal sealed class InspectionSession : IWorkbookSession
                     var rowText = reader.GetAttribute("r"); currentRow = 0;
                     if (rowText != null) { if (!int.TryParse(rowText, out currentRow) || currentRow <= previousRowElement || currentRow > 1048576) throw WorkbookInspection.Error("Duplicate, malformed or out-of-order row elements."); previousRowElement = currentRow; }
                     else if (reader.IsEmptyElement && ++previousRowElement > 1048576) throw WorkbookInspection.Error("Inferred row exceeds worksheet bounds.");
+                    rowHidden = reader.GetAttribute("hidden") is "1" or "true";
+                    inheritedRowFormat = reader.GetAttribute("s") is { } rowStyle && rowStyle != "0";
+                    var hiddenRow = currentRow > 0 ? currentRow : reader.IsEmptyElement ? previousRowElement : 0;
+                    if (rowHidden && hiddenRow >= row && hiddenRow < row + rows) hiddenRows?.Add(hiddenRow);
                 }
                 if (reader.LocalName == "dimension") { dimension = reader.GetAttribute("ref") ?? "Not declared"; if (dimension.Length > 64) throw WorkbookInspection.Error("Invalid dimension declaration."); }
                 if (reader.LocalName is "drawing" or "oleObjects" or "controls" or "mergeCells" or "tableParts" or "extLst") warnings.Add("Drawings, objects, merges, tables and extensions are not rendered.");
+                if (reader.LocalName == "conditionalFormatting") warnings.Add("Conditional formatting is not evaluated; interpretations use only qualified base number formats.");
                 if (reader.LocalName != "c") continue;
                 if (reader.Depth != 3 || !rowOpen) throw WorkbookInspection.Error("Unexpected cell structure is outside the view prototype.");
                 if (++cells > limits.Cells) throw WorkbookInspection.Error($"Selected sheet exceeds {limits.Cells} stored cell elements; this view was stopped.");
                 var address = Address(reader.GetAttribute("r") ?? ""); var (r, col) = address;
                 if (currentRow == 0) { if (r <= previousRowElement) throw WorkbookInspection.Error("Out-of-order inferred row."); currentRow = previousRowElement = r; }
+                if (rowHidden && r >= row && r < row + rows) hiddenRows?.Add(r);
                 if (r != currentRow) throw WorkbookInspection.Error("Cell address disagrees with its row.");
-                var retain = r >= row && r < row + rows && col >= column && col < column + columns;
+                var retain = r >= row && r < row + rows && (roleColumns?.Contains(col) ?? (col >= column && col < column + columns));
                 if (r < previousRow || r == previousRow && col <= previousColumn) throw WorkbookInspection.Error("Unordered or duplicate cell addresses are outside the view prototype.");
                 previousRow = r; previousColumn = col; lastRow = Math.Max(lastRow, r); lastColumn = Math.Max(lastColumn, col);
                 var style = reader.GetAttribute("s"); if (style != null) styled++;
@@ -356,24 +388,32 @@ internal sealed class InspectionSession : IWorkbookSession
                         }
                     }
                 }
-                if (hasValue) { nonempty++; valueRow = Math.Max(valueRow, r); valueColumn = Math.Max(valueColumn, col); }
+                if (hasValue) { nonempty++; if (type == "n") numericValues++; valueRow = Math.Max(valueRow, r); valueColumn = Math.Max(valueColumn, col); }
                 if (formula != null) formulas++;
+                // Formatting and empty stored cells do not define display bounds. Include every
+                // formula (even without a cache), hidden row and serialized value in the scan.
+                // Shared-string indices are conservatively meaningful, including empty strings.
+                if (hasValue || formula != null) { valueRow = Math.Max(valueRow, r); valueColumn = Math.Max(valueColumn, col); }
                 if (formulaType == "shared") groups.Add(r, col, formulaIndex, formulaRange, formula ?? "", truncated);
                 if (formulaType is "array" or "dataTable") warnings.Add("Array/spill/data-table formulas are not reconstructed or evaluated.");
-                if (r < row || r >= row + rows || col < column || col >= column + columns) continue;
+                if (!retain) continue;
                 var kind = type switch { "s" or "inlineStr" or "str" => "Text", "b" => "Boolean", "d" => "Date", "n" => "Number", "e" => "Error", _ => "Unsupported" };
                 if (type == "s") { if (!int.TryParse(value, out var index) || index < 0 || truncated) throw WorkbookInspection.Error("Invalid shared-string index."); shared[address] = index; value = ""; }
                 if (type == "b") value = value == "1" ? "TRUE" : value == "0" ? "FALSE" : value;
                 var format = Format(style, budget);
+                if (style == null && (inheritedRowFormat || unknownColumnDefaults || inheritedColumns.Any(c => col >= c.First && col <= c.Last)))
+                    format = format with { Warning = "Row/column default formatting is unresolved for a cell without an explicit style; raw value retained.",
+                        Classification = "Unresolved inheritance", EffectiveId = null, Resolution = "No explicit cell style; non-default row/column style present" };
                 var formulaStatus = formula == null ? "No formula" : formulaType == "" || formulaType == "normal" ? "Stored formula; cached value is unverified." : "Unsupported " + formulaType + " formula; cached value is unverified.";
                 if (formulaType == "shared") sharedFormulas[address] = formulaIndex;
-                found[address] = new(r, col, value, kind, formula, truncated, new(format.Code, format.Id, false, false, ""), InspectionCellFormatting.Interpret(value, kind, format, date1904, truncated, formulaStatus));
+                found[address] = new(r, col, value, kind, formula, truncated, new(format.Code, format.Id, false, false, "", format.EffectiveId, format.Resolution, format.Classification), InspectionCellFormatting.Interpret(value, kind, format, date1904, truncated, formulaStatus));
+                Account(found[address]);
             }
         }
         if (shared.Count > 0)
         {
             if (sharedPart == null) throw WorkbookInspection.Error("Missing shared-string part.");
-            var needed = shared.Values.ToHashSet(); var strings = new Dictionary<int, (string Text, bool Cut)>(); var index = -1;
+            var needed = shared.Values.ToHashSet(); var strings = new Dictionary<int, (string Text, bool Cut)>(); var index = -1; long sharedTextBytes = 0;
             using var reader = Reader(zip.GetEntry(sharedPart)!, limits.XmlBytes, budget);
             while (reader.Read())
             {
@@ -382,17 +422,17 @@ internal sealed class InspectionSession : IWorkbookSession
                 string value = ""; bool truncated = false;
                 using var item = reader.ReadSubtree(); bool textNode = false;
                 while (item.Read()) { budget.Node(item); if (item.NodeType == XmlNodeType.Element && item.LocalName == "rPh") { using var annotation = item.ReadSubtree(); while (annotation.Read()) budget.Node(annotation); warnings.Add("Phonetic annotations are not rendered."); continue; } if (item.NodeType == XmlNodeType.Element) textNode = item.LocalName == "t" && item.NamespaceURI == Main; else if (item.NodeType == XmlNodeType.EndElement) textNode = false; else if (textNode && item.NodeType is XmlNodeType.Text or XmlNodeType.CDATA) { var text = Text(item, budget, out var cut, textBuffer, needed.Contains(index)); truncated |= cut || value.Length + text.Length > 1024; if (needed.Contains(index)) value = (value + text)[..Math.Min(1024, value.Length + text.Length)]; } }
-                if (needed.Contains(index)) strings[index] = (value, truncated);
+                if (needed.Contains(index)) { sharedTextBytes += 64L + value.Length * 2L; if (roleColumns != null && sharedTextBytes > 16 * 1024 * 1024) throw WorkbookInspection.Error("Analysis shared-text retention exceeds its accounted bound."); strings[index] = (value, truncated); }
             }
-            foreach (var pair in shared) { if (!strings.TryGetValue(pair.Value, out var text)) throw WorkbookInspection.Error("Shared-string index is out of range."); found[pair.Key] = found[pair.Key] with { Value = text.Text, Truncated = found[pair.Key].Truncated || text.Cut, Interpretation = found[pair.Key].Interpretation! with { RawValue = text.Text, DisplayValue = text.Text, Warning = text.Cut ? "Shared text truncated." : "" } }; }
+            foreach (var pair in shared) { budget.Check(); if (!strings.TryGetValue(pair.Value, out var text)) throw WorkbookInspection.Error("Shared-string index is out of range."); var previous = found[pair.Key]; found[pair.Key] = previous with { Value = text.Text, Truncated = previous.Truncated || text.Cut, Interpretation = previous.Interpretation! with { RawValue = text.Text, DisplayValue = text.Text, Warning = text.Cut ? "Shared text truncated." : "" } }; Account(found[pair.Key], previous); }
         }
         groups.Validate(budget.Check);
-        foreach (var pair in sharedFormulas) { var resolved = groups.Resolve(pair.Value, pair.Key.Item1, pair.Key.Item2); var cell = found[pair.Key]; found[pair.Key] = cell with { Formula = resolved.Formula ?? cell.Formula, Interpretation = cell.Interpretation! with { FormulaStatus = resolved.Status } }; }
+        foreach (var pair in sharedFormulas) { budget.Check(); var resolved = groups.Resolve(pair.Value, pair.Key.Item1, pair.Key.Item2); var cell = found[pair.Key]; found[pair.Key] = cell with { Formula = resolved.Formula ?? cell.Formula, Interpretation = cell.Interpretation! with { FormulaStatus = resolved.Status } }; Account(found[pair.Key], cell); }
         var reliability = "Untrusted declaration; stored-cell extent measured by complete selected-sheet scan"; bool inflated = lastRow > Math.Max(1000, valueRow * 10L) || lastColumn > Math.Max(100, valueColumn * 10L);
         if (dimension != "Not declared") { try { var extent = Address(dimension.Split(':').Last()); inflated |= extent.Row > Math.Max(1000, lastRow * 10L) || extent.Column > Math.Max(100, lastColumn * 10L); } catch (WorkbookException) { reliability = "Invalid dimension declaration; ignored"; } }
-        var scan = new WorksheetScan(dimension, reliability, cells, nonempty, formulas, styled, lastRow, lastColumn, inflated, warnings.ToArray());
+        var scan = new WorksheetScan(dimension, reliability, cells, nonempty, formulas, styled, lastRow, lastColumn, inflated, warnings.ToArray(), numericValues, previousRowElement, valueRow, valueColumn);
         var result = new List<CellInfo>();
-        for (var r = row; r < row + rows; r++) for (var col = column; col < column + columns; col++) result.Add(found.GetValueOrDefault((r, col)) ?? new(r, col, "", "Blank", null, false, new("", -1, false, false, "")));
+        for (var r = row; r < row + rows; r++) foreach (var col in roleColumns?.Order() ?? Enumerable.Range(column, columns)) result.Add(found.GetValueOrDefault((r, col)) ?? new(r, col, "", "Blank", null, false, new("", -1, false, false, "")));
         return new(info.SessionId, id, row, column, rows, columns, result.AsReadOnly(), scan);
     }
     private static (int Row, int Column) Address(string address)

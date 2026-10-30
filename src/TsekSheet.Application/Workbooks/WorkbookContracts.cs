@@ -6,8 +6,10 @@ public sealed record WorkbookInfo(Guid SessionId, Guid? ParentSessionId, string 
     int Revision, bool IsDirty, bool EditingAllowed, string Creator, string Title,
     IReadOnlyList<WorksheetInfo> Worksheets, IReadOnlyList<CompatibilityFinding> Findings, int? LastExportedRevision = null, string? LastExportedSha256 = null,
     WorkbookCompatibilityReport? Compatibility = null);
-public sealed record CellFormat(string NumberFormat, int NumberFormatId, bool Bold, bool Italic, string FillColor);
-public sealed record CellInterpretation(string RawValue, string DisplayValue, string ResolvedType, string Confidence, string Warning, string FormulaStatus);
+public sealed record CellFormat(string NumberFormat, int NumberFormatId, bool Bold, bool Italic, string FillColor,
+    int? EffectiveNumberFormatId = null, string? FormatResolution = null, string? FormatClassification = null);
+public sealed record CellInterpretation(string RawValue, string DisplayValue, string ResolvedType, string Confidence, string Warning, string FormulaStatus,
+    string Classification = "", string FormatResolution = "");
 public sealed record CellInfo(int Row, int Column, string Value, string Kind, string? Formula, bool Truncated, CellFormat Format, CellInterpretation? Interpretation = null);
 public sealed record CellViewport(Guid SessionId, Guid WorksheetId, int StartRow, int StartColumn, int Rows, int Columns, IReadOnlyList<CellInfo> Cells, WorksheetScan? Scan = null);
 public sealed record WorkbookCapability(string Operation, bool Allowed, string Reason);
@@ -15,7 +17,8 @@ public sealed record PackageCategory(string Category, int Count);
 public sealed record WorkbookCompatibilityReport(long FileBytes, long CompressedPartBytes, long ExpandedPartBytes, int PartCount, int DefinedNames,
     int Relationships, bool ExternalLinks, IReadOnlyList<PackageCategory> Categories, IReadOnlyList<WorkbookCapability> Capabilities, string CountStatus);
 public sealed record WorksheetScan(string DeclaredDimension, string DimensionReliability, long StoredCells, long NonemptyValues, long Formulas, long StyledCells,
-    int LastRow, int LastColumn, bool PotentialInflation, IReadOnlyList<string> Warnings);
+    int LastRow, int LastColumn, bool PotentialInflation, IReadOnlyList<string> Warnings, long NumericValues = 0, int LastRowElement = 0,
+    int? MeaningfulLastRow = null, int? MeaningfulLastColumn = null);
 public sealed record CellEdit(Guid WorksheetId, int Row, int Column, string Kind, string Value, int ExpectedRevision);
 public sealed record CellChange(Guid WorksheetId, int Row, int Column, string Kind, string Value, int Revision);
 public sealed record WorkingCopyInfo(Guid SessionId, Guid SourceWorksheetId, int BaseRevision, int Revision, bool IsDirty, IReadOnlyList<CellChange> Changes);

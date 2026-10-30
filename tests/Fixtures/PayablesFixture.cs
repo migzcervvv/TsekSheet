@@ -3,6 +3,30 @@ using System.IO;
 
 namespace TsekSheet.TestFixtures;
 
+public sealed class SectionReviewFixture : IDisposable
+{
+    private readonly string folder = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "TsekSheet-section-review-" + Guid.NewGuid().ToString("N"));
+    public string Path { get; }
+    public static TsekSheet.Application.Workflows.ReadOnlySectionProfile Profile => new("artificial-review", 1, 1, 32, [1, 3, 4, 5, 6],
+        [new("vendor", "Entity"),new("rfp","Request"),new("invoice","Invoice"),new("amount","Amount")],"vendor",["rfp","invoice"],["amount"],
+        [new("north","North",null,new("North ledger",[1]),new("contiguous-sum",FormulaField:"amount")),
+         new("tools","Tools","north",new("Tools",[1]),new("explicit-row",ExplicitRow:8))], [], []);
+    public static string ProfileJson => System.Text.Json.JsonSerializer.Serialize(Profile,new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web));
+    public SectionReviewFixture()
+    {
+        Directory.CreateDirectory(folder);Path=System.IO.Path.Combine(folder,"artificial-review.xlsx");
+        using var wb=new XLWorkbook();var s=wb.AddWorksheet("Artificial review");
+        foreach(var r in new[]{1,9}){s.Cell(r,3).Value=r==9?"Payee":"Entity";s.Cell(r,4).Value="Request";s.Cell(r,5).Value="Invoice";s.Cell(r,6).Value="Amount";}
+        s.Cell(2,1).Value="North ledger";s.Cell(3,1).Value="Tools";
+        void Record(int r,string vendor,string id){s.Cell(r,3).Value=vendor;s.Cell(r,4).Value=id;s.Cell(r,6).Value=10;}
+        Record(4,"Artificial Alpha Ltd","SYN-A");Record(5,"","SYN-B");Record(6,"Artificial Alpha Ltd","SYN-A");Record(11,"Artificial Alpha, Ltd","SYN-C");
+        s.Row(5).Hide();s.Cell(8,6).FormulaA1="SUM(F3:F7)";s.Cell(20,6).FormulaA1="SUM(F3:F19)";s.Cell(31,6).FormulaA1="F20";s.Cell(32,1).Value="Artificial footer";
+        wb.AddWorksheet("Artificial context").Cell(1,1).Value="Context";
+        using var stream=new FileStream(Path,FileMode.CreateNew,FileAccess.ReadWrite,FileShare.None);wb.SaveAs(stream,new SaveOptions{EvaluateFormulasBeforeSaving=false,GenerateCalculationChain=false});
+    }
+    public void Dispose(){File.Delete(Path);Directory.Delete(folder);}
+}
+
 // Artificial data only. CreateNew prevents accidental overwrite even in a test race.
 public sealed class PayablesFixture : IDisposable
 {
