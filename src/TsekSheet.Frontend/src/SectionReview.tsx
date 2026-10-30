@@ -1,5 +1,5 @@
 import {useEffect, useRef, useState} from 'react';
-import {BridgeError} from './bridge/client';
+import {BridgeError, BridgeTransportError} from './bridge/client';
 import type {BridgeClient, Workbook} from './bridge/client';
 import {useReviewDiscard} from './useReviewDiscard';
 import type {ReviewDecision, ReviewMetrics, ReviewSnapshot} from './bridge/sectionReview';
@@ -11,40 +11,58 @@ export default function SectionReview({bridge,book,sheetId,disabled,onNavigate,o
  const [kind,setKind]=useState('investigate'),[row,setRow]=useState(1),[section,setSection]=useState(''),[value,setValue]=useState(''),[evidenceRow,setEvidenceRow]=useState(1),[evidenceColumn,setEvidenceColumn]=useState(1),[reason,setReason]=useState(''),[page,setPage]=useState(0),[queueRow,setQueueRow]=useState(0),[duplicate,setDuplicate]=useState(0);
  const [category,setCategory]=useState('Overview'),[guided,setGuided]=useState(false);
  const [unknownCount,setUnknownCount]=useState(0);
+ const [requiresRecovery,setRequiresRecovery]=useState(false);
+ const recovery=useRef(false), operation=useRef(false);
+ const confirmedReview=useRef<{bridge:BridgeClient;sessionId:string;worksheetId:string;decisionCount:number}|null>(null);
+ function markUnknown(count:number){recovery.current=true;setRequiresRecovery(true);setUnknownCount(count);setNotice('');}
+ function mayHaveApplied(e:unknown){return !(e instanceof BridgeError) && !(e instanceof BridgeTransportError && !e.outcomeUnknown);}
  const decisionCount=Math.max(review?.decisions.length??0,unknownCount);
- const discard=useReviewDiscard(decisionCount,unknownCount>0);
- useEffect(()=>{onStatus?.(decisionCount,busy,unknownCount>0);},[decisionCount,busy,unknownCount,onStatus]);
+ const discard=useReviewDiscard(decisionCount,requiresRecovery);
+ useEffect(()=>{onStatus?.(decisionCount,busy,requiresRecovery);},[decisionCount,busy,requiresRecovery,onStatus]);
  const alive=useRef(true),generation=useRef(0);
- useEffect(()=>{alive.current=true;return()=>{alive.current=false;generation.current++;void bridge.request('sectionReview.cancel',{sessionId:book.sessionId,worksheetId:sheetId}).promise.catch(()=>{});};},[bridge,book.sessionId,sheetId]);
+ useEffect(()=>{alive.current=true;return()=>{alive.current=false;generation.current++;
+  // Cleanup may release only a confirmed empty review owned by this effect.
+  // Read the latest accepted count without re-running cleanup on review updates.
+  const confirmed=confirmedReview.current;
+  if(!recovery.current&&!operation.current&&confirmed?.decisionCount===0
+   &&confirmed.bridge===bridge&&confirmed.sessionId===book.sessionId&&confirmed.worksheetId===sheetId)
+   void bridge.request('sectionReview.cancel',{sessionId:book.sessionId,worksheetId:sheetId}).promise.catch(()=>{});
+ };},[bridge,book.sessionId,sheetId]);
  function accept(r:ReviewSnapshot,previous:ReviewSnapshot|null) {
   if(r.binding.sessionId!==book.sessionId||r.binding.worksheetId!==sheetId||r.binding.sourceSha256!==book.sourceSha256||r.binding.captureRevision!==book.revision||r.binding.worksheetOrder!==book.worksheets.find(s=>s.id===sheetId)?.order
    ||previous&&(r.binding.reviewId!==previous.binding.reviewId||r.binding.profileSha256!==previous.binding.profileSha256||r.binding.profileVersion!==previous.binding.profileVersion||r.binding.reviewRevision!==previous.binding.reviewRevision+1))throw new Error('Review response identity changed. Close and restart review.');
-  setUnknownCount(0);setReview(r);
+  confirmedReview.current={bridge,sessionId:r.binding.sessionId,worksheetId:r.binding.worksheetId,decisionCount:r.decisions.length};
+  recovery.current=false;setRequiresRecovery(false);setUnknownCount(0);setReview(r);
  }
  function clearPrivateDraft(){setReason('');setValue('');setSection('');setRow(1);setEvidenceRow(1);setEvidenceColumn(1);setQueueRow(0);setDuplicate(0);setPage(0);setKind('investigate');setGuided(false);setCategory('Overview');setUnknownCount(0);}
- async function start(){const g=++generation.current;setBusy(true);setError('');setNotice('');setReview(null);clearPrivateDraft();
+ async function start(){if(operation.current||recovery.current)return;operation.current=true;const g=++generation.current;setBusy(true);setError('');setNotice('');confirmedReview.current=null;setReview(null);clearPrivateDraft();
   try {const r=await bridge.request('sectionReview.start',{sessionId:book.sessionId,worksheetId:sheetId,expectedRevision:book.revision}).promise;if(!alive.current||g!==generation.current)return;
    if(r.review){accept(r.review,null);setSection(r.review.report.sections[0]?.id??'');setRow(r.review.report.coverage.startRow);}else setNotice('Profile selection cancelled.');
-  }catch(e){if(alive.current&&g===generation.current)setError((e as Error).message);}finally{if(alive.current&&g===generation.current)setBusy(false);}
+  }catch(e){if(alive.current&&g===generation.current){setError((e as Error).message);if(mayHaveApplied(e))markUnknown(0);}}finally{operation.current=false;if(alive.current&&g===generation.current)setBusy(false);}
  }
- async function cancel(){generation.current++;setReview(null);clearPrivateDraft();setError('');setBusy(true);
-  try{await bridge.request('sectionReview.cancel',{sessionId:book.sessionId,worksheetId:sheetId}).promise;setNotice('Review closed. In-memory assertions released. Source unchanged.');}catch(e){setError((e as Error).message);}finally{setBusy(false);}
+ async function cancel(){if(operation.current)return;operation.current=true;const g=++generation.current;setError('');setNotice('');setBusy(true);
+  try{await bridge.request('sectionReview.cancel',{sessionId:book.sessionId,worksheetId:sheetId}).promise;
+   if(!alive.current||g!==generation.current)return;
+   confirmedReview.current=null;setReview(null);clearPrivateDraft();recovery.current=false;setRequiresRecovery(false);setNotice('Review closed. In-memory assertions released. Source unchanged.');
+  }catch(e){if(alive.current&&g===generation.current){setError((e as Error).message);if(mayHaveApplied(e))markUnknown(decisionCount);}}finally{operation.current=false;if(alive.current&&g===generation.current)setBusy(false);}
  }
- async function decide(){if(!review)return;setBusy(true);setError('');const g=generation.current;
+ async function decide(){if(!review||operation.current||recovery.current)return;operation.current=true;setBusy(true);setError('');setNotice('');const g=generation.current;
   const d:ReviewDecision={id:crypto.randomUUID(),kind,row,sectionId:['heading','boundary','parent'].includes(kind)?section:null,value:kind==='duplicate'?review.duplicateKeys[duplicate]:['header','parent'].includes(kind)?value||null:null,evidenceRow:['header','heading','identity'].includes(kind)?kind==='identity'?evidenceRow:row:null,evidenceColumn:['header','heading','identity'].includes(kind)?evidenceColumn:null,reason};
-  try{const r=await bridge.request('sectionReview.decide',{binding:review.binding,decision:d}).promise;if(alive.current&&g===generation.current){accept(r,review);setReason('');setNotice('Decision recorded. Source unchanged.');setGuided(kind==='boundary'&&r.originalRecordRows.includes(row));}}catch(e){if(alive.current&&g===generation.current){setError((e as Error).message);if(!(e instanceof BridgeError))setUnknownCount(review.decisions.length+1);}}finally{if(alive.current&&g===generation.current)setBusy(false);}
+  try{const r=await bridge.request('sectionReview.decide',{binding:review.binding,decision:d}).promise;if(alive.current&&g===generation.current){accept(r,review);setReason('');setNotice('Decision recorded. Source unchanged.');setGuided(kind==='boundary'&&r.originalRecordRows.includes(row));}}catch(e){if(alive.current&&g===generation.current){setError((e as Error).message);if(mayHaveApplied(e))markUnknown(review.decisions.length+1);}}finally{operation.current=false;if(alive.current&&g===generation.current)setBusy(false);}
  }
- async function retract(id:string){if(!review)return;setBusy(true);setError('');const g=generation.current;
-  try{const r=await bridge.request('sectionReview.retract',{binding:review.binding,decisionId:id}).promise;if(alive.current&&g===generation.current)accept(r,review);}catch(e){if(alive.current&&g===generation.current)setError((e as Error).message);}finally{if(alive.current&&g===generation.current)setBusy(false);}
+ async function retract(id:string){if(!review||operation.current||recovery.current)return;operation.current=true;setBusy(true);setError('');setNotice('');const g=generation.current;
+  try{const r=await bridge.request('sectionReview.retract',{binding:review.binding,decisionId:id}).promise;if(alive.current&&g===generation.current)accept(r,review);}catch(e){if(alive.current&&g===generation.current){setError((e as Error).message);if(mayHaveApplied(e))markUnknown(review.decisions.length);}}finally{operation.current=false;if(alive.current&&g===generation.current)setBusy(false);}
  }
  function choose(r:number,k='investigate',col=1){setRow(r);setKind(k);setEvidenceColumn(col);onNavigate(r,col);}
  const q=review?.identityQueue.find(x=>x.row===queueRow)??review?.identityQueue[0], warning=review?.report.potentialDuplicates[duplicate];
- const off=busy||disabled||discard.confirming;
+ const unavailable=busy||disabled||discard.confirming;
+ const off=unavailable||requiresRecovery;
  return <section className="workflow-panel section-review" aria-label="Read-only section review">
   <h3>Section Review · read only</h3><p>Worksheet: {book.worksheets.find(s=>s.id===sheetId)?.name}. Section review requires a configured profile. Select a local profile for this worksheet; it stays in memory for this review.</p>
-  <button disabled={off} onClick={()=>discard.guard(()=>void start())}>Select profile and start review</button><button disabled={off||!review} onClick={()=>discard.guard(()=>void cancel())}>Close section review</button>
+  <button disabled={off} onClick={()=>discard.guard(()=>void start())}>Select profile and start review</button><button disabled={unavailable||(!review&&!requiresRecovery)} onClick={()=>discard.guard(()=>void cancel())}>Close section review</button>
   {discard.dialog}
   {busy&&<p aria-live="polite">Review operation in progress…</p>}{notice&&<p aria-live="polite">{notice}</p>}{error&&<p role="alert">{error}</p>}
+  {requiresRecovery&&<p role="status">Review requires recovery. The last confirmed snapshot is retained; the current desktop review revision is unconfirmed. Assertions and retractions are blocked. Explicitly close this review to discard it, then select a profile to start again. Closure must be confirmed by the desktop host.</p>}
   {review&&<>
    <nav className="review-categories" aria-label="Review categories">{['Overview','Sections & Subtotals','Missing Vendors','Potential Duplicates','Unassigned Rows','Review History'].map(c=><button key={c} aria-pressed={category===c} onClick={()=>setCategory(c)}>{c}</button>)}</nav>
    <div hidden={category!=='Overview'}>

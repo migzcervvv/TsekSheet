@@ -8,6 +8,11 @@ export interface Handshake { selectedVersion: number; applicationName: string; v
 export interface Selection { status: 'selected' | 'cancelled'; selectionId?: string; displayName?: string }
 export interface Progress { operationId: string; completed: number; total: number }
 export class BridgeError extends Error { constructor(public readonly code: string, message: string) { super(message); } }
+// Local failures are distinct from an authoritative host rejection. A request
+// that was dispatched may have completed even when its response never arrives.
+export class BridgeTransportError extends Error {
+  constructor(public readonly reason: 'timeout' | 'closed' | 'unavailable' | 'capacity', public readonly outcomeUnknown: boolean, message: string) { super(message); }
+}
 export interface Worksheet { id: string; name: string; order: number; visibility: 'Visible' | 'Hidden' | 'VeryHidden'; lastRow: number; lastColumn: number }
 export interface CompatibilityReport { fileBytes: number; compressedPartBytes: number; expandedPartBytes: number; partCount: number; definedNames: number; relationships: number; externalLinks: boolean; categories: { category: string; count: number }[]; capabilities: { operation: string; allowed: boolean; reason: string }[]; countStatus: string }
 export interface WorksheetScan { declaredDimension: string; dimensionReliability: string; storedCells: number; nonemptyValues: number; formulas: number; styledCells: number; lastRow: number; lastColumn: number; potentialInflation: boolean; warnings: string[]; numericValues?: number; lastRowElement?: number; meaningfulLastRow?: number | null; meaningfulLastColumn?: number | null }
@@ -164,12 +169,12 @@ export class BridgeClient {
   request<C extends Command>(command: C, payload: Payloads[C]) {
     const id = crypto.randomUUID();
     const promise = new Promise<Results[C]>((resolve, reject) => {
-      if (this.disposed) { reject(new Error('Desktop connection closed.')); return; }
-      if (this.pending.size >= 16) { reject(new Error('Too many pending requests.')); return; }
-      const timer = setTimeout(() => { this.pending.delete(id); reject(new Error('Desktop request timed out. Its outcome is unknown.')); }, command === 'foundation.selectFile' || command === 'workbook.open' || command === 'workbook.saveAsNew' || command === 'sectionReview.start' ? 120000 : this.timeoutMs);
+      if (this.disposed) { reject(new BridgeTransportError('closed', false, 'Desktop connection closed.')); return; }
+      if (this.pending.size >= 16) { reject(new BridgeTransportError('capacity', false, 'Too many pending requests.')); return; }
+      const timer = setTimeout(() => { this.pending.delete(id); reject(new BridgeTransportError('timeout', true, 'Desktop request timed out. Its outcome is unknown.')); }, command === 'foundation.selectFile' || command === 'workbook.open' || command === 'workbook.saveAsNew' || command === 'sectionReview.start' ? 120000 : this.timeoutMs);
       this.pending.set(id, { command, resolve: value => resolve(value as Results[C]), reject, timer });
       try { this.transport.postMessage({ protocolVersion: 1, requestId: id, command, payload }); }
-      catch { this.finish(id); reject(new Error('Desktop connection is unavailable.')); }
+      catch { this.finish(id); reject(new BridgeTransportError('unavailable', true, 'Desktop connection is unavailable.')); }
     });
     return { id, promise };
   }
@@ -196,7 +201,7 @@ export class BridgeClient {
     if (this.disposed) return;
     this.disposed = true;
     this.transport.removeEventListener('message', this.receive);
-    for (const [id, p] of this.pending) { this.finish(id); p.reject(new Error('Desktop connection closed.')); }
+    for (const [id, p] of this.pending) { this.finish(id); p.reject(new BridgeTransportError('closed', true, 'Desktop connection closed.')); }
   }
 }
 import { validProfiles, validWorkflowPlan, validCandidateReview } from './workflows';

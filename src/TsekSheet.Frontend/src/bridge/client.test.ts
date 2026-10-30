@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { BridgeClient } from './client';
+import { BridgeClient, BridgeError, BridgeTransportError } from './client';
 import type { Transport } from './client';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -56,4 +56,39 @@ test('times out pending requests and rejects outstanding work on disposal', asyn
   await vi.advanceTimersByTimeAsync(101); await rejection;
   const pending = client.request('foundation.getInfo', {});
   const closed = expect(pending.promise).rejects.toThrow('closed'); client.dispose(); await closed;
+});
+
+test('transport failures carry outcome uncertainty separately from authoritative host errors', async () => {
+  vi.useFakeTimers();
+  const fake = fakeTransport(); const client = new BridgeClient(fake.transport, 100);
+  const request = client.request('sectionReview.cancel', {sessionId:'s', worksheetId:'w'});
+  const timedOut = request.promise.catch(error => error);
+  await vi.advanceTimersByTimeAsync(101);
+  expect(await timedOut).toBeInstanceOf(BridgeTransportError);
+  expect(await timedOut).toMatchObject({reason:'timeout', outcomeUnknown:true});
+  const rejected = client.request('sectionReview.cancel', {sessionId:'s', worksheetId:'w'});
+  const hostError = rejected.promise.catch(error => error);
+  fake.emit({protocolVersion:1, type:'response', requestId:rejected.id, ok:false, error:{code:'BUSY', message:'Busy.'}});
+  expect(await hostError).toBeInstanceOf(BridgeError);
+  expect(await hostError).not.toBeInstanceOf(BridgeTransportError);
+  const pending = client.request('foundation.getInfo', {}).promise.catch(error => error);
+  client.dispose();
+  expect(await pending).toMatchObject({reason:'closed', outcomeUnknown:true});
+  const unsent = await client.request('foundation.getInfo', {}).promise.catch(error => error);
+  expect(unsent).toMatchObject({reason:'closed', outcomeUnknown:false});
+});
+
+test('a send exception is conservatively uncertain while capacity rejection is known unsent', async () => {
+  const fake = fakeTransport();
+  const throwing = new BridgeClient({...fake.transport, postMessage: () => {throw new Error('Transport failed.');}});
+  const error = await throwing.request('foundation.getInfo', {}).promise.catch(error => error);
+  expect(error).toBeInstanceOf(BridgeTransportError);
+  expect(error).toMatchObject({reason:'unavailable', outcomeUnknown:true});
+  throwing.dispose();
+  const client = new BridgeClient(fake.transport);
+  const pending = Array.from({length:16}, () => client.request('foundation.getInfo', {}).promise.catch(error => error));
+  const rejected = await client.request('foundation.getInfo', {}).promise.catch(error => error);
+  expect(rejected).toMatchObject({reason:'capacity', outcomeUnknown:false});
+  expect(fake.sent).toHaveLength(16);
+  client.dispose(); await Promise.all(pending);
 });
