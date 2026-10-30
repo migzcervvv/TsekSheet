@@ -281,6 +281,19 @@ public static class ReadOnlySectionAnalysis
             if (similar.Count > 512) throw Error("Similarity diagnostic budget exceeded.");
         }
         var dependencies = new List<ReadOnlySummaryDependency>();
+        // Section containment alone does not explain a row. Retain residual content in
+        // any captured role column, without inferring a payable or a vendor identity.
+        var classifiedRows = headers.Concat(headerLike).Concat(markerRows).Concat(reviewedNonRecords)
+            .Concat(notes).Concat(records.Select(r => r.Row)).ToHashSet();
+        foreach (var row in rows.Where(r => !classifiedRows.Contains(r)))
+        {
+            token.ThrowIfCancellationRequested();
+            if (region.Columns.Any(col => Cell(row, col).Formula != null || Cell(row, col).Truncated || !string.IsNullOrWhiteSpace(Cell(row, col).Value)))
+            {
+                unassigned.Add(row);
+                Warn("UNCLASSIFIED_ROW", "Meaningful captured role content has no record or non-record classification; human review is required.", row);
+            }
+        }
         if (columns.Count == profile.Fields.Count)
         foreach (var row in rows.Where(r => !headers.Contains(r) && !markerRows.Contains(r) && !reviewedNonRecords.Contains(r)
             && !sections.Any(s => s.BoundaryRuleMatched && r >= s.FirstDataRow && r < s.SubtotalRow)))
