@@ -236,9 +236,19 @@ public static class ReadOnlySectionAnalysis
             var entity = Cell(row, columns[profile.EntityField]); var ids = profile.IdentifierFields.ToDictionary(k => k, k => Cell(row, columns[k]));
             var role = ids.Values.Append(entity).ToArray();
             bool hasId = ids.Values.Any(c => c.Formula != null || !string.IsNullOrWhiteSpace(c.Value));
-            bool hasContext = profile.ContextFields.Any(k => Literal(Cell(row, columns[k])));
+            // Context establishes that a row needs review, not that its financial
+            // values are verified. Uncached formulas and truncated values must
+            // not turn a record without identifiers into an entity-only note.
+            bool hasContext = profile.ContextFields.Any(k =>
+            {
+                var context = Cell(row, columns[k]);
+                return context.Formula != null || context.Truncated || !string.IsNullOrWhiteSpace(context.Value);
+            });
             bool hasEntity = !string.IsNullOrWhiteSpace(entity.Value);
-            var markerConflict = markerRows.Contains(row) && (hasId || hasEntity && hasContext) && !reviewedNonRecords.Contains(row);
+            // Configured subtotal/summary labels with formulas retain their
+            // existing marker classification; literal record context still conflicts.
+            bool hasLiteralContext = profile.ContextFields.Any(k => Literal(Cell(row, columns[k])));
+            var markerConflict = markerRows.Contains(row) && (hasId || hasEntity && hasLiteralContext) && !reviewedNonRecords.Contains(row);
             if (markerRows.Contains(row))
             {
                 if (markerConflict) Warn("MARKER_RESEMBLES_RECORD", "A heading/subtotal/summary/excluded row resembles a record and cannot be silently excluded.", row);

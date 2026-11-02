@@ -1,5 +1,3 @@
-using System.Globalization;
-using System.Xml;
 using TsekSheet.Application.Workbooks;
 
 namespace TsekSheet.Application.Workflows;
@@ -33,6 +31,12 @@ public static class WorkflowPlanning
         if (request.ProfileHash != WorkflowProfiles.Hash(profile)) throw WorkflowProfiles.Error("STALE_PROFILE", "Refresh the approved workflow profile before planning.");
         var analysis = WorksheetAnalysisReader.Read(session, request.WorksheetId, request.ExpectedRevision, profile, token);
         var plan = Plan(analysis, profile, request.Records, token);
+        return InspectStructure(session, plan, token);
+    }
+
+    internal static WorkflowPlan InspectStructure(IWorkbookSession session, WorkflowPlan plan, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
         if (!plan.ReadyForReview) return plan with { StructuralStatus = "ambiguous-destination" };
         if (plan.Records.Any(r => r.Duplicates.Count > 0)) return plan with { StructuralStatus = "duplicate-review-required" };
         return session.InspectStructuralInsertion(plan, token);
@@ -109,31 +113,9 @@ public static class WorkflowPlanning
             Array.AsReadOnly(new[] { "The experimental oracle supports only plain rows and restricted same-sheet formulas", "Names, tables, merges and advanced structures block structural experiments", "New rows require a uniform explicit style template with unrelated constants cleared", "This proposal neither modifies nor saves the workbook; production Apply remains disabled" }), proposals.AsReadOnly());
     }
 
-    private static Dictionary<string, string> ValidateValues(WorkflowRecord record, WorkflowProfile profile)
-    {
-        if (record.Values == null || record.Values.Count > profile.Fields.Count || record.Values.Keys.Any(k => !profile.Fields.Any(f => f.Key == k))) throw WorkflowProfiles.Error("INVALID_RECORD", "The record contains unsupported field mappings.");
-        var values = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var field in profile.Fields)
-        {
-            var value = record.Values.GetValueOrDefault(field.Key, "");
-            if (value == null || value.Length > field.MaxLength) throw WorkflowProfiles.Error("INVALID_RECORD", $"Field '{field.Header}' exceeds its permitted length.");
-            try { XmlConvert.VerifyXmlChars(value); } catch (XmlException) { throw WorkflowProfiles.Error("INVALID_RECORD", "A record contains invalid text characters."); }
-            value = value.Trim();
-            if (field.Required && value.Length == 0) throw WorkflowProfiles.Error("INVALID_RECORD", $"Field '{field.Header}' is required.");
-            if (value.Length > 0 && field.Kind == "decimal")
-            {
-                if (!decimal.TryParse(value, NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var number)
-                    || number < 0 || number > 1000000000000m || (decimal.GetBits(number)[3] >> 16 & 0xFF) > 4)
-                    throw WorkflowProfiles.Error("INVALID_RECORD", "Decimal fields require a nonnegative decimal-point number, at most four decimal places and at most one trillion.");
-                value = number.ToString(CultureInfo.InvariantCulture);
-            }
-            if (value.Length > 0 && field.Kind == "date" && !DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _))
-                throw WorkflowProfiles.Error("INVALID_RECORD", "Dates must use YYYY-MM-DD.");
-            values[field.Key] = value;
-        }
-        if (!profile.IdentifierFields.Any(k => values[k].Length > 0)) throw WorkflowProfiles.Error("INVALID_RECORD", "At least one configured record identifier is required.");
-        return values;
-    }
+    private static Dictionary<string, string> ValidateValues(WorkflowRecord record, WorkflowProfile profile) =>
+        WorkflowValueValidation.Validate(profile.Fields, profile.IdentifierFields, record.Values)
+            .ToDictionary(pair => pair.Key, pair => pair.Value.Text, StringComparer.Ordinal);
     private static bool Similar(string a, string b) => Math.Min(a.Length, b.Length) >= 4 && (a.StartsWith(b, StringComparison.Ordinal) || b.StartsWith(a, StringComparison.Ordinal)
         || a.Split(' ').Intersect(b.Split(' '), StringComparer.Ordinal).Any(word => word.Length >= 4));
     private static string[] MatchingIdentifiers(IReadOnlyDictionary<string, string> a, IReadOnlyDictionary<string, string> b, WorkflowProfile p) => p.IdentifierFields

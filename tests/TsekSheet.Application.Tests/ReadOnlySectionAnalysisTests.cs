@@ -86,6 +86,85 @@ public sealed class ReadOnlySectionAnalysisTests
     }
 
     [TestMethod]
+    [DataRow(13, "literal")]
+    [DataRow(13, "cached-formula")]
+    [DataRow(13, "uncached-formula")]
+    [DataRow(13, "truncated")]
+    [DataRow(13, "empty-truncated")]
+    [DataRow(21, "literal")]
+    [DataRow(21, "cached-formula")]
+    [DataRow(21, "uncached-formula")]
+    [DataRow(21, "truncated")]
+    [DataRow(21, "empty-truncated")]
+    public void EntityWithUnidentifiedFinancialContextCannotBecomeAnEntityOnlyNote(int row, string context)
+    {
+        var region = Region(c =>
+        {
+            c[(row, 3)] = c[(4, 3)] with { Row = row };
+            c[(row, 6)] = c[(row, 6)] with
+            {
+                Value = context is "uncached-formula" or "empty-truncated" ? "" : "125.50",
+                Kind = "Number",
+                Formula = context is "cached-formula" or "uncached-formula" ? "F4" : null,
+                Truncated = context is "truncated" or "empty-truncated"
+            };
+        });
+        region = region with { HiddenRows = region.HiddenRows.Append(row).ToArray() };
+        var report = ReadOnlySectionAnalysis.Analyze(region, Profile());
+
+        var record = report.Records.SingleOrDefault(r => r.Row == row);
+        Assert.IsNotNull(record, "Meaningful financial context requires review even without an identifier or formula cache.");
+        Assert.AreEqual("Context without identifier", record.Classification);
+        Assert.IsNull(record.Entity);
+        Assert.IsTrue(record.Hidden);
+        Assert.IsFalse(report.EntityOnlyRows.Contains(row));
+        Assert.IsTrue(report.Diagnostics.Any(d => d.Code == "UNRESOLVED_IDENTITY" && d.Row == row));
+        Assert.IsFalse(report.IdentitiesVerified);
+        if (row == 21) CollectionAssert.Contains(report.UnassignedRows.ToArray(), row);
+        Assert.IsFalse(report.CanInsert);
+        Assert.AreEqual(context is "cached-formula" or "uncached-formula" ? "F4" : null, region.Cells.Single(c => c.Row == row && c.Column == 6).Formula);
+    }
+
+    [TestMethod]
+    public void ConfiguredFormulaSubtotalAndSummaryLabelsRemainNonRecordMarkers()
+    {
+        var profile = Profile();
+        profile = profile with
+        {
+            Sections = profile.Sections.Select(s => s.Id == "north" ? s with { End = new("marker", new("North total", [3])) } : s).ToArray(),
+            SummaryMarkers = [new("Overview", [3])]
+        };
+        var region = Region(c =>
+        {
+            c[(20, 3)] = c[(20, 3)] with { Value = "North total", Kind = "Text" };
+            c[(31, 3)] = c[(31, 3)] with { Value = "Overview", Kind = "Text" };
+        });
+        var report = ReadOnlySectionAnalysis.Analyze(region, profile);
+        Assert.AreEqual(20, report.Sections.Single(s => s.Id == "north").SubtotalRow);
+        CollectionAssert.Contains(report.SummaryRows.ToArray(), 31);
+        Assert.IsFalse(report.Records.Any(r => r.Row is 20 or 31));
+        Assert.IsFalse(report.Diagnostics.Any(d => d.Code == "MARKER_RESEMBLES_RECORD"));
+        Assert.IsTrue(report.HierarchyVerified);
+        Assert.IsFalse(report.CanInsert);
+    }
+
+    [TestMethod]
+    public void FinancialContextDoesNotVerifyAnIdentifierOrTurnAContextFormulaIntoAnIdentityFormula()
+    {
+        var region = Region(c => c[(13, 3)] = c[(4, 3)] with { Row = 13 });
+        var note = ReadOnlySectionAnalysis.Analyze(region, Profile());
+        CollectionAssert.Contains(note.EntityOnlyRows.ToArray(), 13);
+        Assert.IsFalse(note.Records.Any(r => r.Row == 13));
+
+        region = Region(c => c[(4, 6)] = c[(4, 6)] with { Formula = "F6", Value = "" });
+        var report = ReadOnlySectionAnalysis.Analyze(region, Profile());
+        Assert.AreEqual("Literal identity", report.Records.Single(r => r.Row == 4).Classification);
+        Assert.AreEqual("Alpha Ltd", report.Records.Single(r => r.Row == 4).Entity);
+        Assert.AreEqual("", region.Cells.Single(c => c.Row == 4 && c.Column == 6).Value);
+        Assert.IsFalse(report.CanInsert);
+    }
+
+    [TestMethod]
     [DataRow(13)]
     [DataRow(21)]
     public void ContextFormulaWithoutCachedValueRemainsUnresolved(int row)

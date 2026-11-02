@@ -58,6 +58,8 @@ Parents/children must be strictly contained. Partial overlaps, undeclared nestin
 
 The report includes headers and their mappings, section/boundary candidates, parent IDs, intermediate subtotal candidates, summary/excluded/entity-only rows, unassigned rows, hidden-row inclusion, identity cases, duplicate/similarity suggestions and typed diagnostics. Formula-bearing context outside verified candidate regions needs an explicit summary classification. Lexical summary references are reported with `Complete=false`: this is not a dependency parser, formula evaluation or a name/external-link resolver.
 
+A literal entity plus meaningful configured context without an identifier remains a record-shaped unresolved identity (`Context without identifier`), including cached or uncached formulas and truncated context. Such rows stay in the Section Review identity queue and outside-section ownership diagnostics; they cannot be hidden as entity-only notes. Context establishes a need for review, never a verified amount, identifier or vendor. An entity with no configured context or identifier can still be an entity-only note. Explicitly configured subtotal/summary labels with formula context retain their existing marker classification; identifiers or literal record context still raise marker conflicts. Synthetic source-preservation and review/retraction evidence is recorded in the [autonomous progress tracker](AUTONOMOUS_PROGRESS.md).
+
 Coverage is deliberately separated:
 
 - `EntireWorksheetRowsCaptured`: the explicit request covers all observed cell/row elements, independent of an inflated dimension declaration.

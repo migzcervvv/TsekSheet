@@ -109,9 +109,9 @@ public static class WorksheetSectionAnalyzer
             var hasId = profile.IdentifierFields.Any(k => !string.IsNullOrWhiteSpace(Cell(row, header.Columns[k]).Value));
             if (!hasId)
             {
-                if (inside && !string.IsNullOrWhiteSpace(entity.Value) && profile.ContextFields.Any(k => { var c = Cell(row, header.Columns[k]); return c.Formula == null && !string.IsNullOrWhiteSpace(c.Value); }))
+                if (inside && !string.IsNullOrWhiteSpace(entity.Value) && profile.ContextFields.Any(k => { var c = Cell(row, header.Columns[k]); return c.Formula != null || !string.IsNullOrWhiteSpace(c.Value); }))
                     throw WorkflowProfiles.Error("AMBIGUOUS_RECORD", "A possible record has contextual data but no identifier. It cannot be silently treated as a note.");
-                return null; // Entity-only headings/notes and formula-only summaries are not records.
+                return null; // Entity-only notes and unnamed/outside-section formula summaries retain their established allowance.
             }
             if (string.IsNullOrWhiteSpace(entity.Value) || entity.Kind != "Text") throw WorkflowProfiles.Error("AMBIGUOUS_RECORD", "An identified record requires a literal text entity name.");
             return new(row, new ReadOnlyDictionary<string, string>(header.Columns.ToDictionary(p => p.Key, p => Cell(row, p.Value).Formula == null ? Cell(row, p.Value).Value : "[formula; cached result unverified]")));

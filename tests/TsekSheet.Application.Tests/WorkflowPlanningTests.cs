@@ -156,6 +156,53 @@ public sealed class WorkflowPlanningTests
     }
 
     [TestMethod]
+    [DataRow("synthetic-payables", 0, "")]
+    [DataRow("synthetic-payables", 0, "0")]
+    [DataRow("synthetic-payables", 0, "125.50")]
+    [DataRow("synthetic-payables", 1, "")]
+    [DataRow("synthetic-laboratory", 0, "")]
+    [DataRow("synthetic-laboratory", 0, "0")]
+    [DataRow("synthetic-laboratory", 0, "125.50")]
+    [DataRow("synthetic-laboratory", 1, "")]
+    public void UnidentifiedContextFormulasInsideEitherSectionCannotDisappearAsNotes(string profileId, int contextIndex, string cache)
+    {
+        var profile = WorkflowProfiles.Get(profileId);
+        foreach (var row in new[] { 9, 20 })
+        {
+            var d = Capture(profile);
+            var column = profile.Fields.ToList().FindIndex(f => f.Key == profile.ContextFields[contextIndex]) + 1;
+            d.Cells[(row, 1)] = d.Cells[(row, 1)] with { Value = "Artificial unresolved entity", Kind = "Text" };
+            d.Cells[(row, column)] = d.Cells[(row, column)] with { Value = cache, Kind = cache == "" ? "Blank" : "Number", Formula = "E6" };
+            var before = d.Cells.ToArray();
+
+            var error = Assert.ThrowsExactly<WorkbookException>(() => WorksheetSectionAnalyzer.Analyze(d.Info, d.Sheet, profile, d.Cells));
+
+            Assert.AreEqual("AMBIGUOUS_RECORD", error.Code);
+            CollectionAssert.AreEqual(before, d.Cells.ToArray());
+        }
+    }
+
+    [TestMethod]
+    [DataRow("synthetic-payables")]
+    [DataRow("synthetic-laboratory")]
+    public void ContextFormulasPreserveNotesMarkersSummariesAndUnverifiedIdentifiedRecords(string profileId)
+    {
+        var profile = WorkflowProfiles.Get(profileId);
+        var d = Capture(profile);
+        // Configured markers bypass record classification; outside-section summaries retain their established allowance.
+        foreach (var row in new[] { 5, 6, 10, 15, 20, 22, 25 })
+            d.Cells[(row, 5)] = d.Cells[(row, 5)] with { Value = "", Kind = "Blank", Formula = "E7" };
+
+        var analysis = WorksheetSectionAnalyzer.Analyze(d.Info, d.Sheet, profile, d.Cells);
+
+        Assert.AreEqual(6, analysis.Sections.Sum(s => s.Records.Count));
+        Assert.IsFalse(analysis.Sections.SelectMany(s => s.Records).Any(r => r.Row is 9 or 20 or 25));
+        Assert.AreEqual("[formula; cached result unverified]", analysis.Sections[0].Records.Single(r => r.Row == 6).Values[profile.ContextFields[0]]);
+        Assert.AreEqual(10, analysis.Sections[0].SubtotalRow);
+        Assert.AreEqual(22, analysis.Sections[1].SubtotalRow);
+    }
+
+    [TestMethod]
     public void MissingCaptureLimitsProfileMismatchAndCancellationRejectPlanning()
     {
         var d=Capture(Profile); d.Cells.Remove((4,2));

@@ -1,5 +1,287 @@
 # TsekSheet Implementation Roadmap
 
+## Autonomous cycle 13 - live source-linked mapping preview
+
+The [source-linked mapping plan](plans/phase-04-source-linked-mapping.md) connects
+the privately owned live source-linked review to the existing deterministic
+read-only column/section mapping. Fresh source observations bracket complete
+worksheet analysis and typed projection; destination checks follow source I/O.
+Lifetime, exact review/profile/source/destination versions and cancellation are
+enforced through the serialized private boundary. Both synthetic profiles,
+artificial native documents, independent sheets and dirty copies are tested.
+Cached previews remain observations with CanApply=false. Exact executed checks
+are in the [progress tracker](docs/development/AUTONOMOUS_PROGRESS.md). No OCR,
+renderer, UI/bridge or workbook mutation is enabled; MVP remains incomplete.
+
+Next bounded task: first record a focused plan to connect one live source-linked
+review to the existing read-only single-record placement planner. Retain exact
+live review/profile and explicit destination/session/sheet/revision/source
+bindings, private review ownership and fresh source checks around analysis,
+typed projection and planning. Recheck the destination after source I/O and
+registration/lifetime/cancellation after final destination reads. Reuse the
+existing pure planner's section/entity choices, duplicate warnings and conservative
+worksheet analysis, preserving literal/typed/source provenance and CanApply=false.
+Test both profiles, independent synthetic worksheets/dirty copies, corrections
+requiring renewed verification, stale/foreign bindings, source changes/release/
+disposal, cancellation and destination changes during reads, with unchanged
+originals/cells/revisions. No batches, structural preflight, candidate preparation/
+approval/adoption, OCR/tool choice, rendering, UI/bridge, persistence or workbook
+writes in that slice. This is the documented Phase 3/4 live verified-data placement
+prerequisite and needs no accounting-owner decision or routine milestone approval.
+
+## Autonomous cycle 12 - live source-linked field review
+
+The [source-linked review plan](plans/phase-04-source-linked-review.md) connects
+exact registered local sources to a privately owned headless field review.
+Fresh source checks bracket review commands and typed projection. Staged changes
+commit only after final checks; cancellation rolls back and source failures
+terminally invalidate the review. Corrections require renewed explicit field
+verification. Caller-created evidence, cached snapshots and unwrapped reviews
+cannot enter this live boundary. Both synthetic profiles and artificial native
+files are tested. PDF ordinals remain associations, not parsed/rendered-page
+proof. Exact checks are in the [progress tracker](docs/development/AUTONOMOUS_PROGRESS.md).
+No OCR, UI/bridge, source-linked mapping, candidate adoption or workbook mutation
+is enabled; Phase 2/3 and the MVP remain incomplete.
+
+Next bounded task: first record a focused plan to connect this live source-linked
+review to the existing headless read-only single-record mapping preview. Require
+exact live review/profile and explicit destination/session/sheet/revision/source
+bindings. Recheck the registered document authorities before and after worksheet
+analysis and typed projection, and recheck the destination after source I/O so
+changes during reads cannot return a current-looking preview. Keep ownership
+private: do not expose or accept a substituted wrapped FieldReviewSession, cached
+projection or caller-created verification proof. Reuse deterministic mapping and
+the existing analysis/field constraints; preserve synthetic/proposal APIs and
+every CanApply=false gate. Test both profiles, independent synthetic worksheets/
+working copies, changed/released/disposed sources, corrections, cancellation and
+destination changes during source reads, with unchanged originals/cells/revisions.
+No placement batch, structural preflight, candidate approval/adoption, OCR tool
+choice, rendering, UI/bridge, persistence or workbook mutation in this slice.
+This is the documented Phase 3/4 live verified-data mapping prerequisite and
+needs no accounting-owner decision or routine milestone approval.
+
+## Autonomous cycle 11 - bounded local document source registration
+
+The [local source registration plan](plans/phase-04-local-source-registration.md)
+adds application-owned in-memory source associations for explicitly selected
+PDF/PNG/JPEG files. Bounded read-only native filesystem observations retain
+identity, metadata and SHA-256; fresh evidence issuance rejects missing, locked,
+replaced or changed sources. Path-free immutable snapshots, exact versions,
+terminal invalidation, cancellation and release/disposal are tested with
+artificial local bytes. Signature triage is not parser/rendering/OCR validation.
+Existing supplied SourceEvidence remains synthetic/proposal evidence in existing
+review APIs; live source authority is not yet connected. Exact checks are in the
+[progress tracker](docs/development/AUTONOMOUS_PROGRESS.md); MVP remains incomplete.
+
+Next bounded task: record a focused plan to connect live registered sources to
+a headless application-owned field-review boundary. Bind drafts/corrections to
+exact live registrations; obtain evidence through fresh source checks rather
+than accepting arbitrary caller-created SourceEvidence as live proof. Revalidate
+source authorities before and after explicit field verification and typed
+projection, rejecting changed/replaced/released/disposed sources and stale or
+foreign versions. Keep review ownership private so an unwrapped review cannot
+bypass the live source checks. Corrections must invalidate verification; source
+availability must never automatically verify a field. Test both synthetic
+profiles and artificial local files with cancellation, missing/locked sources,
+identity replacement and unchanged originals. Preserve existing synthetic/
+proposal-only APIs and all mutation gates. Document PDF ordinal limitations;
+do not claim parsed pages, rendered source inspection, human receipt acceptance
+or OCR. No renderer/tool choice, UI/bridge, persistence, temporary document copies,
+candidate adoption or workbook mutation in this slice. This is the documented
+Phase 4 source-linked verification prerequisite, with no owner decision needed.
+
+## Autonomous cycle 10 - live verified candidate metadata approval
+
+The [verified candidate review lifecycle](plans/phase-03-verified-candidate-lifecycle.md)
+owns live review/copy/parent authorities and the exact engine ticket, hashes and
+ordered provenance. Explicit metadata-only approval rechecks those authorities
+before and after the existing public engine command. Foreign/replayed commands,
+duplicates, formatting gates, stale state and cancellation are tested; cleanup
+distinguishes confirmed discard from reported invalidation/cleanup failure and
+protects newer tickets. Public tickets stay permanently review-only, with no
+adoption/integration/export/production Apply. Exact executed checks are in the
+[progress tracker](docs/development/AUTONOMOUS_PROGRESS.md); Phase 2/3 and MVP
+remain incomplete.
+
+Next bounded task: record a focused plan for the already-required local document
+import/source association boundary (GOALS.md local document processing; Phase 4
+source-linked verification). Add headless application-owned in-memory source
+registration from explicitly selected local files, with bounded byte reads and
+identity/content fingerprint/revision observations. Revalidate the source before
+issuing evidence for review, reject missing/replaced/changed sources, and test
+with artificial local image/PDF bytes and unchanged originals. Keep paths out of
+field evidence and diagnostics. No PDF rendering/OCR tool choice, UI/bridge,
+persistent store, temporary document copies, candidate adoption or workbook
+mutation is authorized by this slice. Existing supplied SourceEvidence remains
+synthetic/proposal evidence until live source registration is explicitly connected
+to review; do not claim receipt verification or authenticate arbitrary caller
+identities. Follow ADR-0002 lifetimes and document supported-input limits. This
+independent dependency needs no accounting-owner decision or routine approval.
+
+## Autonomous cycle 9 - live verified review-only candidate preparation
+
+The [verified candidate preparation](plans/phase-03-verified-candidate-review.md)
+connects 1-20 live reviews to the existing public review-only candidate generator
+on an explicitly bound copy and parent destination. It retains ordered typed/
+literal/source provenance, actual candidate/manifest/review hashes, oracle
+findings and distinct lifecycle facts. Revalidation failures discard the exact
+generated ticket; cleanup failures are explicitly reported. Synthetic tests
+cover both profiles, narrow formatting, source/copy isolation, rejection,
+cancellation and retries. No approval/adoption or structural integration/export
+is enabled. Exact commands/results are in the
+[progress tracker](docs/development/AUTONOMOUS_PROGRESS.md); Phase 2/3 remain incomplete.
+
+Next bounded task: record a focused plan for an application-owned verified
+candidate review lifecycle that retains live authorities and exact engine ticket/
+hash/provenance bindings. Add explicit **metadata-only review approval** through
+the existing public review-only engine contract, requiring a deliberate command
+for that exact ticket and explicit duplicate acknowledgment. Revalidate every
+live review and copy/parent/base/profile/source binding before and after approval;
+discard this ticket on stale review, destination change or cancellation, reporting
+cleanup failures. Never accept caller-created snapshots as verification/approval
+proof or substitute corrected entities without renewed verification. Test stale/
+foreign/replayed approval, changes during approval, duplicates, formatting gates
+and cleanup with both synthetic profiles and unchanged sources/cells/revisions.
+Public tickets must remain permanently review-only; do not enable adoption,
+structural integration/export, production Apply, UI/bridge, OCR, persistence or
+broader compatibility. This follows Phase 3's verified preview/revision lifecycle
+without authorizing active-workbook mutation or requiring routine approval.
+
+## Autonomous cycle 8 - read-only verified structural preflight
+
+The [verified structural preflight](plans/phase-03-verified-structural-preflight.md)
+connects 1-20 live verified reviews and one explicit destination to the existing
+read-only capability diagnostic. It shares Prepare's choice/duplicate/structure
+precedence, retains ordered typed/literal/source provenance and separate lifecycle
+facts, and rechecks all live authorities after preflight. Synthetic plain passes
+and multi-boundary/merged/hidden/unsupported rejections preserve cells, revisions,
+copy changes and source hashes. Every CanApply remains false; no candidate is
+generated. Exact results and limits are in the
+[progress tracker](docs/development/AUTONOMOUS_PROGRESS.md). Phase 2/3 remain incomplete.
+
+Next bounded task: first record a focused plan to connect live verified inputs
+to the existing **review-only candidate preparation** on a selected working copy
+and its explicit parent destination. Accept 1-20 live reviews/expected versions
+and explicit copy/destination/profile/source bindings; revalidate every authority
+after generation and discard the newly generated ticket on stale review,
+destination change or cancellation. Retain per-record provenance and actual
+candidate/manifest/review hashes and oracle/lifecycle facts. Test both synthetic
+profiles, narrow supported formatting, source/copy isolation, rejection and
+cleanup using the existing public review-only engine contract. Never accept cached
+preflight as authority, synthesize human approval, call approval/adoption or enable
+structural integration/export, UI/bridge, OCR, production Apply or broader
+compatibility. This exercises the documented Phase 3 isolated-candidate/reopen/
+validation requirement without enabling active-workbook mutation.
+
+## Autonomous cycle 7 - bounded placement of live verified records
+
+The [bounded verified placement extension](plans/phase-03-verified-bounded-placement.md)
+accepts 1-20 live reviews with explicit expected versions and one selected
+destination. It retains per-record typed/literal/source provenance, cross-record
+duplicate warnings, unresolved choices and deterministic virtual row ordering.
+Invalid/stale/foreign/repeated inputs reject the whole preview; every review and
+the destination are rechecked. The older mapping path now also rejects review
+changes/cancellation during its final destination read. All results remain
+read-only with `CanApply=false`; Phase 2/3 and the MVP remain incomplete. Exact
+checks and limitations are in the [progress tracker](docs/development/AUTONOMOUS_PROGRESS.md).
+
+Next bounded task: record a focused plan to connect live verified placement to
+the existing **read-only structural preflight**, following the established
+`WorkflowPlanning.Prepare` precedence for unresolved choices, duplicate review
+and supported/unsupported structure. Use live review sessions and expected
+versions with one explicit destination; recheck all authorities after preflight.
+Preserve per-record provenance and the distinct planning/preflight/generation/
+oracle/approval/adoption/integration/export lifecycle facts. Test supported plain
+synthetic fixtures and rejected multi-boundary/merged/hidden/unsupported cases on
+independent worksheets/copies with unchanged cells, revisions and source hashes.
+This is the existing Phase 3 capability diagnostic applied to verified inputs,
+not candidate acceptance. Never accept cached observations as authority or enable
+candidate generation/approval/adoption, mutations, UI/bridge, insertion, export,
+OCR or production Apply. Retain all current compatibility and save gates.
+
+## Autonomous cycle 6 - read-only placement of live verified fields
+
+The [bounded verified placement preview](plans/phase-03-verified-placement-preview.md)
+uses the existing pure section/entity/duplicate planner with live review and
+workbook bindings. It retains typed/literal/source provenance, ambiguous section
+and similar-name choices, duplicate warnings and independent worksheet/copy
+coordinates. Entity correction requires renewed verification. All results remain
+observations with `CanApply=false`; candidate generation and mutation gates are
+unchanged. Exact checks and limitations are in the
+[progress tracker](docs/development/AUTONOMOUS_PROGRESS.md).
+
+Next bounded task: record a focused plan to extend verified placement to the
+existing planner's bounded 1-20-record input, using live review sessions and
+explicit expected versions for every record with one selected destination.
+Capture/recheck every live review and the destination; reject the whole preview
+on invalid/stale/foreign/repeated review input. Preserve cross-record duplicate
+warnings, unresolved choices, deterministic virtual row ordering and per-record
+typed/literal/source provenance. Test both synthetic profiles and independent
+worksheets/copies. This completes verified input coverage for the existing
+bounded planner, not larger document-set processing. Never accept cached
+observations as authority or enable candidate generation, mutation, UI/bridge,
+insertion, export, OCR or production Apply. Phase 2/3 remain incomplete.
+
+## Autonomous cycle 5 - read-only mapping of live verified fields
+
+The [bounded verified mapping preview](plans/phase-03-verified-mapping-preview.md)
+resolves configured columns and section bounds independently per selected
+worksheet and captures typed/literal/source/review provenance from the live
+review. Expected review/profile and destination session/source/sheet/revision
+bindings reject stale or incompatible inputs. All results are read-only with
+`CanApply=false`; raw-input proposal APIs and existing mutation gates remain
+unchanged. Current checks and limitations are in the
+[progress tracker](docs/development/AUTONOMOUS_PROGRESS.md).
+
+Next bounded task: record a focused plan for a headless, single-record verified
+placement preview that reuses the existing section/entity/duplicate planner.
+Accept live review/workbook sessions and expected review/profile/destination
+bindings, retain typed/literal/source provenance alongside proposed placements,
+and recheck live revisions during capture. Preserve ambiguous-section choices
+and duplicate warnings. Do not silently replace a verified entity with a
+selected similar name: that change requires correction and fresh verification.
+Use both synthetic profiles and independent worksheets/copies. Never accept a
+cached mapping/projection as proof or enable edits, candidate generation,
+UI/bridge, insertion, export, OCR or production Apply. This follows the existing
+Phase 3 preview/mapping criteria; Phase 2/3 remain incomplete.
+
+## Autonomous cycle 4 - typed projection of live verified fields
+
+The [bounded typed projection](plans/phase-03-typed-review-projection.md) shares
+the planner's established pure value validation and captures typed values from
+the live review under its revision lock. It preserves literal text, normalized
+values, decimal/date types and source/value/review/profile provenance. Draft,
+stale, invalid-type and missing-identifier records reject without state changes.
+No workbook mutation or production Apply capability is enabled. Cycle evidence
+and remaining gates are in the [progress tracker](docs/development/AUTONOMOUS_PROGRESS.md).
+
+Next bounded task: record a focused plan for a headless, read-only mapping preview
+that accepts live review sessions and explicit expected review/profile and
+worksheet revisions. Use the typed projection and current worksheet analysis to
+map fields to configured columns, preserve literal/source provenance, and reject
+stale/foreign versions and incompatible destinations. Exercise both synthetic
+profiles on independent worksheets. Do not accept caller snapshots as proof or
+enable workbook edits, UI/bridge, insertion, export, OCR or production Apply.
+Existing raw-input proposal APIs remain proposal-only. Phase 2/3 remain incomplete.
+
+## Autonomous cycle 3 - headless verified-field contract
+
+The [bounded Phase 3 contract](plans/phase-03-verified-field-contract.md) now owns source-bound draft/corrected/explicitly verified state in memory. Every correction invalidates verification; stale/foreign/replayed commands and missing required/unverified supplied fields reject without changing state. Both synthetic workflow profiles and defensive snapshot/concurrency controls are tested. [Cycle 3 evidence](docs/development/AUTONOMOUS_PROGRESS.md) records 501 passing solution tests and 70 passing frontend tests. Source registration, typed mapping, OCR and actual human-review acceptance remain separate; all mutation gates and incomplete Phase 2/3 status remain unchanged.
+
+Next bounded task: extract the existing planner's pure value-validation rules without changing their semantics, and add a headless typed-record projection that atomically consumes the live review at its expected version/profile. Reject stale/unverified/wrongly typed/invalid records and retain literal text plus source/version provenance. Record a focused plan first; do not accept snapshots as verification proof or enable workbook mutation, UI/bridge, insertion, export or OCR adapters.
+
+## Autonomous cycle 2 - planner formula-context rejection
+
+The older flat `WorksheetSectionAnalyzer.Record` now rejects named rows without identifiers when a configured context field contains a formula, including uncached and zero-cache formulas, inside either declared section. Both generic profiles and synthetic workbook/session/copy preservation controls are covered. Configured markers, entity-only notes, outside-section formula summaries and all mutation gates remain unchanged. [Cycle 2 evidence](docs/development/AUTONOMOUS_PROGRESS.md) records 464 passing .NET tests and 70 passing frontend tests; Phase 2/3 and the MVP remain incomplete.
+
+Next bounded task: begin the already-required Phase 3 verified-data contract as a headless application-layer slice, consistent with ADR-0002/0003. First record a focused implementation plan, then model draft/corrected/explicitly verified field values bound to their source and value revision; corrections invalidate verification, and validation rejects draft/stale/missing required fields. Use artificial reimbursement and non-reimbursement inputs only. This independent core contract needs no accounting-owner decisions or OCR tool selection; it must not enable template application, insertion, export, persistence or bridge/UI commands. Mapping, extraction, packaging and actual accounting acceptance remain separate dependencies.
+
+## Autonomous cycle 1 - unresolved financial context
+
+The [autonomous progress tracker](docs/development/AUTONOMOUS_PROGRESS.md) records the current bounded repair and exact checks. Read-only analysis must retain an entity with formula-bearing or truncated financial context but no identifier as an unresolved record, while preserving explicitly configured subtotal/summary marker behavior. Synthetic domain and real-inspector tests cover hidden rows, cached/uncached formulas, review/retraction, and unchanged source bytes. Existing mutation gates remain unchanged.
+
+Next bounded task: reproduce and repair the analogous missing-identifier/formula-context omission **inside declared data sections** in the older `WorksheetSectionAnalyzer.Record` planner. Preserve its configured markers and established outside-section summary behavior; do not enable Apply or expand its profile schema. Add rejection/control tests and run application, workbook and desktop regressions. This correctness repair does not depend on accounting-owner acceptance or a new architecture.
+
 ## Step 56 implementation plan
 
 Result: [420 solution tests and 52 frontend tests pass](docs/development/step56-verification.md). Review loss requires default-preserving confirmation; bounded scroll/keyboard/A1 navigation and focused categories are implemented. Four actual tabs trim formatting-only tails to 20 columns; distant value/formula evidence keeps the third tab wide. Private source and all 126 fixture/logo/lock fingerprints are unchanged. Full safety harnesses and self-contained Windows publish pass. Accounting-owner acceptance remains outstanding; inspection mutation/export stays disabled and Phase 2 remains incomplete.

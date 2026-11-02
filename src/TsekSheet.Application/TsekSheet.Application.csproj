@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Workflows\Profiles\*.workflow.json" />
+    <InternalsVisibleTo Include="TsekSheet.Application.Tests" />
   </ItemGroup>
 
 </Project>

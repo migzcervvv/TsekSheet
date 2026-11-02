@@ -10,6 +10,84 @@ namespace TsekSheet.Workbooks.Tests;
 public sealed class SectionReviewIntegrationTests
 {
     [TestMethod]
+    public void InspectionKeepsEntityAndUnidentifiedContextInTheReviewQueueWithoutTrustingCaches()
+    {
+        using var fixture = new SectionReviewFixture();
+        var path = fixture.Path + ".entity-context.xlsx";
+        string Hash(string file) => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(file)));
+        var fixtureHash = Hash(fixture.Path);
+        try
+        {
+            using (var workbook = new ClosedXML.Excel.XLWorkbook(fixture.Path))
+            {
+                var sheet = workbook.Worksheet(1);
+                foreach (var row in new[] { 13, 14, 21, 24 }) sheet.Cell(row, 3).Value = "Artificial Context Entity";
+                sheet.Cell(13, 6).FormulaA1 = "F4";
+                sheet.Cell(14, 6).Value = new string('7', 1100);
+                sheet.Cell(21, 6).FormulaA1 = "F4";
+                sheet.Row(21).Hide();
+                using var output = new FileStream(path, FileMode.CreateNew);
+                workbook.SaveAs(output, new ClosedXML.Excel.SaveOptions { EvaluateFormulasBeforeSaving = false, GenerateCalculationChain = false });
+            }
+            using (var zip = System.IO.Compression.ZipFile.Open(path, System.IO.Compression.ZipArchiveMode.Update))
+            {
+                var entry = zip.GetEntry("xl/worksheets/sheet1.xml")!;
+                System.Xml.Linq.XDocument xml;
+                using (var input = entry.Open()) xml = System.Xml.Linq.XDocument.Load(input);
+                System.Xml.Linq.XNamespace ns = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+                var cached = xml.Descendants(ns + "c").Single(c => (string?)c.Attribute("r") == "F13");
+                cached.Element(ns + "v")?.Remove();
+                cached.Add(new System.Xml.Linq.XElement(ns + "v", "125.50"));
+                xml.Descendants(ns + "c").Single(c => (string?)c.Attribute("r") == "F21").Element(ns + "v")?.Remove();
+                entry.Delete();
+                using var output = zip.CreateEntry("xl/worksheets/sheet1.xml").Open();
+                xml.Save(output);
+            }
+            var before = Hash(path);
+            using (var session = new WorkbookEngine().Inspect(path))
+            {
+                var sheet = session.Info.Worksheets[0].Id;
+                var cells = session.ReadViewport(sheet, 13, 1, 9, 6).Cells;
+                Assert.AreEqual("F4", cells.Single(c => c.Row == 13 && c.Column == 6).Formula);
+                Assert.AreEqual("125.50", cells.Single(c => c.Row == 13 && c.Column == 6).Value);
+                Assert.AreEqual("F4", cells.Single(c => c.Row == 21 && c.Column == 6).Formula);
+                Assert.AreEqual("", cells.Single(c => c.Row == 21 && c.Column == 6).Value);
+                Assert.IsTrue(cells.Single(c => c.Row == 14 && c.Column == 6).Truncated);
+                var review = new SectionReview(session, sheet, 0, SectionReviewFixture.Profile);
+                var initial = review.Snapshot;
+                foreach (var row in new[] { 13, 14, 21 })
+                {
+                    var record = initial.Report.Records.Single(r => r.Row == row);
+                    Assert.AreEqual("Context without identifier", record.Classification);
+                    Assert.IsNull(record.Entity);
+                    Assert.IsTrue(initial.IdentityQueue.Any(r => r.Row == row));
+                    Assert.IsFalse(initial.Report.EntityOnlyRows.Contains(row));
+                }
+                Assert.IsTrue(initial.Report.Records.Single(r => r.Row == 21).Hidden);
+                CollectionAssert.Contains(initial.Report.UnassignedRows.ToArray(), 21);
+                CollectionAssert.Contains(initial.Report.EntityOnlyRows.ToArray(), 24);
+                Assert.IsFalse(initial.Report.IdentitiesVerified);
+                Assert.ThrowsExactly<WorkbookException>(() => review.Decide(new(initial.Binding,
+                    new(Guid.NewGuid(), "identity", 13, null, null, 4, 3, "An identity assertion cannot supply the missing identifier"))));
+                var missing = new SectionReviewDecision(Guid.NewGuid(), "missing", 13, null, null, null, null, "Identifier still requires investigation");
+                var updated = review.Decide(new(initial.Binding, missing));
+                Assert.AreEqual(initial.After.UncertainIdentities, updated.After.UncertainIdentities);
+                Assert.IsFalse(updated.Report.IdentitiesVerified);
+                var retracted = review.Retract(new(updated.Binding, missing.Id));
+                Assert.AreEqual(initial.After.UncertainIdentities, retracted.After.UncertainIdentities);
+                Assert.IsFalse(retracted.PreservationVerified);
+                Assert.IsFalse(retracted.CanInsert);
+                Assert.IsFalse(session.Info.EditingAllowed);
+                Assert.IsFalse(session.Info.IsDirty);
+                Assert.AreEqual(0, session.Info.Revision);
+            }
+            Assert.AreEqual(before, Hash(path));
+            Assert.AreEqual(fixtureHash, Hash(fixture.Path));
+        }
+        finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
+    [TestMethod]
     public void InspectionRetainsUnexplainedAmountsHiddenRowsUncachedFormulasAndTruncatedContext()
     {
         using var fixture = new SectionReviewFixture();
