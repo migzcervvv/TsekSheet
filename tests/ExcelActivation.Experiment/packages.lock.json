@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net10.0-windows7.0": {
+      "DocumentFormat.OpenXml": {
+        "type": "Direct",
+        "requested": "[3.5.1, )",
+        "resolved": "3.5.1",
+        "contentHash": "zxdOf5VVCe/uNklbRhj8dVBzQGj3DoqkUuqOp9cAZVuN8mNYDjof1lvSQA2OQNr8Ptc9d7pbA7Azq/ReaI3FpA==",
+        "dependencies": {
+          "DocumentFormat.OpenXml.Framework": "3.5.1"
+        }
+      },
+      "ExcelDna.Interop": {
+        "type": "Direct",
+        "requested": "[16.0.0, )",
+        "resolved": "16.0.0",
+        "contentHash": "xJoz0zmnEfJd5hKkC0rzmtpQeyjC0mMEQQdpICrGnIB/zYN8e270S5yLxdtbPpTYeEGk7RUQNfjA4FjG9xlRNA=="
+      },
+      "Microsoft.Office.Interop.Excel": {
+        "type": "Direct",
+        "requested": "[16.0.18925.20022, )",
+        "resolved": "16.0.18925.20022",
+        "contentHash": "Wlhtqu3QfLnDRHc77bJewv5k27VASgcINA3eDAljfZQX9iTuM+12Mt7EJYZpxn+2gBw9dlK7q6riUxuXd4cviw=="
+      },
+      "DocumentFormat.OpenXml.Framework": {
+        "type": "Transitive",
+        "resolved": "3.5.1",
+        "contentHash": "U5txtc3ORno73xQx9Lf2gWzfaSZnZwKHfLkTAslhlew9lxe5XbUiCt0dY1fHeAf8yRqszUAe5i/+xLC9R/Xfsw=="
+      },
+      "tseksheet.application": {
+        "type": "Project"
+      }
+    },
+    "net10.0-windows7.0/win-x64": {}
+  }
+}

@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <PlatformTarget>x64</PlatformTarget>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <!-- Isolated experiment; reuse admission and readback, never a production writer. -->
+  <ItemGroup>
+    <ProjectReference Include="../../src/TsekSheet.Application/TsekSheet.Application.csproj" />
+    <PackageReference Include="DocumentFormat.OpenXml" Version="3.5.1" />
+    <Compile Include="../../src/TsekSheet.Workbooks/PackageGuard.cs" Link="Shared/PackageGuard.cs" />
+    <Compile Include="../../src/TsekSheet.Workbooks/WorkbookLimits.cs" Link="Shared/WorkbookLimits.cs" />
+    <Compile Include="../../src/TsekSheet.Excel/SnapshotIdentity.cs" Link="Shared/SnapshotIdentity.cs" />
+    <Compile Include="../../src/TsekSheet.Excel/ExcelReadback.cs" Link="Shared/ExcelReadback.cs" />
+    <Compile Include="../../src/TsekSheet.Excel/StaCommandQueue.cs" Link="Shared/StaCommandQueue.cs" />
+    <Compile Include="../../src/TsekSheet.Excel/BusyMessageFilter.cs" Link="Shared/BusyMessageFilter.cs" />
+    <Compile Include="../ExcelLifecycle.Diagnostics/ExitObservation.cs" Link="Shared/ExitObservation.cs" />
+  </ItemGroup>
+  <Import Project="../../src/TsekSheet.Excel/InteropReferences.props" />
+</Project>
