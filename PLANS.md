@@ -1,5 +1,160 @@
 # TsekSheet Implementation Roadmap
 
+## Excel-native Gate B revision — blocked; insertion stopped, 2026-11-03
+
+[Revision plan](plans/excel-native-gate-b-revision.md) and
+[current preservation results](docs/development/excel-native-editing-poc.md#gate-b-revision--controlled-themefont-results)
+supersede the initial revision proposal. Complete valid Calibri-theme and literal
+font controls retain Calibri; the byte-identical missing-theme negative reproduces
+Aptos Narrow. The expected font was not changed. Original failed evidence remains.
+
+Gate B **did not pass**. The complete-theme run confirms exact copies, source hashes,
+reopen, restored settings and cleanup, but descent/layout, calculation and other
+package differences are not fully qualified. Literal/negative controls additionally
+expose cleanup-unconfirmed/provider results and supervisor timeouts, including after
+removing an unqualified diagnostic COM reader. Later process exit does not approve
+those runs. Native work stopped; C insertion and broad D qualification were not entered.
+
+The independent experimental review distinguishes tested encoding equivalence,
+visual/technical review and hard preservation failures, while retaining complete
+raw differences. The strict experimental raw comparator and production OOXML oracle
+remain unchanged. Only exact generated synthetic hashes enter the isolated worker.
+
+Next prerequisite is resolving owned-instance cleanup/STA-loop exit, independently
+verifying descent/auto-height/rendering, and reviewing a finite package/calculation
+contract. No row-insertion implementation precedes a demonstrably passed B. Real
+Payables boundaries, production editing/receipt output and broader qualification
+remain separate. OCR and worksheet-eligibility implementation remain paused.
+
+Validation: 54 experimental, 457 existing workbook and 608 existing application
+tests pass, zero failed/skipped. Native failed results remain failed. A 321-file
+production/initial-evidence hash inventory shows zero changes. No product/UI,
+admission, original accounting files, commit, push or deployment changed.
+
+## Excel-native synthetic experiment — Gate B blocked, 2026-11-03
+
+[The experimental plan](plans/excel-native-editing-poc.md) and
+[architecture/results](docs/development/excel-native-editing-poc.md) supersede OCR
+and worksheet-eligibility implementation priorities. Microsoft Excel is a required
+user dependency; this isolated provider remains experimental and unregistered.
+
+Gate A passed the measured owned-instance STA/cleanup lifecycle, including restoring
+instance settings. Gate B completed exact-copy/no-op save/reopen/source-preservation
+checks but **did not qualify preservation**: Calibri became Aptos Narrow, with
+unapproved theme/layout/package changes. Both independent no-op runs retain that
+negative result. C insertion and D native complexity/failure expansion were not
+entered. No production gates, UI, receipt Apply/Save As or private workbook changed.
+
+Next bounded revision is a fully specified synthetic font/theme baseline and an
+independent, narrowly reviewed native-difference contract. Retain the failed capture;
+do not treat Excel normalization as automatically harmless. Only a qualified B
+can precede C/D. Real Payables editing requires separate preservation, operation-
+bound authorization, explicit approval and accounting acceptance. OCR stays paused.
+
+Validation: 27 new experimental tests, 457 existing workbook and 608 existing
+application tests pass; exact native results and unexecuted cases are recorded in
+the progress tracker. No commit, push or deployment.
+
+## Workbook opening compatibility fixed — OCR qualification resumed, 2026-11-03
+
+The [bounded opening plan](plans/workbook-opening-compatibility.md) and
+[compatibility report](docs/development/workbook-project-opening.md) document the
+two admission paths and verified fix. Open workbook now independently attempts
+inspection after a known editable-admission rejection and can activate that real
+inspection session as the workbook project. Exact rejection findings and failed
+inspection blockers reach expandable Details. Activation never authorizes copies,
+receipt mapping/insertion or export. Editable limits and preservation gates remain.
+
+Retained real-workbook evidence stops editable admission at 50,001 cells; links,
+VML/comments/printer settings, shared expressions and structural dependencies
+require additional preservation proof. No private workbook was modified or newly
+qualified for editing. Synthetic package/navigation/switching/authorization and
+actual WPF/WebView2 regressions are verified; the progress tracker records exact
+passes and all development failures, including one existing focus timeout whose
+unchanged isolated rerun passes. No commit, push or deployment.
+
+The temporary OCR pause is lifted after workbook verification. The
+[resumed offline OCR qualification plan](plans/phase-04-offline-ocr-qualification.md)
+records actual runtime discovery: Python 3.12.10 x64 runs natively; no Tesseract
+runtime/model was found in the targeted local inventory. Next qualify immutable
+Windows native/Python/model artifacts and actual synthetic recognition, preserving
+unverified drafts and source authority. OCR remains unavailable until that proof.
+
+## Functional MVP continuation — scrolling and rendering, 2026-11-03
+
+Cycle 17 preserves the accepted workbook-centered UI and resumes functional work.
+[Local document rendering](docs/development/local-document-rendering.md) records
+implementation, resource limits, SDK/offline-distribution evaluation and next OCR
+requirements. The [bounded plan](plans/phase-04-rendering-and-scrolling.md) preceded
+implementation. Task canvases scroll expanded content; the grid retains independent
+cell scrolling. Open workbook hover contrast is fixed and hosted-tested in both themes.
+
+Genuine PDF/PNG/JPEG rendering and PDF page navigation/enlargement are connected to
+registered sources in the existing Source inspector, through a supervised one-shot
+Windows renderer worker. No original paths reach React/worker; fresh source checks
+bracket rendering. Viewing never verifies fields or changes their page associations.
+No broad UI redesign or workbook/output authorization changes.
+
+Next functional task is genuine offline OCR: qualify a reproducible Windows x64
+Tesseract runtime/native dependencies and local model payloads, then populate genuine
+unverified candidates using existing source/review contracts. Windows.Media.Ocr was
+assessed but requires package identity absent from this unpackaged application; do
+not silently change packaging or use unsupported calls. Runtime/model hashes,
+licenses, cancellation/timeouts and actual recognition evidence precede enabling OCR.
+Receipt insertion/export remains disabled pending preservation/approval gates.
+
+## Workbook-centered workspace priority — 2026-11-03
+
+Cycle 16 supersedes the global task model in Cycle 15. Each selected workbook is
+one project; the existing architecture still owns a single active workbook plus
+its isolated copies. [Workbook workspace plan and report](docs/design/workbook-workspace.md)
+records the focused audit, implementation, hosted laptop/zoom checks and limits.
+
+The sidebar selects/switches workbooks through existing pending-change guards,
+identifies the active project and provides Overview, Receipts and Worksheets.
+Placement is now Source → Fields → Destination → Review inside Receipts. Settings
+contains Appearance and Troubleshooting. No recent paths, concurrent workbook
+sessions, new persistence, backend policies or receipt output capabilities added.
+Live review/drafts/copies remain mounted across contextual navigation. A live
+receipt must be explicitly closed before switching/closing its workbook in the UI.
+
+Continue from observed workbook-centered usability needs and existing renderer/OCR
+qualification gates. Preserve all source verification and workbook immutability
+restrictions. Current validation: 1,061 .NET tests and 76 frontend tests passed;
+final hosted receipt/laptop/zoom acceptance passed. No commit or deployment.
+
+## Desktop UI/UX priority — 2026-11-03
+
+The [workspace design plan](docs/design/workspace-redesign.md) takes priority over
+additional backend abstraction work. Cycle 15 implements a shared semantic design
+system, task navigation for Receipts/Workbook/Placement, isolated Diagnostics,
+source inspector, mapped-value table, persistent live review state across tasks,
+responsive navigation and light/dark/system appearance. Existing backend services,
+verification semantics and preservation/authorization gates remain unchanged.
+
+Continue with observed usability gaps in the real desktop workflow. Do not add
+mock OCR, decorative dashboards or new backend features to fill the interface.
+Rendering/OCR, production receipt insertion/export and real-accounting acceptance
+remain gated as documented below. Review evidence is in AUTONOMOUS_PROGRESS.md.
+
+## Integration-first priority — 2026-11-03
+
+[Desktop receipt integration](plans/phase-04-desktop-review-integration.md) supersedes
+Cycle 13's next-headless-task ordering. Deliver native local document registration,
+manual source-linked field editing and explicit human verification, then verified
+worksheet mapping, section choices, duplicate warnings and placement proposals in
+WPF/WebView2/React. Cycle 14 connects these four milestones for manual single-record
+review; 1,061 .NET and 74 frontend tests pass, including the hosted receipt flow.
+Reuse the completed application services. Keep all preview
+CanApply gates false. Synthetic compatibility profiles must be labelled honestly.
+
+OCR is dependency-blocked by decoder, process supervision and redistribution work;
+source rendering is unavailable. Production receipt insertion/output remains gated
+by preservation, candidate adoption and explicit authorization. Existing narrow
+cell-edit/Save As behavior retains its restrictions. Next eligible work must close
+usable desktop workflow gaps, with hosted integration evidence, before adding
+further isolated abstractions. No original files, automatic commits or deployment.
+
 ## Autonomous cycle 13 - live source-linked mapping preview
 
 The [source-linked mapping plan](plans/phase-04-source-linked-mapping.md) connects

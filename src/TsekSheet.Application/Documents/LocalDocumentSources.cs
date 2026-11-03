@@ -19,6 +19,8 @@ internal sealed record DocumentObservation(DocumentFileIdentity Identity, string
 internal interface ILocalDocumentReader
 {
     DocumentObservation Read(string selectedPath, long maxBytes, CancellationToken token);
+    (DocumentObservation Observation,byte[] Bytes) ReadContent(string path,long maxBytes,CancellationToken token)
+        => throw new DocumentSourceException("RENDER_UNAVAILABLE","Source reader does not support byte capture.");
 }
 
 /// <summary>
@@ -103,6 +105,22 @@ public sealed class LocalDocumentSources : IDisposable
                 throw Error("SOURCE_INVALIDATED", "The selected source changed or was replaced. Select it again before review.");
             }
             return new(expected.DocumentId, current.Sha256, expected.Revision, pageNumber);
+        }
+    }
+
+    internal byte[] Capture(LocalDocumentVersion expected,CancellationToken token)
+    {
+        lock(_gate)
+        {
+            var entry=Require(expected);
+            try
+            {
+                var captured=_reader.ReadContent(entry.Path,_limits.MaxFileBytes,token);
+                token.ThrowIfCancellationRequested();Require(expected);
+                if(captured.Observation!=entry.Observation)throw Error("SOURCE_INVALIDATED","Source changed before rendering.");
+                return captured.Bytes;
+            }
+            catch(DocumentSourceException){Invalidate(entry);throw Error("SOURCE_INVALIDATED","Source changed or is unavailable. Select it again.");}
         }
     }
 

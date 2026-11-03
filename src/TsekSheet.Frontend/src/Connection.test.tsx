@@ -7,6 +7,8 @@ afterEach(() => { cleanup(); delete (window as unknown as { chrome?: unknown }).
 
 test('browser preview honestly disables native operations', () => {
   render(<App />);
+  fireEvent.click(screen.getByRole('button', {name: 'Settings'}));
+  fireEvent.click(screen.getByText('Troubleshooting'));
   expect(screen.getByRole('status').textContent).toBe('Desktop host unavailable');
   expect((screen.getByRole('button', { name: 'Run diagnostic' }) as HTMLButtonElement).disabled).toBe(true);
 });
@@ -23,6 +25,8 @@ test('handshake failure shows a safe error and retry without enabling native act
   };
   (window as unknown as { chrome: { webview: Transport } }).chrome = { webview: host };
   render(<App />);
+  fireEvent.click(screen.getByRole('button', {name: 'Settings'}));
+  fireEvent.click(screen.getByText('Troubleshooting'));
   await screen.findByText('Connection failed');
   expect(screen.getByRole('alert').textContent).toBe('Protocol unavailable.');
   expect((screen.getByRole('button', { name: 'Run diagnostic' }) as HTMLButtonElement).disabled).toBe(true);
@@ -49,6 +53,8 @@ test('connects to the host, shows progress and cancellation, and renders file na
   };
   (window as unknown as { chrome: { webview: Transport } }).chrome = { webview: host };
   render(<App />);
+  fireEvent.click(screen.getByRole('button', {name: 'Settings'}));
+  fireEvent.click(screen.getByText('Troubleshooting'));
   await waitFor(() => expect(screen.getByRole('status').textContent).toBe('Connected'));
   fireEvent.click(screen.getByRole('button', { name: 'Run diagnostic' }));
   await screen.findByText('50%');

@@ -1,6 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\TsekSheet.Renderer\TsekSheet.Renderer.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" />
     <ProjectReference Include="..\TsekSheet.Application\TsekSheet.Application.csproj" />
     <ProjectReference Include="..\TsekSheet.Workbooks\TsekSheet.Workbooks.csproj" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4314.35" />
@@ -37,4 +38,11 @@
     <Copy SourceFiles="@(FrontendPublish)" DestinationFiles="@(FrontendPublish->'$(PublishDir)frontend\%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>
 
+  <Target Name="CopyRenderer" AfterTargets="Build">
+    <ItemGroup><RendererFiles Include="$(MSBuildThisFileDirectory)..\TsekSheet.Renderer\bin\$(Configuration)\net10.0-windows10.0.19041.0\**\*" Exclude="**\*.pdb" /></ItemGroup>
+    <Copy SourceFiles="@(RendererFiles)" DestinationFiles="@(RendererFiles->'$(TargetDir)renderer\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+  <Target Name="PublishRenderer" AfterTargets="Publish">
+    <Copy SourceFiles="@(RendererFiles)" DestinationFiles="@(RendererFiles->'$(PublishDir)renderer\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
 </Project>

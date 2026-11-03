@@ -1,4 +1,4 @@
-import {cleanup,fireEvent,render,screen,waitFor} from '@testing-library/react';
+import {cleanup,configure,fireEvent,render,screen,waitFor} from '@testing-library/react';
 import {afterEach,expect,test} from 'vitest';
 import {BridgeClient} from './bridge/client';
 import type {Transport,Viewport} from './bridge/client';
@@ -8,6 +8,9 @@ import WorkbookViewer from './WorkbookViewer';
 import {parseCell} from './worksheetNavigation';
 
 const clients:BridgeClient[]=[];
+// Match the other workbook tests: loaded jsdom workers can exceed the library's
+// one-second default while the synthetic async viewport is still progressing.
+configure({asyncUtilTimeout:5000});
 afterEach(()=>{cleanup();clients.splice(0).forEach(c=>c.dispose());});
 function setup(delay=0){
  const messages:{command:string;payload:Record<string,unknown>}[]=[];
@@ -51,7 +54,8 @@ test('Go To Cell, native scroll events and keys use bounded source windows while
 });
 test('rapid scrolling coalesces requests and obsolete in-flight responses never overwrite the newest window',async()=>{
  const s=setup(180);await open();const grid=screen.getByLabelText('Worksheet viewport');
- fireEvent.scroll(grid,{target:{scrollTop:100*28}});await new Promise(r=>setTimeout(r,100));
+ fireEvent.scroll(grid,{target:{scrollTop:100*28}});
+ await waitFor(()=>expect(s.messages.some(m=>m.command==='workbook.readViewport'&&m.payload.startRow===101)).toBe(true));
  for(let n=200;n<=240;n++)fireEvent.scroll(grid,{target:{scrollTop:n*28}});
  await screen.findByRole('button',{name:'Inspect A241'});expect(s.peak()).toBe(1);
  expect(s.messages.filter(m=>m.command==='workbook.readViewport').length).toBeLessThanOrEqual(3);

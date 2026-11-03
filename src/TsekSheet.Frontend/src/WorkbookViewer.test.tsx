@@ -18,7 +18,7 @@ function viewport(payload: Record<string, unknown>): Viewport {
 const clients: BridgeClient[] = [];
 configure({ asyncUtilTimeout: 5000 });
 afterEach(() => { cleanup(); clients.forEach(c => c.dispose()); clients.length = 0; });
-function setup(inspect = false, unsafeCapability = false) {
+function setup(inspect = false, unsafeCapability = false, fallback = false) {
   const listeners = new Set<(event: { data: unknown }) => void>();
   let mode = 'opened';
   let changed = false;
@@ -29,7 +29,8 @@ function setup(inspect = false, unsafeCapability = false) {
       queueMicrotask(() => {
         const error = (m.command === 'workbook.open' && mode === 'error') || (m.command === 'workbook.editCopy' && (mode === 'edit-error' || mode === 'edit-timeout')) || (m.command === 'workbook.saveAsNew' && (mode === 'save-error' || mode === 'save-uncertain')) || (m.command === 'workbook.merge' && mode === 'merge-error');
         let result: unknown;
-        if (m.command === 'workbook.inspect') result = { status: 'opened', workbook: { ...book, editingAllowed: false,
+        if (m.command === 'workbook.inspect' || (fallback && m.command === 'workbook.open' && mode !== 'error')) result = { status: 'opened', workbook: { ...book, editingAllowed: false,
+          findings: fallback ? [{code:'EDITABLE_ADMISSION_LIMIT_EXCEEDED',message:'Editable validation stopped at 50001 stored cell elements; the limit is 50000.'}] : book.findings,
           worksheets: Array.from({ length: 250 }, (_, i) => ({ ...book.worksheets[0], id: `${String(i + 1).padStart(8, '0')}-1111-1111-1111-111111111111`, name: `Sheet ${i + 1}`, order: i + 1, visibility: i === 249 ? 'Hidden' : 'Visible' })),
           compatibility: { fileBytes: 12345, compressedPartBytes: 12000, expandedPartBytes: 50000, partCount: 255, definedNames: 2, relationships: 252, externalLinks: true,
             categories: [{ category: 'Embedded OLE/objects (ignored)', count: 1 }], countStatus: '250 tabs; editable limit 32. Counts unmeasured until selected-sheet scan.',
@@ -236,6 +237,39 @@ test('inspection reports measured limits, prevents mutation and navigates 250 sh
   fireEvent.change(screen.getByLabelText('Inspection start row'), { target: { value: '900000' } });
   await screen.findByText(/Rows 900000–900019/);
 }, 15000);
+
+test('Open workbook adopts inspection as a restricted project and retains the rejection', async () => {
+  const { client } = setup(true, false, true); const contexts: unknown[]=[];
+  render(<WorkbookViewer bridge={client} available onContextChange={c=>contexts.push(c)} />);
+  fireEvent.click(screen.getByRole('button', {name:'Open workbook'}));
+  await screen.findByRole('table');
+  expect(screen.getByText('Workbook opened in inspection mode')).toBeDefined();
+  expect(screen.getByText('EDITABLE_ADMISSION_LIMIT_EXCEEDED')).toBeDefined();
+  expect(screen.getByText('Details').closest('details')?.textContent).toContain('stopped at 50001');
+  expect((screen.getByRole('button',{name:'Create working copy'}) as HTMLButtonElement).disabled).toBe(true);
+  expect((screen.getByRole('button',{name:'Save As'}) as HTMLButtonElement).disabled).toBe(true);
+  expect(contexts.some(c=>!!c && (c as {inspection:boolean}).inspection)).toBe(true);
+  expect(screen.queryByText('Payables Processing')).toBeNull();
+  const sheet=screen.getByRole('combobox',{name:'Worksheet'}) as HTMLSelectElement;
+  await waitFor(()=>expect(sheet.disabled).toBe(false));
+  fireEvent.change(sheet,{target:{value:sheet.options[249].value}});
+  await screen.findByText(/Sheet 250 · Rows/);
+},15000);
+
+test('failed opening displays structured blockers without claiming inspection succeeded', async () => {
+  const listeners=new Set<(event:{data:unknown})=>void>();
+  const client=new BridgeClient({addEventListener:(_,l)=>{listeners.add(l);},removeEventListener:(_,l)=>{listeners.delete(l);},postMessage:m=>{
+    const r=m as {requestId:string}; queueMicrotask(()=>listeners.forEach(l=>l({data:{protocolVersion:1,type:'response',requestId:r.requestId,ok:false,error:{code:'INSPECTION_INVALID_XML',message:'Workbook could not be opened for inspection.',details:[{code:'EDITABLE_ADMISSION_INVALID_PACKAGE',message:'Editable structural validation failed.'},{code:'INSPECTION_INVALID_XML',message:'Malformed relationship XML.'}]}}})));
+  }});clients.push(client);
+  render(<WorkbookViewer bridge={client} available />);
+  fireEvent.click(screen.getByRole('button',{name:'Open workbook'}));
+  await screen.findByRole('alert');
+  expect(screen.getByText('Opening failure details')).toBeDefined();
+  expect(screen.getByText('EDITABLE_ADMISSION_INVALID_PACKAGE')).toBeDefined();
+  expect(screen.getByText('Opening failure details').closest('details')?.textContent).toContain('Malformed relationship XML.');
+  expect(screen.queryByText('Workbook opened in inspection mode')).toBeNull();
+  expect(screen.queryByRole('table')).toBeNull();
+});
 
 test('inspection capability responses cannot authorize mutation', async () => {
   const { client } = setup(true, true); render(<WorkbookViewer bridge={client} available />);

@@ -13,6 +13,7 @@
     <Content Include="..\TsekSheet.Workbooks.Tests\ReferenceCorpus\VerifiedFormatting\noop-height-twentytwo.input.xlsx" Link="Fixtures\review22.xlsx" CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="..\Fixtures\PayablesFixture.cs" Link="Fixtures\PayablesFixture.cs" />
     <Compile Include="..\Fixtures\InspectionFixture.cs" Link="Fixtures\InspectionFixture.cs" />
+    <Compile Include="..\Fixtures\AccountingCompatibilityFixture.cs" Link="Fixtures\AccountingCompatibilityFixture.cs" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="4.5.2" />
     <PackageReference Include="MSTest.TestFramework" Version="4.5.2" />
@@ -22,5 +23,7 @@
   <Target Name="CopySmokeAssets" AfterTargets="Build">
     <ItemGroup><SmokeAsset Include="..\..\src\TsekSheet.Frontend\dist\**\*" /></ItemGroup>
     <Copy SourceFiles="@(SmokeAsset)" DestinationFiles="@(SmokeAsset->'$(TargetDir)frontend\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <ItemGroup><RenderAsset Include="..\..\src\TsekSheet.Desktop\bin\$(Configuration)\net10.0-windows\renderer\**\*" /></ItemGroup>
+    <Copy SourceFiles="@(RenderAsset)" DestinationFiles="@(RenderAsset->'$(TargetDir)renderer\%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>
 </Project>

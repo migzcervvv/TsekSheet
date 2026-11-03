@@ -1,13 +1,16 @@
+import { validReceiptState, validReceiptPreview, validSourceRender } from './receipts';
+import type { ReceiptState, ReceiptPreview, ReceiptDestination, ReviewVersion, SourceRender } from './receipts';
 export interface Transport {
   postMessage(message: unknown): void;
   addEventListener(type: 'message', handler: (event: { data: unknown }) => void): void;
   removeEventListener(type: 'message', handler: (event: { data: unknown }) => void): void;
 }
 export interface Info { applicationName: string; version: string; platform: string; hasUnsavedWork: boolean }
-export interface Handshake { selectedVersion: number; applicationName: string; version: string; capabilities: { diagnostics: boolean; fileSelection: boolean; workbooks: boolean; templates: boolean; ocr: boolean } }
+export interface Handshake { selectedVersion: number; applicationName: string; version: string; capabilities: { sourceRendering?: boolean; receipts?: boolean; diagnostics: boolean; fileSelection: boolean; workbooks: boolean; templates: boolean; ocr: boolean } }
 export interface Selection { status: 'selected' | 'cancelled'; selectionId?: string; displayName?: string }
 export interface Progress { operationId: string; completed: number; total: number }
-export class BridgeError extends Error { constructor(public readonly code: string, message: string) { super(message); } }
+export interface CompatibilityFinding { code: string; message: string }
+export class BridgeError extends Error { constructor(public readonly code: string, message: string, public readonly details: CompatibilityFinding[] = []) { super(message); } }
 // Local failures are distinct from an authoritative host rejection. A request
 // that was dispatched may have completed even when its response never arrives.
 export class BridgeTransportError extends Error {
@@ -27,6 +30,16 @@ export interface MergePreview { destinationName: string; pendingCells: number; c
 import {validSectionReview} from './sectionReview';
 import type {ReviewSnapshot, ReviewBinding, ReviewDecision} from './sectionReview';
 interface Results {
+  'receipt.render': SourceRender;
+  'receipt.cancelRender': {status:'requested'};
+  'receipt.select': ReceiptState;
+  'receipt.state': ReceiptState;
+  'receipt.close': ReceiptState;
+  'receipt.start': ReceiptState;
+  'receipt.correct': ReceiptState;
+  'receipt.verify': ReceiptState;
+  'receipt.retract': ReceiptState;
+  'receipt.preview': ReceiptPreview;
   'sectionReview.start': {status:'started'|'cancelled';review:ReviewSnapshot|null};
   'sectionReview.decide': ReviewSnapshot;
   'sectionReview.retract': ReviewSnapshot;
@@ -53,6 +66,16 @@ interface Results {
   'workbook.merge': { workbook: Workbook; appliedCells: number };
 }
 interface Payloads {
+  'receipt.render': {source:NonNullable<ReceiptState['source']>['document']['version'];pageNumber:number};
+  'receipt.cancelRender': Record<string,never>;
+  'receipt.select': Record<string, never>;
+  'receipt.state': Record<string, never>;
+  'receipt.close': Record<string, never>;
+  'receipt.start': {profileId:string; pageNumber:number};
+  'receipt.correct': {expected:ReviewVersion; key:string; valueRevision:number; value:string};
+  'receipt.verify': {expected:ReviewVersion; key:string; valueRevision:number};
+  'receipt.retract': {expected:ReviewVersion; key:string; valueRevision:number};
+  'receipt.preview': {expected:ReviewVersion; destination:ReceiptDestination; sectionId:string|null; confirmNewEntity:boolean};
   'sectionReview.start': {sessionId:string;worksheetId:string;expectedRevision:number};
   'sectionReview.decide': {binding:ReviewBinding;decision:ReviewDecision};
   'sectionReview.retract': {binding:ReviewBinding;decisionId:string};
@@ -127,6 +150,10 @@ function validViewport(v: ObjectValue): boolean {
 function validResult(command: Command, r: unknown): boolean {
   if (!object(r)) return false;
   switch (command) {
+    case 'receipt.render': return validSourceRender(r);
+    case 'receipt.cancelRender': return r.status==='requested';
+    case 'receipt.select': case 'receipt.state': case 'receipt.close': case 'receipt.start': case 'receipt.correct': case 'receipt.verify': case 'receipt.retract': return validReceiptState(r);
+    case 'receipt.preview': return validReceiptPreview(r);
     case 'sectionReview.start': return r.status==='cancelled'&&r.review===null || r.status==='started'&&validSectionReview(r.review);
     case 'sectionReview.decide': case 'sectionReview.retract': return validSectionReview(r);
     case 'sectionReview.cancel': return r.status==='cancelled';
@@ -194,7 +221,10 @@ export class BridgeClient {
     const p = this.pending.get(m.requestId);
     if (!p) return;
     if (m.ok === true && validResult(p.command, m.result)) { this.finish(m.requestId); p.resolve(m.result); }
-    else if (m.ok === false && object(m.error) && text(m.error.code) && text(m.error.message)) { this.finish(m.requestId); p.reject(new BridgeError(m.error.code, m.error.message)); }
+    else if (m.ok === false && object(m.error) && text(m.error.code) && text(m.error.message)
+      && (m.error.details == null || (Array.isArray(m.error.details) && m.error.details.length <= 32 && m.error.details.every((f: unknown) => object(f) && text(f.code) && content(f.message))))) {
+      this.finish(m.requestId); p.reject(new BridgeError(m.error.code, m.error.message, (m.error.details ?? []) as CompatibilityFinding[]));
+    }
   };
 
   dispose() {

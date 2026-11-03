@@ -19,8 +19,9 @@ internal static class PackageGuard
         if (bytes.LongLength > limits.MaxFileBytes) throw Reject("LIMIT_EXCEEDED", "Workbook exceeds the configured compressed-file limit.");
         if (bytes.Length >= 2 && bytes[0] == 0xD0 && bytes[1] == 0xCF) throw Reject("PROTECTED_WORKBOOK", "Encrypted or legacy compound workbooks are unsupported. Supply an unencrypted .xlsx copy.");
         var findings = new Dictionary<string, CompatibilityFinding>(StringComparer.Ordinal)
-        { ["EDIT_SCOPE"] = new("EDIT_SCOPE", "Only validated single-cell in-memory edits are supported. Integration and saving are unavailable; complete Excel preservation is not certified.") };
+        { ["EDIT_SCOPE"] = new("EDIT_SCOPE", "Only separately validated cell edits and working-copy operations are supported. Save As requires explicit new-file authorization and validation. Production receipt insertion/export and complete Excel preservation are not certified.") };
         var opaque = new Dictionary<string, string>(StringComparer.Ordinal);
+        var advanced = new SortedSet<string>(StringComparer.Ordinal);
         var targets = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         using var input = new MemoryStream(bytes, false);
         using var zip = new ZipArchive(input, ZipArchiveMode.Read);
@@ -37,11 +38,17 @@ internal static class PackageGuard
             if (expanded > limits.MaxExpandedBytes) throw Reject("LIMIT_EXCEEDED", "Workbook exceeds the expanded-package limit.");
             if (name.EndsWith('/')) continue;
             var lower = name.ToLowerInvariant();
-            if (lower == "xl/calcchain.xml") findings["ADVANCED_CONTENT"] = new("ADVANCED_CONTENT", "A calculation chain is present. Snapshot preservation has not been established.");
+            if (lower == "xl/calcchain.xml") advanced.Add("calculation chain");
             if (lower.Contains("vbaproject") || lower.Contains("activex") || lower.Contains("macrosheets") || lower.Contains("externallinks") || lower.Contains("connections") || lower.StartsWith("_xmlsignatures/"))
-                throw Reject("UNSUPPORTED_FEATURE", "Macros, active content, signatures and external data links are unsupported. Supply a plain .xlsx copy.");
+            {
+                var feature = lower.Contains("vbaproject") ? "VBA project" : lower.Contains("activex") ? "ActiveX control" : lower.Contains("macrosheets") ? "macro worksheet" : lower.Contains("externallinks") ? "external workbook link" : lower.Contains("connections") ? "data connection" : "digital signature";
+                throw Reject("UNSUPPORTED_FEATURE", $"Editable admission detected a {feature} package part. Preservation is unverified; this feature cannot be edited or exported.");
+            }
             if (!lower.EndsWith(".xml") && !lower.EndsWith(".rels") && !lower.EndsWith(".psmdcp"))
-                throw Reject("UNSUPPORTED_FEATURE", "Editing rejects non-XML binary or embedded parts, including images, because preservation is unverified. Use Inspect workbook read-only for categorized metadata and bounded cells.");
+            {
+                var feature = lower.EndsWith(".vml") ? "VML drawing" : lower.StartsWith("xl/printersettings/") ? "printer settings" : lower.StartsWith("xl/media/") ? "image/media" : lower.StartsWith("xl/embeddings/") ? "embedded object" : "non-XML or binary";
+                throw Reject("UNSUPPORTED_FEATURE", $"Editable admission detected a {feature} part. Preservation is unverified; read-only inspection can categorize the package without rewriting it.");
+            }
             using var stream = entry.Open();
             using var bounded = new CountingStream(stream, count =>
             {
@@ -60,7 +67,7 @@ internal static class PackageGuard
                 {
                     var target = reader.GetAttribute("Target") ?? "";
                     if (string.Equals(reader.GetAttribute("TargetMode"), "External", StringComparison.OrdinalIgnoreCase) || target.Contains("://") || target.StartsWith("file:", StringComparison.OrdinalIgnoreCase))
-                        throw Reject("EXTERNAL_RESOURCE", "External workbook resources are not supported. Remove links in a separate copy before opening.");
+                        throw Reject("EXTERNAL_RESOURCE", "Editable admission detected an external relationship (for example a workbook link or hyperlink). Preservation is unverified. Read-only inspection never follows these targets.");
                     var sourcePart = entry.FullName == "_rels/.rels" ? "" : entry.FullName.Replace("/_rels/", "/")[..^5];
                     if (!Uri.TryCreate(new Uri("http://package/" + sourcePart), target, out var resolved) || resolved.Host != "package" || resolved.Query.Length > 0 || resolved.Fragment.Length > 0
                         || zip.GetEntry(resolved.AbsolutePath.TrimStart('/')) == null)
@@ -70,7 +77,7 @@ internal static class PackageGuard
                     if (relationshipType is not ("officeDocument" or "worksheet" or "styles" or "sharedStrings" or "theme" or "table" or "calcChain" or "core-properties" or "extended-properties" or "custom-properties" or "customXml" or "customXmlProps"))
                         findings["UNKNOWN_PARTS"] = new("UNKNOWN_PARTS", "Unrecognized package relationships restrict this workbook to inspection; snapshots are disabled.");
                 }
-                if (element is "workbookProtection" or "sheetProtection" or "protectedRanges") throw Reject("PROTECTED_WORKBOOK", "Protected workbooks or worksheets are unsupported. Supply an authorized unprotected copy.");
+                if (element is "workbookProtection" or "sheetProtection" or "protectedRanges") throw Reject("PROTECTED_WORKBOOK", $"Editable admission detected {element}. Protected content cannot be edited; inspection grants no permission to remove protection.");
                 if (element == "Override")
                 {
                     var type = reader.GetAttribute("ContentType") ?? "";
@@ -82,7 +89,7 @@ internal static class PackageGuard
                 if (element == "sheet" && ++sheets > limits.MaxWorksheets) throw Reject("LIMIT_EXCEEDED", $"Editable validation stopped at {sheets} worksheet declarations; the limit is {limits.MaxWorksheets}. Use Inspect workbook read-only for metadata and bounded browsing.");
                 if (element == "xf" && ++styles > limits.MaxStyles) throw Reject("LIMIT_EXCEEDED", "Workbook has too many styles.");
                 if (element is "extLst" or "conditionalFormatting" or "dataValidations" or "drawing" or "pivotTable" || (element == "f" && reader.GetAttribute("t") is "array" or "shared"))
-                    findings["ADVANCED_CONTENT"] = new("ADVANCED_CONTENT", "Advanced or extension content is present. Only basic cell inspection is available; future mutations require separate compatibility tests.");
+                    advanced.Add(element == "f" ? reader.GetAttribute("t") + " formula" : element);
             }
             if (bounded.BytesRead != entry.Length) throw Reject("INVALID_PACKAGE", "Workbook has inconsistent package entry sizes.");
             if (lower.StartsWith("customxml/"))
@@ -93,13 +100,14 @@ internal static class PackageGuard
             else if (!IsKnownPart(lower))
                 findings["UNKNOWN_PARTS"] = new("UNKNOWN_PARTS", "Unrecognized package parts restrict this workbook to inspection; snapshots are disabled.");
         }
+        if (advanced.Count > 0) findings["ADVANCED_CONTENT"] = new("ADVANCED_CONTENT", "Preservation is unverified for detected features: " + string.Join(", ", advanced) + ". Working copies, edits and export are unavailable.");
         if (names.Any(name => !name.EndsWith('/') && !name.EndsWith(".rels", StringComparison.OrdinalIgnoreCase) && !name.Equals("[Content_Types].xml", StringComparison.OrdinalIgnoreCase) && !targets.Contains(name)))
             findings["UNKNOWN_PARTS"] = new("UNKNOWN_PARTS", "Unreferenced package parts restrict this workbook to inspection; snapshots are disabled.");
         using var packageStream = new MemoryStream(bytes, false);
         using var package = SpreadsheetDocument.Open(packageStream, false, new OpenSettings { AutoSave = false, MaxCharactersInPart = limits.MaxExpandedBytes });
         var wb = package.WorkbookPart ?? throw Reject("INVALID_PACKAGE", "The package does not contain an Excel workbook.");
         var validation = new OpenXmlValidator().Validate(package, token).Take(1).ToArray();
-        if (validation.Length > 0) throw Reject("INVALID_PACKAGE", "Workbook failed Open XML structural validation. Repair a separate copy in Excel before opening.");
+        if (validation.Length > 0) throw Reject("INVALID_PACKAGE", $"Workbook failed Open XML structural validation ({validation[0].Id}). Editable loading is unavailable; independent inspection does not certify schema validity.");
         if (wb.Workbook?.Sheets == null || !wb.Workbook.Sheets.Any()) throw Reject("INVALID_PACKAGE", "Workbook has no worksheets.");
         var structural = new SortedDictionary<string, string>(StringComparer.Ordinal)
         {

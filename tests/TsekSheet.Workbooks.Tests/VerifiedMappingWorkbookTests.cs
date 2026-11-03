@@ -338,6 +338,9 @@ public sealed class VerifiedMappingWorkbookTests
                 var destination = Destination(session, sheet.Id, p);
                 var version = review.Snapshot.Review.Version;
                 var main = review.PreviewMapping(session, destination, version);
+                var placement = review.PreviewPlacement(session, destination, version, new(p.Sections[1].Id, true));
+                Assert.IsFalse(placement.CanApply); Assert.IsFalse(placement.Proposal.CanApply);
+                Assert.IsNotNull(placement.Proposal.Records[0].ProposedRow);
                 Assert.AreEqual(sheet.Name, main.WorksheetName);
                 Assert.AreEqual(index == 0 ? 22 : 42, main.Sections[1].SubtotalRow);
                 Assert.AreEqual(index == 0 ? 1 : 6, main.Fields[0].Column);
@@ -360,6 +363,9 @@ public sealed class VerifiedMappingWorkbookTests
                 var changes = copy.WorkingCopy!.Changes.ToArray();
                 var copyCells = copyBefore.Worksheets.ToDictionary(s => s.Id, s => Capture(copy, s));
                 var independent = review.PreviewMapping(copy, target, version);
+                var copyPlacement = review.PreviewPlacement(copy, target, version, new(p.Sections[1].Id, true));
+                Assert.AreEqual(placement.Proposal.Records[0].ProposedRow, copyPlacement.Proposal.Records[0].ProposedRow);
+                Assert.IsFalse(copyPlacement.CanApply);
                 Assert.AreNotEqual(main.Destination.SessionId, independent.Destination.SessionId);
                 Assert.AreEqual(main.Review, independent.Review);
                 CollectionAssert.AreEqual(main.Fields.ToArray(), independent.Fields.ToArray());

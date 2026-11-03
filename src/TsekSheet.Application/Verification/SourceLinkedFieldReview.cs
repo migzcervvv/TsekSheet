@@ -94,6 +94,26 @@ public sealed class SourceLinkedFieldReview : IDisposable
         }, token, () => VerifiedMapping.RequireDestination(session, destination));
     }
 
+    public VerifiedPlacementPreview PreviewPlacement(IWorkbookSession session, MappingDestination destination,
+        ReviewVersion expected, PlacementChoices? choices = null, CancellationToken token = default)
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        var profile = VerifiedMapping.RequireProfile(destination);
+        VerifiedMapping.RequireReviewProfile(profile, expected);
+        VerifiedMapping.RequireDestination(session, destination);
+        return Execute(expected, staged =>
+        {
+            VerifiedMapping.RequireDestination(session, destination);
+            var analysis = WorksheetAnalysisReader.Read(session, destination.WorksheetId, destination.Revision, profile, token);
+            var record = staged.Project(expected);
+            var input = new WorkflowRecord(record.Version.ReviewId.ToString("N"),
+                record.Fields.ToDictionary(f => f.Key, f => f.NormalizedText, StringComparer.Ordinal),
+                choices?.SectionId, ConfirmNewVendor: choices?.ConfirmNewEntity ?? false);
+            var proposal = WorkflowPlanning.Plan(analysis, profile, [input], token);
+            return new VerifiedPlacementPreview(VerifiedMapping.Map(destination, profile, analysis, record), proposal);
+        }, token, () => VerifiedMapping.RequireDestination(session, destination));
+    }
+
     public void Dispose()
     {
         lock (_gate) { _review = null; _disposed = true; }

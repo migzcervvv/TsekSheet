@@ -12,6 +12,27 @@ namespace TsekSheet.Application.Tests;
 public sealed class SourceLinkedMappingTests
 {
     [TestMethod]
+    [DataRow("synthetic-payables")]
+    [DataRow("synthetic-laboratory")]
+    public void SourceLinkedPlacementReusesChoicesAndRejectsChangedSourceWithoutMutatingWorkbook(string profileId)
+    {
+        using var f = new Fixture(profileId);
+        var cells = f.Cells; var info = f.Session.Current;
+        var expected = f.Review.Snapshot.Review.Version;
+        var preview = f.Review.PreviewPlacement(f.Session, f.Destination(), expected,
+            new PlacementChoices(f.Profile.Sections[1].Id, true));
+        Assert.IsFalse(preview.CanApply); Assert.IsFalse(preview.Proposal.CanApply);
+        Assert.AreEqual(expected, preview.Mapping.Review);
+        Assert.AreEqual(f.Profile.Sections[1].Id, preview.Proposal.Records[0].SectionId);
+        Assert.IsNotNull(preview.Proposal.Records[0].ProposedRow);
+        CollectionAssert.AreEqual(f.Original, File.ReadAllBytes(f.Path));
+        var changed = f.Original.ToArray(); changed[^1] = 77; File.WriteAllBytes(f.Path, changed);
+        Assert.ThrowsExactly<DocumentSourceException>(() => f.Review.PreviewPlacement(f.Session, f.Destination(), expected));
+        Assert.AreEqual(cells, f.Cells); Assert.AreEqual(info, f.Session.Current);
+        Assert.AreEqual(SourceLinkedReviewStatus.Invalidated, f.Review.Snapshot.Status);
+    }
+
+    [TestMethod]
     [DataRow("synthetic-payables", ".pdf")]
     [DataRow("synthetic-laboratory", ".pdf")]
     [DataRow("synthetic-payables", ".png")]

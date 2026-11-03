@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "experiment": "initial-five-sheet-noop-v1",
+  "syntheticOnly": true,
+  "productionAuthorization": false,
+  "insertionAuthorization": false,
+  "recommendation": "revise",
+  "gateA": "passed on this host with no pre-existing Excel process",
+  "gateB": "not qualified",
+  "gateC": "not executed",
+  "gateD": "not executed",
+  "sourceSha256": "CE86AA36A022D766D5C91027E4F315F353449DC6CAEE2FABDE9CF2E66CB9D5AB",
+  "candidateSha256": "64B7F18C30605B994E90F9337CEBEB78DDBC27108C5D8B34059BF27EF38C0B19",
+  "sourceBytes": 4294,
+  "candidateBytes": 12389,
+  "gateAObservation": {
+    "Worker": {
+      "Status": "completed",
+      "Code": "COMPLETED",
+      "OwnershipVerified": true,
+      "CleanupConfirmed": true,
+      "SourceUnchanged": true,
+      "ExactWorkingCopy": false,
+      "CandidateReopened": false,
+      "Ownership": {
+        "ProcessId": 17480,
+        "StartUtcTicks": 639292840690642203,
+        "WindowHandle": 3476696,
+        "SessionId": 1,
+        "ExistingProcessIds": []
+      },
+      "Stage": "security",
+      "ElapsedMilliseconds": 7860,
+      "ExcelPeakWorkingSet": 149663744,
+      "ExcelVersion": "16.0",
+      "ExcelBuild": "20326",
+      "Timings": {
+        "activationAndOwnership": 4796
+      },
+      "InstanceSettingsRestored": true
+    },
+    "OutcomeUnknown": false,
+    "Code": "COMPLETED",
+    "ExitCode": 0,
+    "ElapsedMilliseconds": 8115,
+    "PeakWorkerBytes": 51429376
+  },
+  "gateBObservation": {
+    "Worker": {
+      "Status": "completed",
+      "Code": "COMPLETED",
+      "OwnershipVerified": true,
+      "CleanupConfirmed": true,
+      "SourceUnchanged": true,
+      "ExactWorkingCopy": true,
+      "CandidateReopened": true,
+      "Ownership": {
+        "ProcessId": 25012,
+        "StartUtcTicks": 639292841318889724,
+        "WindowHandle": 3541970,
+        "SessionId": 1,
+        "ExistingProcessIds": []
+      },
+      "Stage": "reopen-candidate",
+      "ElapsedMilliseconds": 5067,
+      "ExcelPeakWorkingSet": 221798400,
+      "ExcelVersion": "16.0",
+      "ExcelBuild": "20326",
+      "Timings": {
+        "activationAndOwnership": 1627,
+        "openWorkingCopy": 520,
+        "serializeCandidate": 55,
+        "reopenCandidate": 51
+      },
+      "InstanceSettingsRestored": true
+    },
+    "OutcomeUnknown": false,
+    "Code": "COMPLETED",
+    "ExitCode": 0,
+    "ElapsedMilliseconds": 5396,
+    "PeakWorkerBytes": 57806848
+  },
+  "rawPartChanges": 16,
+  "rawXmlFactDifferences": 710,
+  "semanticDifferences": 32,
+  "reviewedObservations": [
+    {
+      "finding": "18 explicit cells retained; 9 text values moved from inline strings to shared strings",
+      "classification": "value projection equivalent for this fixture only",
+      "acceptedAsGeneralNormalization": false
+    },
+    {
+      "finding": "two formula expressions and cached numeric results unchanged",
+      "classification": "preserved in measured projection",
+      "acceptedAsGeneralNormalization": false
+    },
+    {
+      "finding": "five worksheet names, IDs, order and visibility unchanged after relationship resolution",
+      "classification": "preserved in measured projection",
+      "acceptedAsGeneralNormalization": false
+    },
+    {
+      "finding": "Calibri font name changed to Aptos Narrow and theme part added",
+      "classification": "unapproved formatting change; blocking",
+      "acceptedAsGeneralNormalization": false
+    },
+    {
+      "finding": "dyDescent=0.25 added to 5 default-row records and 9 stored rows; explicit 21-point heights and customHeight flags retained",
+      "classification": "specific new layout metadata, appearance not qualified",
+      "acceptedAsGeneralNormalization": false
+    },
+    {
+      "finding": "calcChain added with two entries; formula caches retained",
+      "classification": "observed package transformation; not a preservation exemption",
+      "acceptedAsGeneralNormalization": false
+    },
+    {
+      "finding": "relationships/content types reordered and IDs rewritten; five parts added",
+      "classification": "graph remains internally resolvable; complete normalization contract unqualified",
+      "acceptedAsGeneralNormalization": false
+    },
+    {
+      "finding": "custom origin property canonical XML facts unchanged while serialization hash changed",
+      "classification": "canonical XML equivalence for this exact property",
+      "acceptedAsGeneralNormalization": false
+    },
+    {
+      "finding": "comments, printer binary, names, external links, merges, hidden/grouped rows and broken references absent from initial fixture",
+      "classification": "not exercised; deferred after Gate B",
+      "acceptedAsGeneralNormalization": false
+    }
+  ]
+}

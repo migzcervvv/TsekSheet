@@ -29,13 +29,41 @@ public sealed class WorkbookWorkspaceTests
     }
     private sealed class Engine : IWorkbookEngine
     {
-        public Session Current = new(); public bool Fail; public int Opens;
+        public Session Current = new(); public bool Fail; public int Opens; public Exception? OpenFailure; public int Inspections;
         public IWorkbookSession Open(string path, CancellationToken cancellationToken = default)
         {
             Assert.AreEqual("native-only-path.xlsx", path); Opens++;
+            if (OpenFailure != null) throw OpenFailure;
             if (Fail) throw new WorkbookException("INVALID_PACKAGE", "Unsupported workbook.");
             return Current;
         }
+        public IWorkbookSession Inspect(string path, CancellationToken cancellationToken = default)
+        {
+            Inspections++;
+            throw new WorkbookException("INSPECTION_UNAVAILABLE", "Read-only package inspection is unavailable.");
+        }
+    }
+
+    [TestMethod]
+    [DataRow("UNSUPPORTED_LOCATION")]
+    [DataRow("UNSUPPORTED_FORMAT")]
+    [DataRow("FILE_UNAVAILABLE")]
+    [DataRow("BUSY")]
+    public async Task OpeningDoesNotRetryLocationFormatAccessOrBusyFailures(string code)
+    {
+        var engine = new Engine { OpenFailure = new WorkbookException(code, "Fixed authoritative rejection.") };
+        using var workspace = new WorkbookWorkspace(engine, _ => Task.FromResult<string?>("native-only-path.xlsx"));
+        var failure = await Assert.ThrowsExactlyAsync<WorkbookException>(() => workspace.OpenAsync());
+        Assert.AreEqual(code, failure.Code); Assert.AreEqual(0, engine.Inspections);
+    }
+
+    [TestMethod]
+    public async Task CancellationIsNeverRetriedAsInspection()
+    {
+        var engine = new Engine { OpenFailure = new OperationCanceledException() };
+        using var workspace = new WorkbookWorkspace(engine, _ => Task.FromResult<string?>("native-only-path.xlsx"));
+        await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => workspace.OpenAsync());
+        Assert.AreEqual(0, engine.Inspections);
     }
 
     [TestMethod]

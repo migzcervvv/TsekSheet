@@ -13,7 +13,15 @@ internal sealed class WindowsDocumentReader : ILocalDocumentReader
 {
     internal Action<int>? AfterChunk { get; init; }
 
-    public DocumentObservation Read(string selectedPath, long maxBytes, CancellationToken token)
+    public DocumentObservation Read(string selectedPath, long maxBytes, CancellationToken token) => Observe(selectedPath,maxBytes,token,null);
+
+    public (DocumentObservation Observation, byte[] Bytes) ReadContent(string path,long maxBytes,CancellationToken token)
+    {
+        using var bytes=new MemoryStream();
+        var observation=Observe(path,maxBytes,token,bytes);
+        return (observation,bytes.ToArray());
+    }
+    private DocumentObservation Observe(string selectedPath, long maxBytes, CancellationToken token, Stream? capture)
     {
         try
         {
@@ -44,6 +52,7 @@ internal sealed class WindowsDocumentReader : ILocalDocumentReader
                 buffer.AsSpan(0, take).CopyTo(header[headerLength..]);
                 headerLength += take;
                 hash.AppendData(buffer, 0, read);
+                capture?.Write(buffer,0,read);
                 AfterChunk?.Invoke(read);
             }
             token.ThrowIfCancellationRequested();

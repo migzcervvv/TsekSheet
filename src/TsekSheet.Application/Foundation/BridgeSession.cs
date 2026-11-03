@@ -2,6 +2,8 @@ using System.Text;
 using System.Text.Json;
 using TsekSheet.Application.Workbooks;
 using TsekSheet.Application.Workflows;
+using TsekSheet.Application.Documents;
+using TsekSheet.Application.Verification;
 
 namespace TsekSheet.Application.Foundation;
 
@@ -30,16 +32,24 @@ public sealed class BridgeSession : IDisposable
     private string? operationId;
     private bool ready, selecting, disposed;
     private readonly WorkbookWorkspace? workbooks;
+    private readonly Func<CancellationToken, Task<string?>>? selectDocument;
+    private readonly DesktopReceiptReview receipts = new();
+    private readonly ILocalDocumentRenderer? renderer;
+    private CancellationTokenSource? renderOperation;
+    private TaskCompletionSource? renderFinished;
     public bool HasPendingWorkbookChanges => workbooks?.HasPendingChanges == true;
     public int ReviewDecisionCount => workbooks?.ReviewDecisionCount ?? 0;
 
     public BridgeSession(Action<string> send, Func<CancellationToken, Task<FileSelection>> selectFile,
-        Func<int, CancellationToken, Task>? delay = null, WorkbookWorkspace? workbooks = null)
+        Func<int, CancellationToken, Task>? delay = null, WorkbookWorkspace? workbooks = null,
+        Func<CancellationToken, Task<string?>>? selectDocument = null, ILocalDocumentRenderer? renderer = null)
     {
         this.send = send;
         this.selectFile = selectFile;
         this.delay = delay ?? ((ms, token) => Task.Delay(ms, token));
         this.workbooks = workbooks;
+        this.selectDocument = selectDocument;
+        this.renderer = renderer;
     }
 
     private void Emit(object message)
@@ -47,7 +57,7 @@ public sealed class BridgeSession : IDisposable
         lock (gate) if (!disposed) send(JsonSerializer.Serialize(message, JsonOptions));
     }
     private void Success(string id, object result) => Emit(new { protocolVersion = 1, type = "response", requestId = id, ok = true, result });
-    private void Error(string id, string code, string message) => Emit(new { protocolVersion = 1, type = "response", requestId = id, ok = false, error = new { code, message } });
+    private void Error(string id, string code, string message, IReadOnlyList<CompatibilityFinding>? details = null) => Emit(new { protocolVersion = 1, type = "response", requestId = id, ok = false, error = new { code, message, details } });
     private static bool ValidId(string? id) => id is { Length: > 0 and <= 64 } && id.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_');
     private static bool HasOnly(JsonElement value, params string[] names) => value.ValueKind == JsonValueKind.Object
         && value.EnumerateObject().Select(p => p.Name).Distinct().Count() == value.EnumerateObject().Count()
@@ -85,12 +95,79 @@ public sealed class BridgeSession : IDisposable
                 { Error(id!, "INVALID_REQUEST", "Invalid supported versions."); return; }
                 if (!versions.EnumerateArray().Any(v => v.GetInt32() == 1)) { Error(id!, "UNSUPPORTED_VERSION", "No compatible version."); return; }
                 ready = true;
-                Success(id!, new { selectedVersion = 1, applicationName = new ApplicationMetadataService().ApplicationName, version = "0.1.0", capabilities = new { diagnostics = true, fileSelection = true, workbooks = workbooks != null, templates = false, ocr = false } });
+                Success(id!, new { selectedVersion = 1, applicationName = new ApplicationMetadataService().ApplicationName, version = "0.1.0", capabilities = new { sourceRendering = renderer != null, receipts = selectDocument != null, diagnostics = true, fileSelection = true, workbooks = workbooks != null, templates = false, ocr = false } });
                 return;
             }
-            if (command is not ("sectionReview.start" or "sectionReview.decide" or "sectionReview.retract" or "sectionReview.cancel" or "foundation.getInfo" or "foundation.selectFile" or "diagnostics.run" or "diagnostics.cancel" or "workbook.open" or "workbook.inspect" or "workbook.readViewport" or "workbook.close" or "workbook.discard" or "workbook.createCopy" or "workbook.editCopy" or "workbook.saveAsNew" or "workbook.previewMerge" or "workbook.merge" or "workflow.profiles" or "workbook.planRecords" or "workbook.generateCandidate" or "workbook.approveCandidate" or "workbook.cancelCandidate"))
+            if (command is not ("receipt.render" or "receipt.cancelRender" or "receipt.select" or "receipt.state" or "receipt.start" or "receipt.correct" or "receipt.verify" or "receipt.retract" or "receipt.close" or "receipt.preview" or "sectionReview.start" or "sectionReview.decide" or "sectionReview.retract" or "sectionReview.cancel" or "foundation.getInfo" or "foundation.selectFile" or "diagnostics.run" or "diagnostics.cancel" or "workbook.open" or "workbook.inspect" or "workbook.readViewport" or "workbook.close" or "workbook.discard" or "workbook.createCopy" or "workbook.editCopy" or "workbook.saveAsNew" or "workbook.previewMerge" or "workbook.merge" or "workflow.profiles" or "workbook.planRecords" or "workbook.generateCandidate" or "workbook.approveCandidate" or "workbook.cancelCandidate"))
             { Error(id!, "UNSUPPORTED_COMMAND", "Command is unavailable."); return; }
             if (!ready) { Error(id!, "NOT_READY", "Handshake is required."); return; }
+            if (command!.StartsWith("receipt.", StringComparison.Ordinal))
+            {
+                if (selectDocument == null) { Error(id!, "UNSUPPORTED_COMMAND", "Native receipt selection is unavailable."); return; }
+                if(command=="receipt.cancelRender")
+                {
+                    if(!HasOnly(payload))throw new JsonException();
+                    Task? finished;lock(gate){renderOperation?.Cancel();finished=renderFinished?.Task;}
+                    if(finished!=null)await finished;
+                    Success(id!,new{status="requested"});return;
+                }
+                if(command=="receipt.render")
+                {
+                    if(renderer==null){Error(id!,"RENDER_UNAVAILABLE","Local rendering is unavailable in this host.");return;}
+                    if(!HasOnly(payload,"source","pageNumber") || !HasOnly(payload.GetProperty("source"),"documentId","revision","sha256"))throw new JsonException();
+                    var expectedSource=JsonSerializer.Deserialize<LocalDocumentVersion>(payload.GetProperty("source"),JsonOptions)!;
+                    var requestedPage=payload.GetProperty("pageNumber").GetInt32();
+                    CancellationTokenSource render;
+                    lock(gate)
+                    {
+                        if(renderOperation!=null){Error(id!,"RENDER_BUSY","Wait for the current render to finish or cancel it.");return;}
+                        render=CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);renderOperation=render;renderFinished=new(TaskCreationOptions.RunContinuationsAsynchronously);
+                    }
+                    try{Success(id!,await receipts.RenderAsync(renderer,expectedSource,requestedPage,render.Token));}
+                    finally{lock(gate){if(ReferenceEquals(renderOperation,render)){renderOperation=null;renderFinished?.TrySetResult();renderFinished=null;}}render.Dispose();}
+                    return;
+                }
+                if (command is "receipt.state" or "receipt.close" or "receipt.select")
+                {
+                    if (!HasOnly(payload)) throw new JsonException();
+                    if (command == "receipt.select")
+                    {
+                        lock (gate) { if (selecting) { Error(id!, "BUSY", "A file dialog is already open."); return; } selecting = true; }
+                        try
+                        {
+                            if (receipts.State.Source != null) throw new FieldReviewException("RECEIPT_ALREADY_OPEN", "Close the current receipt before selecting another source.");
+                            var path = await selectDocument(lifetime.Token);
+                            var state = path == null ? receipts.State : await Task.Run(() => receipts.Register(path, lifetime.Token));
+                            Success(id!, state);
+                        }
+                        finally { lock (gate) selecting = false; }
+                        return;
+                    }
+                    if (command == "receipt.close") { lock(gate){renderOperation?.Cancel();} receipts.Close(); }
+                    Success(id!, receipts.State); return;
+                }
+                if (command == "receipt.start")
+                {
+                    if (!HasOnly(payload, "profileId", "pageNumber")) throw new JsonException();
+                    Success(id!, await Task.Run(() => receipts.Start(payload.GetProperty("profileId").GetString()!, payload.GetProperty("pageNumber").GetInt32(), lifetime.Token))); return;
+                }
+                var names = command switch {
+                    "receipt.correct" => new[] { "expected", "key", "valueRevision", "value" },
+                    "receipt.preview" => new[] { "expected", "destination", "sectionId", "confirmNewEntity" },
+                    _ => new[] { "expected", "key", "valueRevision" }
+                };
+                if (!HasOnly(payload, names) || !HasOnly(payload.GetProperty("expected"), "reviewId", "revision", "profileId", "profileHash")) throw new JsonException();
+                var expected = JsonSerializer.Deserialize<ReviewVersion>(payload.GetProperty("expected"), JsonOptions)!;
+                if (command == "receipt.preview")
+                {
+                    if (workbooks == null || !HasOnly(payload.GetProperty("destination"), "sessionId", "worksheetId", "revision", "sourceSha256", "profileId", "profileHash")) throw new JsonException();
+                    var destination = JsonSerializer.Deserialize<MappingDestination>(payload.GetProperty("destination"), JsonOptions)!;
+                    var choices = new PlacementChoices(payload.GetProperty("sectionId").GetString(), payload.GetProperty("confirmNewEntity").GetBoolean());
+                    Success(id!, await workbooks.PreviewReceiptAsync(receipts, expected, destination, choices)); return;
+                }
+                Success(id!, await Task.Run(() => receipts.Change(command[8..], expected, payload.GetProperty("key").GetString()!, payload.GetProperty("valueRevision").GetInt32(),
+                    command == "receipt.correct" ? payload.GetProperty("value").GetString() : null, lifetime.Token))); return;
+            }
             if (command!.StartsWith("sectionReview.", StringComparison.Ordinal))
             {
                 if (workbooks == null) { Error(id!, "UNSUPPORTED_COMMAND", "Workbook host required."); return; }
@@ -255,7 +332,9 @@ public sealed class BridgeSession : IDisposable
                     break;
             }
         }
-        catch (WorkbookException ex) { if (ValidId(id)) Error(id!, ex.Code, ex.Message); }
+        catch (FieldReviewException ex) { if (ValidId(id)) Error(id!, ex.Code, ex.Message); }
+        catch (DocumentSourceException ex) { if (ValidId(id)) Error(id!, ex.Code, ex.Message); }
+        catch (WorkbookException ex) { if (ValidId(id)) Error(id!, ex.Code, ex.Message, ex.Details); }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException)
         { if (ValidId(id)) Error(id!, "INVALID_REQUEST", "Malformed request."); }
         catch (OperationCanceledException) { if (ValidId(id)) Error(id!, "CANCELLED", "Request cancelled."); }
@@ -265,6 +344,7 @@ public sealed class BridgeSession : IDisposable
     public void Dispose()
     {
         lock (gate) { if (disposed) return; disposed = true; lifetime.Cancel(); lifetime.Dispose(); seen.Clear(); }
+        receipts.Dispose();
         workbooks?.Dispose();
         // Active handlers own their linked tokens; cancellation prevents any further sends.
     }

@@ -61,7 +61,8 @@ public interface IWorkbookEngine
         => throw new WorkbookException("INSPECTION_UNAVAILABLE", "Read-only package inspection is unavailable.");
 }
 
-public sealed class WorkbookException(string code, string message) : Exception(message)
+public sealed class WorkbookException(string code, string message, IReadOnlyList<CompatibilityFinding>? details = null) : Exception(message)
 {
     public string Code { get; } = code;
+    public IReadOnlyList<CompatibilityFinding> Details { get; } = details ?? [];
 }

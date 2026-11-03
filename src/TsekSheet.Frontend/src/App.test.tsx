@@ -4,14 +4,14 @@ import App from './App';
 
 afterEach(cleanup);
 
-test('renders the application welcome message and frontend status', () => {
+test('starts in the receipt task and preserves shell navigation', () => {
   render(<App />);
 
   expect(
-    screen.getByRole('heading', { level: 1, name: 'Welcome to TsekSheet' }).textContent,
-  ).toBe('Welcome to TsekSheet');
-  expect(screen.getByText('React frontend is running.').textContent).toBe(
-    'React frontend is running.',
+    screen.getByRole('heading', { level: 1, name: 'Workbook overview' }).textContent,
+  ).toBe('Workbook overview');
+  expect(screen.getByText('Your active workbook and next steps.').textContent).toBe(
+    'Your active workbook and next steps.',
   );
 });
 
@@ -22,4 +22,15 @@ test('header keeps its text fallback when the local logo cannot load', () => {
   fireEvent.error(logo);
   expect(container.querySelector('header img')).toBeNull();
   expect(screen.getByText('TsekSheet')).toBeDefined();
+});
+
+test('workbook destinations require a project; settings and appearance stay available', () => {
+ const {container}=render(<App/>);
+ expect((screen.getByRole('button',{name:'Receipts'}) as HTMLButtonElement).disabled).toBe(true);
+ expect(screen.queryByRole('button',{name:'Placement'})).toBeNull();
+ fireEvent.click(screen.getByRole('button',{name:'Settings'}));
+ expect(screen.getByRole('heading',{level:1}).textContent).toBe('Settings');
+ fireEvent.change(screen.getByLabelText('Appearance'),{target:{value:'dark'}});
+ expect(container.querySelector('.shell')?.getAttribute('data-theme')).toBe('dark');
+ expect(screen.getByText('Troubleshooting')).toBeDefined();
 });

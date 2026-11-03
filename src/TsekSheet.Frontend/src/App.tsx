@@ -1,11 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { BridgeClient, nativeTransport } from './bridge/client';
 import type { Info } from './bridge/client';
+import { Navigation, StatusBadge } from './ui/Workspace';
+import type { Activity } from './ui/Workspace';
 import WorkbookViewer from './WorkbookViewer';
 
 export default function App() {
   const client = useRef<BridgeClient | null>(null);
+  const workspaceScroll = useRef<HTMLElement>(null);
+  const menuButton = useRef<HTMLButtonElement>(null);
   const operation = useRef<string | null>(null);
+  const [activity, setActivity] = useState<Activity>('overview');
+  const [project, setProject] = useState<{name:string;sheet:string;copy:string;pending:boolean;inspection:boolean}|null>(null);
+  const [openRequest, setOpenRequest] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [theme, setTheme] = useState('system');
   const [connection, setConnection] = useState('Connecting');
   const [info, setInfo] = useState<Info | null>(null);
   const [error, setError] = useState('');
@@ -15,9 +24,13 @@ export default function App() {
   const [selecting, setSelecting] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [workbooksAvailable, setWorkbooksAvailable] = useState(false);
+  const [renderingAvailable,setRenderingAvailable]=useState(false);
+  const [receiptsAvailable, setReceiptsAvailable] = useState(false);
   const [logoAvailable, setLogoAvailable] = useState(true);
   const connected = connection === 'Connected';
   const running = runState === 'Running' || runState === 'Cancelling';
+
+  useEffect(() => { workspaceScroll.current?.scrollTo?.(0,0); }, [activity]);
 
   useEffect(() => {
     let active = true;
@@ -28,7 +41,7 @@ export default function App() {
     setConnection('Connecting'); setError(''); setWorkbooksAvailable(false);
     bridge.onProgress = p => { if (active && operation.current === p.operationId) setProgress(Math.round(p.completed / p.total * 100)); };
     void bridge.request('foundation.handshake', { supportedVersions: [1] }).promise
-      .then(handshake => { if (active) setWorkbooksAvailable(handshake.capabilities.workbooks); return bridge.request('foundation.getInfo', {}).promise; })
+      .then(handshake => { if (active) {setWorkbooksAvailable(handshake.capabilities.workbooks);setReceiptsAvailable(handshake.capabilities.receipts===true);setRenderingAvailable(handshake.capabilities.sourceRendering===true);} return bridge.request('foundation.getInfo', {}).promise; })
       .then(metadata => { if (active) { setInfo(metadata); setConnection('Connected'); } })
       .catch(e => { if (active) { setConnection('Connection failed'); setError(String(e.message)); } });
     const close = () => bridge.dispose();
@@ -62,39 +75,28 @@ export default function App() {
     finally { setSelecting(false); }
   }
 
-  return (
-    <div className="shell">
-      <header className="topbar"><span className="wordmark">{logoAvailable && <img className="brand-logo" src="./branding/TsekSheet-No-BG.svg" alt="" width="36" height="36" onError={() => setLogoAvailable(false)} />}TsekSheet</span><span>Desktop foundation</span><span className="local">Local application</span></header>
-      <main>
-        <div className="heading"><div><h1>Welcome to TsekSheet</h1><p>React frontend is running.</p></div><span className="version">{info ? `Version ${info.version}` : 'Starting up'}</span></div>
-        <section className="connection" aria-labelledby="connection-title">
-          <div><h2 id="connection-title">Desktop connection</h2><p>React interface ↔ C# application</p></div>
-          <strong role="status" className={connected ? 'connected' : ''}>{connection}</strong>
-          {connection === 'Connection failed' && <button onClick={() => setAttempt(a => a + 1)}>Retry connection</button>}
-        </section>
+  const titles = {overview:['Workbook overview','Your active workbook and next steps.'],receipts:['Receipts','Source → Fields → Destination → Review'],worksheets:['Worksheets','Explore the active workbook.'],settings:['Settings','Appearance and local troubleshooting.']};
+  return <div className="shell" data-theme={theme} onKeyDown={e=>{if(e.key==='Escape' && menuOpen){setMenuOpen(false);menuButton.current?.focus();}}}>
+    <a className="skip-link" href="#main-workspace">Skip to workspace</a>
+    <aside tabIndex={0} aria-label="Workbook sidebar" className="sidebar" data-open={menuOpen}>
+      <header className="brand-header"><span className="wordmark">{logoAvailable && <span className="brand-mark"><img className="brand-logo" src="./branding/TsekSheet-No-BG.svg" alt="" width="28" height="28" onError={()=>setLogoAvailable(false)}/></span>}TsekSheet</span><span className="workspace-label">Workbook workspace</span></header>
+      <div className="project-picker"><span className="sidebar-label">Workbook</span><button className="project-select" disabled={!connected || !workbooksAvailable} onClick={()=>{setActivity('worksheets');setOpenRequest(n=>n+1);}}>{project?'Switch workbook…':'Select workbook…'}</button>{project?<div className="active-project" title={project.name}><strong>{project.name}</strong><small>{project.inspection?'Inspection only':project.pending?'Unsaved workbook changes':'Original file protected'}</small></div>:<p>No workbook selected</p>}</div>
+      <Navigation active={!!project} activity={activity} onSelect={a=>{setActivity(a);setMenuOpen(false);if(menuOpen)menuButton.current?.focus();}}/>
+      <div className="sidebar-bottom"><p>Files stay on this device.<br/>Reviews stay in memory.</p><span className="version">{info?'Version '+info.version:'Starting up'}</span></div>
+    </aside>
+    <div className="workspace-frame">
+      <header className="topbar"><button ref={menuButton} className="menu-toggle" aria-label="Toggle navigation" aria-expanded={menuOpen} onClick={()=>setMenuOpen(o=>!o)}>Menu</button><span className="workbook-breadcrumb" title={project?.name}>{project?.name??'No workbook selected'} <span className="breadcrumb-separator">/</span> {titles[activity][0]}</span><StatusBadge tone={connected?'success':'neutral'}><span role="status">{connection}</span></StatusBadge>{connection==='Connection failed' && <button onClick={()=>setAttempt(a=>a+1)}>Retry connection</button>}</header>
+      <main ref={workspaceScroll} id="main-workspace" tabIndex={0}>
+        <div className="heading"><div><h1>{titles[activity][0]}</h1><p>{titles[activity][1]}</p></div><span className="session-label">{project?project.sheet+' · '+project.copy:'Single-workbook session'}</span></div>
         {!nativeTransport() && <p className="notice">Open the Windows desktop application to use native controls. Browser preview has no C# connection.</p>}
         {error && <p role="alert" className="error">{error}</p>}
-        <WorkbookViewer bridge={connected ? client.current : null} available={workbooksAvailable} />
-        <div className="workspace">
-          <section className="panel" aria-labelledby="diagnostics-title">
-            <div className="panel-heading"><h2 id="diagnostics-title">Connection diagnostic</h2><span>{runState}</span></div>
-            <p>Run a short operation in C# to check progress reporting and cancellation.</p>
-            <div className="progress-label"><label htmlFor="diagnostic-progress">Diagnostic progress</label><span>{progress}%</span></div>
-            <progress id="diagnostic-progress" value={progress} max="100" />
-            <div className="actions"><button className="primary" disabled={!connected || running} onClick={() => void run()}>Run diagnostic</button><button disabled={!connected || !operation.current || runState === 'Cancelling'} onClick={() => void cancel()}>Cancel</button></div>
-            <p className="detail">Diagnostic data stays in memory.</p>
-          </section>
-          <section className="panel" aria-labelledby="selection-title">
-            <div className="panel-heading"><h2 id="selection-title">Native file selection</h2><span>Demonstration</span></div>
-            <p>Choose a file with the Windows dialog. The selected file is not opened, read, or edited.</p>
-            <div className="selection" aria-live="polite">{file}</div>
-            <button disabled={!connected || selecting} onClick={() => void select()}>{selecting ? 'Dialog open…' : 'Choose a file'}</button>
-            <p className="detail">Only its display name reaches this interface.</p>
-          </section>
-        </div>
-        <section className="scope" aria-labelledby="scope-title"><h2 id="scope-title">Available in a later phase</h2><p>Worksheet replacement, new-sheet creation, existing-file saving, templates, and OCR are not available. Supported cell edits can be merged in memory and exported with Save As to a new file.</p></section>
+        <div className="project-workspace" hidden={activity==='settings'}><WorkbookViewer bridge={connected?client.current:null} available={workbooksAvailable} receiptsAvailable={receiptsAvailable} renderingAvailable={renderingAvailable} activity={activity} onActivityChange={setActivity} openRequest={openRequest} onContextChange={setProject}/></div>
+        <div className="diagnostics-workspace" hidden={activity!=='settings'}>
+          <label className="theme-control">Appearance<select aria-label="Appearance" value={theme} onChange={e=>setTheme(e.target.value)}><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label><details className="troubleshooting"><summary>Troubleshooting</summary><section className="panel" aria-labelledby="diagnostics-title"><div className="panel-heading"><h2 id="diagnostics-title">Connection diagnostic</h2><span>{runState}</span></div><p>Check progress reporting and cancellation through the desktop host.</p><div className="progress-label"><label htmlFor="diagnostic-progress">Diagnostic progress</label><span>{progress}%</span></div><progress id="diagnostic-progress" value={progress} max="100"/><div className="actions"><button className="primary" disabled={!connected||running} onClick={()=>void run()}>Run diagnostic</button><button disabled={!connected||!operation.current||runState==='Cancelling'} onClick={()=>void cancel()}>Cancel</button></div></section>
+          <section className="panel" aria-labelledby="selection-title"><div className="panel-heading"><h2 id="selection-title">Native file selection</h2><span>Diagnostic only</span></div><p>The selected file is not opened, read, or edited.</p><div className="selection" aria-live="polite">{file}</div><button disabled={!connected||selecting} onClick={()=>void select()}>{selecting?'Dialog open…':'Choose a file'}</button></section>
+        </details></div>
       </main>
-      <footer><span>Working copies stay in memory · Save As creates new files</span><span>Windows x64 · Offline-first</span></footer>
+      <footer><span>Original files remain unchanged until an authorized save</span><span>Receipt insertion unavailable</span></footer>
     </div>
-  );
+  </div>;
 }

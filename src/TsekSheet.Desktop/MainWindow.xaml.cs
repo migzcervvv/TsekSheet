@@ -23,10 +23,11 @@ public partial class MainWindow : Window
     private readonly Func<CancellationToken, Task<string?>>? saveSelector;
     private readonly Func<CancellationToken, Task<string?>>? sectionProfileSelector;
     private bool dialogOpen;
+    private readonly Func<CancellationToken, Task<string?>>? documentSelector;
 
     public MainWindow() : this(null, null, null) { }
 
-    internal MainWindow(string? assetDirectory, string? profileDirectory, string? browserExecutableFolder, Func<CancellationToken, Task<string?>>? workbookSelector = null, Func<bool>? confirmDiscard = null, Func<CancellationToken, Task<string?>>? saveSelector = null, Func<CancellationToken, Task<string?>>? sectionProfileSelector = null)
+    internal MainWindow(string? assetDirectory, string? profileDirectory, string? browserExecutableFolder, Func<CancellationToken, Task<string?>>? workbookSelector = null, Func<bool>? confirmDiscard = null, Func<CancellationToken, Task<string?>>? saveSelector = null, Func<CancellationToken, Task<string?>>? sectionProfileSelector = null, Func<CancellationToken, Task<string?>>? documentSelector = null)
     {
         assets = assetDirectory ?? Path.Combine(AppContext.BaseDirectory, "frontend");
         profile = profileDirectory ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TsekSheet", "WebView2");
@@ -35,6 +36,7 @@ public partial class MainWindow : Window
         this.confirmDiscard = confirmDiscard;
         this.saveSelector = saveSelector;
         this.sectionProfileSelector = sectionProfileSelector;
+        this.documentSelector = documentSelector;
         InitializeComponent();
         Loaded += async (_, _) => await InitializeAsync();
         Closing += (_, e) =>
@@ -113,7 +115,7 @@ public partial class MainWindow : Window
         if (session?.HasPendingWorkbookChanges == true && MessageBox.Show(this, "Discard all in-memory workbook changes and reload?", "Unsaved workbook changes", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) { e.Cancel = true; return; }
         session?.Dispose();
         selectedPath = null;
-        session = new BridgeSession(Send, SelectFileAsync, workbooks: new WorkbookWorkspace(workbookEngine, SelectWorkbookAsync, SelectSaveDestinationAsync, SelectSectionProfileAsync));
+        session = new BridgeSession(Send, SelectFileAsync, workbooks: new WorkbookWorkspace(workbookEngine, SelectWorkbookAsync, SelectSaveDestinationAsync, SelectSectionProfileAsync), selectDocument: SelectDocumentAsync, renderer: new TsekSheet.Application.Documents.LocalDocumentRenderer(Path.Combine(AppContext.BaseDirectory,"renderer","TsekSheet.Renderer.exe")));
     }
 
     internal static void ValidateAssets(string directory)
@@ -248,6 +250,21 @@ public partial class MainWindow : Window
         return text;
     }
 
+    private Task<string?> SelectDocumentAsync(CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        if (documentSelector != null) return documentSelector(token);
+        if (dialogOpen) throw new WorkbookException("BUSY", "A native dialog is already open.");
+        dialogOpen = true;
+        try
+        {
+            var dialog = new OpenFileDialog { Title = "Select receipt for manual review", Filter = "Local receipt (*.pdf;*.png;*.jpg;*.jpeg)|*.pdf;*.png;*.jpg;*.jpeg", CheckFileExists = true, Multiselect = false };
+            var selected = dialog.ShowDialog(this) == true ? dialog.FileName : null;
+            token.ThrowIfCancellationRequested();
+            return Task.FromResult(selected);
+        }
+        finally { dialogOpen = false; }
+    }
     internal static SaveFileDialog CreateSaveDialog() => new()
     {
         Title = "Save As — original session only; working-copy edits excluded",

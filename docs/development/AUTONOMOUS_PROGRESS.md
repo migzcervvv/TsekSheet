@@ -1,5 +1,735 @@
 # Autonomous MVP progress
 
+## Cycle 20 — 2026-11-03 — Gate B theme controls; preservation remains blocked
+
+Followed plans/excel-native-gate-b-revision.md before experimental changes. Preserved
+all existing uncommitted work, both original failed captures and initial-noop-v1.json.
+No private workbook was opened/copied/read/modified in this revision. No product
+source, UI, admission, preservation oracle or production dependency changed.
+OCR, worksheet-eligibility UI and new production editing remain paused.
+
+### Delivered and independent checks
+
+- Preserved the exact original generator hash CE86AA36...9D5AB as the unresolved
+  minor-theme negative control. Added complete linked Calibri-theme and literal
+  Calibri/FF000000/no-scheme sources. The theme seed uses only the retained
+  synthetic candidate's complete DrawingML definitions, explicitly replacing its
+  major/minor Latin fonts with Calibri. No independent Excel-authored full-workbook
+  baseline is claimed. All three source packages pass read-only Open XML SDK 3.5.1
+  Microsoft365 schema validation. SDK reference is experimental-test-only.
+- Worker admits exactly these three generated hashes; private/foreign files still
+  cannot enter through matching marker/sheet names. Only probe/no-op remain.
+- Added independent font/scheme/effective-Latin/color analysis, resolved dependency
+  edge and worksheet-target preservation, calculation-setting visibility and a
+  versioned classification review. Plain string/XML encoding equivalences have
+  explicit tests; descent/unknown raw differences require review; font/value/
+  formula/cache/style/name/identity/target/explicit-layout/calculation-mode changes
+  and lost relationships/parts/annotations fail. Complete raw reports remain.
+  Production oracle and strict experimental raw qualification were not relaxed.
+- Added create-new lifecycle journals and a provider-returned result before outer
+  worker-loop exit so failures retain evidence. A supporting bounded COM font/
+  geometry reader failed cleanup qualification and was removed; only DTOs for its
+  invalidated captures remain. No UI or WPF/business-logic integration was added.
+
+### Actual native results; failures remain failures
+
+Fresh normal Gate A passed: e3ff9c335393433588c9bc46a9e8e2e1. Excel 16.0/build20326.
+
+| Control/run | Font | Source/copy/reopen | Preservation/lifecycle outcome |
+| --- | --- | --- | --- |
+| Complete theme d6063112eaa54e52b5c10d79c288efbc | Calibri retained | Confirmed; settings restored and owned exit confirmed | B blocked: 12 changed/4 added parts, 224 raw facts, 15 v3 semantic differences |
+| Literal e3c6c096e6574c39afe2e4f20dffdd84 | Calibri retained | Provider confirms; independent hashes match | EXCEL_CLEANUP_UNCONFIRMED; TIMEOUT_OUTCOME_UNKNOWN; 709 facts, 15 semantic differences |
+| Negative e30ef468986b4a8cb609442cd52eba81 | Aptos Narrow substitution reproduced | Provider confirms; independent hashes match | Cleanup unconfirmed/timeout unknown; preservation also fails; 710 facts, 33 semantic differences |
+
+All controls preserve 18 interpreted cells, artificial values, two formulas/caches,
+five worksheet identities/targets, ranges, explicit heights, print margins and
+empty merges/names. The negative changes font/style. Other controls have nine row
+and five default-row dyDescent additions plus omission of explicit false calculation
+flags. These are not approved by matching formula caches. Microsoft documents a
+custom-height side effect for dyDescent; no independent rendering or future
+auto-height behavior was qualified. Existing dependency edges remain, but added
+metadata/default-style/chain relationships and other raw facts still need a finite
+reviewed contract. Context-sheet raw XML changes also remain unapproved.
+
+Complete-theme addition prevents the rewrite with the original styles on this
+host; literal font selection also prevents it. This supports missing-theme/minor-
+scheme fallback as the observed condition. It does not prove universal behavior,
+the exact Open-versus-Save transition or rendered appearance across environments.
+Calibri remains the expected identity; Aptos Narrow is not treated as equivalent.
+
+Additional diagnostic runs dc125706e71643679e05613a0458097e,
+e6c6b9e3d23e4654bace1937b2ba5236, b93f4d61eed0451a9444da96d61a086a and
+749c8b0a1bdd463c811c6deb05328ded remain invalidated/unknown. One late-bound diagnostic
+failed RuntimeBinderException. Property-readback approaches failed cleanup; the
+reader was removed. Literal/negative failures also occurred without it, so its
+sole causality is unproven. Journals show Quit returned, owned exit was not
+confirmed within five seconds, and some worker outer loops failed to exit even
+after persisting an invalidated provider result. No timeouts were widened; no Excel
+process was killed/attached to. The supervisor stopped only its own timed-out child.
+Later process inventory shows no Excel remaining, without retroactive gate approval.
+
+**B remains blocked; C was not implemented/entered; D was not entered.** No native
+insertion, real template-boundary assumption, output adoption or production editing
+permission. Stop on the remaining preservation/lifecycle findings as requested.
+
+### Verification and retained evidence
+
+- Final **54 experimental tests passed**, zero failed/skipped; interim 46/51/53 green
+  runs retained. Tests include schema and precise positive/negative classification
+  controls, not substitute native-complexity qualification.
+- Existing workbook **457** and application **608** tests passed unchanged, zero
+  failed/skipped. No frontend/desktop UI rerun because no product/UI change.
+- 321 protected production/test/initial-failure-evidence hashes unchanged. All
+  generated baseline/working hashes remain exact. New reports use v3 filenames;
+  initial comparison files and initial review JSON were not overwritten.
+- artifacts/excel-native-gate-b-revision/ holds TRX, protected hashes and audit;
+  artifacts/excel-native-poc/<run>/ holds source/working/candidate/raw/semantic/
+  lifecycle records. Versioned experiments/TsekSheet.ExcelNative.Poc/evidence/
+  gate-b-theme-controls-v1.json records hashes, status, measurements and findings.
+- Updated experimental report, README and PLANS. No commit, push or deployment.
+
+Remaining prerequisites: investigate RCW/STA-loop cleanup with exact ownership;
+independent visual/descent/auto-height proof; finite package/calculation contract;
+only then repeat B and consider the one artificial C insertion. Independent visual
+rendering, other Office versions/locales, native D failure/complexity scenarios,
+real workbook editing and production integration remain unexecuted/unqualified.
+
+## Cycle 19 — 2026-11-03 — gated Excel-native synthetic proof of concept
+
+Read the user's pasted experiment request in full, AGENTS/GOALS/current plans and
+progress, the actual editability investigation, architecture/compatibility/structural
+and native-format evidence. Recorded plans/excel-native-editing-poc.md before code.
+Preserved all prior uncommitted work. Excel is now a required user dependency;
+the adapter remains isolated and experimental. OCR and worksheet-eligibility UI
+implementation remain paused.
+
+### Delivered
+
+- New unreferenced experiments/TsekSheet.ExcelNative.Poc executable: plain provider
+  contracts, deterministic literal five-sheet fixture generator, strict source
+  provenance/hash/path admission, fixed-runtime child-process supervisor and STA
+  OLE/message-pump Excel provider. No Office PIA package, production solution/project
+  reference, business-logic dependency, normal editing permission or UI integration.
+- Ownership uses newly created Excel HWND/PID/start time/session and an initially
+  empty workbook set; rechecks identity and expected paths before operations/Quit.
+  No attachment to existing Excel or Excel kill path. Final cleanup restores six
+  instance properties and confirms the exact owned process exited. COM rejected
+  calls are not automatically replayed. Timeout/cancel invalidates the result;
+  only the owned child worker can be stopped, with Excel cleanup left unconfirmed
+  if necessary. Native hang/crash recovery is not claimed qualified.
+- Worker accepts only probe/no-op and the exact known synthetic source bytes, not
+  an arbitrary workbook matching a marker or tab name. It locks/hashes baseline,
+  makes an exact-byte new working copy before opening it, saves only a distinct
+  candidate and reopens read-only. Macros/events/link updates are disabled on the
+  owned instance, normal load has no repair fallback, and no explicit calculation
+  or insertion call is implemented. Existing output collisions reject.
+- Independent PackageEvidence/SemanticEvidence modules retain package hashes,
+  complete bounded positional XML deltas and a separate values/formulas/caches/
+  styles/layout/identity projection. No blanket native-normalization exemption.
+  Every report denies insertion authority. Production OOXML policies stay unchanged.
+- New experiments/TsekSheet.ExcelNative.Poc.Tests: fixture, preservation-defect,
+  parser/budget/path/protocol/gate and early failure tests. New lockfiles are scoped
+  to these experimental projects, using the repository's existing test versions.
+- README, docs/development/excel-native-editing-poc.md and the versioned
+  experiments/TsekSheet.ExcelNative.Poc/evidence/initial-noop-v1.json retain the
+  architecture, evidence paths, exact synthetic hashes, reviewed observations,
+  limits and revise recommendation. PLANS updated. No actual accounting file
+  was read/modified or used to generate fixtures in this cycle.
+
+### Actual gates
+
+**A passed on the measured normal lifecycle.** Final evidence:
+artifacts/excel-native-poc/0b9f7822c0b94e0292181a6025802c3b/. A newly created instance
+was owned and exited; all six instance settings were restored/read back. Excel
+16.0/build 20326, x64 host. No existing Excel processes were present; concurrent
+user-document/add-in scenarios remain untested and are not implied by the pass.
+
+**B not qualified.** Final evidence:
+artifacts/excel-native-poc/0ef13cb9836b47f3bef060a20edfd599/; first completed no-op
+capture b007fcb80dfb48e0b9dade7248843d52/ reproduces the same findings. Exact working
+copy/source hash/reopen/cleanup checks pass. The final native worker also restores
+its instance settings. No editing call occurs. Baseline 4,294 bytes; candidate
+12,389 bytes; 11 changed and five added parts; 710 raw positional XML facts differ.
+All 18 stored cells, decoded values, two formula expressions/caches and five
+worksheet identities remain in the inspected projection. However, Calibri changes
+to Aptos Narrow in every cell style. A theme/sharedStrings/calcChain/core/app parts
+are added; nine row and five default-row records acquire dyDescent=0.25. Explicit
+21-point/custom heights remain. Semantic projection has 32 differences (18 style,
+9 row, 5 default-row). The missing source theme/minor-font scheme is a plausible
+contributor, not a proven harmless conversion. No normalization allowlist adopted.
+
+**C/D not entered.** No insertion, batch/repeated insertion, realistic native
+complexity expansion, native COM timeout/crash/permission fault or real-workbook
+qualification. The user explicitly required stopping before insertion when B
+cannot qualify. Positive narrow value/cache observations do not overrule the failed
+font/layout/package evidence. No production editing or receipt output is enabled.
+
+### Checks and measurements
+
+| Check | Actual result |
+| --- | --- |
+| Final experimental build and tests | 27 passed, zero failed/skipped; artifacts/excel-native-poc-tests/final-verified/ |
+| Existing full workbook regressions, unchanged --no-build --no-restore | 457 passed, zero failed/skipped; existing-workbooks/ |
+| Existing full application regressions, unchanged --no-build --no-restore | 608 passed, zero failed/skipped; existing-application/ |
+| Native Gate A final | Passed owned-instance/settings-restoration/exit checks; no workbook opened |
+| Native Gate B final | Worker transport/lifecycle completed; exact copy/source/reopen/cleanup passed; independent preservation gate intentionally failed |
+| Final B resource sample | Activation/ownership 1,627 ms; open 520 ms; serialization 55 ms; reopen 51 ms; worker 5,067 ms; supervisor 5,396 ms; Excel peak 221,798,400 bytes (211.52 MiB); worker peak 57,806,848 bytes (55.13 MiB) |
+
+These samples are not hard process-memory limits, maximum-workbook qualification or
+simultaneous additive peaks. Existing source/fixture/production dependency hashes
+are preserved; no UI changes require a fresh frontend/hosted UI acceptance run.
+
+Development failures retained: the first supervisor raised InvalidOperationException
+after worker exit while collecting final metrics; its ownership journal remained
+and subsequent inspection showed no Excel process. Metrics now sample while the
+worker is alive, and native responses persist before supervisor result assembly.
+dotnet test rejected a restore-only switch; restore/test were separated. Sandboxed
+restore used CodexSandboxOffline's empty cache and failed NU1102; native restore
+reused pinned packages. Early vulnerability-metadata access emitted NU1900; no
+audit suppression or production dependency change. A patch-tool failure left a
+new experimental source incomplete; it was reconstructed and verified through final
+native A/B and test builds. An added 10,000-entry calcChain parser control passed
+the worksheet budget but correctly hit the existing comparison-report limit: its
+initial test had 26 passes/one assertion error; the corrected assertion requires
+that exact rejection. Final 27 tests pass without raising any bound. Gate B remains
+an actual preservation failure, not a test harness failure to be hidden.
+
+### Handoff
+
+Recommendation **revise**: qualify a fully specified synthetic font/theme baseline
+and a specific independently tested native-difference policy; retain the failed
+capture. Repeat B before any C insertion. Only then may shared/calcChain/merge/
+hidden/group/name/cross-sheet/external-metadata/broken-ref/comment/printer and native
+failure cases progress. Real accounting editing remains disabled until separate
+preservation/operation-bound authority/explicit user approval/accounting acceptance.
+No automatic commit, push or deployment; no OCR or eligibility UI resumption.
+
+## Cycle 18 — 2026-11-03 — real workbook opening and compatibility
+
+Temporarily paused OCR for the reported Open-versus-Inspect failure. Read project
+instructions/goals/plans, this tracker, workbook architecture/engine/inspection/
+editing/save documentation, real-workbook strategy and retained actual Step 53
+evidence. Preserved all pre-existing uncommitted work. Recorded
+plans/workbook-opening-compatibility.md before code changes. Root
+AUTONOMOUS_PROGRESS.md does not exist; this is the repository's tracker.
+
+### Finding and changes
+
+Open only called full editable admission; Inspect used the independent bounded
+XML reader. The restrictive full-package gates protect preservation; preventing
+otherwise safe inspection from becoming a project was the functional defect.
+Historical actual qualification stopped at 50,001 stored cells, LIMIT_EXCEEDED,
+against a 50,000 limit, with other independently observed link/name/VML/comment/
+printer/shared-expression blockers. No claim is made that every newly reported
+workbook has that first rejection. No private workbook was inspected or modified
+during this cycle.
+
+- WorkbookWorkspace.cs independently attempts inspection only after known
+  editable-admission rejections. The actual inspection session becomes active,
+  without flag conversion or mutable model. Returned findings retain the exact
+  first code/message. Failed/cancelled attempts preserve the previous project;
+  format/location/access/busy errors and cancellation do not trigger fallback.
+  Copy creation now also denies noneditable sessions at the application boundary.
+- WorkbookContracts.cs / BridgeSession.cs / bridge/client.ts preserve bounded
+  structured code/message Details for both failed attempts. Existing origins,
+  payloads, revisions, native path privacy and operation allowlists are unchanged.
+- PackageGuard.cs identifies the detected external link/active/binary/VML/printer/
+  image/protection feature and schema error ID. Advanced findings accumulate the
+  exact detected feature kinds. No admission count, parser or preservation check
+  was relaxed. The old EDIT_SCOPE text now accurately describes narrow existing
+  operations and separately authorized new-file Save As.
+- WorkbookInspection.cs distinguishes metadata XML/compression/file failures.
+  Existing independent admission and per-sheet budgets, caches and denied mutable
+  methods remain. Metadata success does not claim every tab is browsable.
+- WorkbookViewer.tsx / styles.css display inspection-only project status and
+  collapsed technical Details, distinguish automatic rejection from explicitly
+  unevaluated Inspect, retain failed-opening codes/details, identify noneditable
+  projects in the sidebar, and wrap long codes at narrow widths. Copy/Save As and
+  receipt mapping/production insertion/output gates remain. Removed stale UI advice
+  to repair/simplify a workbook as an opening workaround.
+- New artificial AccountingCompatibilityFixture.cs, WorkbookProjectOpeningTests.cs
+  and WorkbookOpeningSmokeTests.cs reproduce cells/tabs/links/link parts/VML/media/
+  printer/protection/advanced and malformed cases. WorkbookWorkspaceTests.cs adds
+  non-retry/cancellation tests. Existing suites and native-selector test seam remain.
+  DesktopSmokeTests becomes partial solely to keep the new hosted test separate.
+  New fixture compile links added to workbook/desktop test projects; no dependency
+  version/lockfile changed.
+- docs/development/workbook-project-opening.md contains the opening-path comparison,
+  error/capability matrix and missing accounting-editing requirements. Analyzer docs
+  and PLANS link the current behavior. Working copies, edits, Merge, new-file Save
+  As, receipt insertion, source/existing-file overwrite and unknown content retain
+  their independent restrictions. No original content was stripped or simplified.
+
+### Executed verification
+
+Evidence: artifacts/workbook-opening/; TRX counters were inspected, not inferred
+from build exit status. Screenshots are under screenshots/ and desktop test output;
+desktop and narrow inspection notices/Details were visually inspected. No tests
+were removed, disabled or skipped; existing preservation tests remain authoritative.
+
+| Check | Actual result |
+| --- | --- |
+| Initial focused workbook-opening suite | 11 passed, zero failed/skipped; focused/ |
+| Initial native complete solution after fallback integration | Application 603 + workbooks 457 + desktop 24 = 1,084 passed, zero failed/skipped; solution-native/ |
+| Final application and workbook suites after non-retry tests/diagnostic changes | 608 + 457 = 1,065 passed, zero failed/skipped; final/ |
+| Final desktop suite after narrow-width fix | 23 passed, one existing receipt drawer Escape/focus timeout, zero skipped; desktop-final/; new actual workbook opening/navigation/switching/authorization/Details regression passed |
+| Unchanged failed receipt test, isolated --no-build rerun | 1 passed, zero failed/skipped; receipt-recheck/; all 24 desktop cases have passing executions on final code |
+| Final frontend suite | 81 tests across ten files passed, zero failed; frontend-final.txt |
+| Final frontend typecheck/production assets and WPF/test builds | Passed through normal desktop test build; no validation bypass or test-only product capability |
+| Source/fixture preservation and protected-input diff | Synthetic hashes unchanged across open/read/switch/copy denial/save denial/close; tracked workbook/media/lock inputs unchanged |
+| git diff --check | Passed, with existing LF/CRLF normalization notices only |
+
+Development failures retained: first frontend run had two new selector assertions
+fail because diagnostics also appear in the existing report and code/message text
+is split by markup. Assertions now scope to the specific Details element, retaining
+the same expected content. Initial desktop compile used the wrong positional
+selector parameter; named saveSelector fixed it. Sandboxed workbook full run had
+45 native directory-handle access-denied failures (412 passes); sandboxed WebView2
+crashed before startup. Authorized native execution passes those checks. A later
+hosted opening assertion raced the asynchronous sidebar effect; it now waits for
+the exact new project name as well as the matching rejection and enabled worksheet.
+Visual review found clipped long codes at 390px despite no page overflow; flex child
+min-width/wrapping and a notice-content bounds assertion fix that defect. Final
+desktop full run had the unrelated existing drawer-focus timeout listed above;
+the unchanged isolated rerun passes. These failed runs remain in the evidence.
+No test expectation or preservation gate was weakened to obtain admission.
+
+Unexecuted: physical native-file-dialog interaction, private-workbook mutation or
+production edit qualification, accounting-owner acceptance, native Excel full
+appearance/calculation proof, hostile corpus exhaustiveness and clean-machine
+offline deployment. The latest complete desktop run is not represented as a
+zero-failure run; its passing isolated retry is recorded separately.
+
+### Resumed offline OCR milestone
+
+After the workbook checks, resumed dependency qualification under
+plans/phase-04-offline-ocr-qualification.md. Targeted PATH/default-install/repository
+inventory found no Tesseract or traineddata payload. py --list-paths finds Store
+Python; native read-only execution confirms **Python 3.12.10 x64**. Sandbox launch
+of python/py was denied; native launcher execution succeeded. This developer
+installation is not a bundled reproducible runtime.
+
+Rechecked primary upstream engine/model documentation and licenses. The resumed
+plan requires immutable Windows runtime/native DLL/Python/model hashes/notices,
+genuine synthetic recognition and source-bound unverified drafts before enabling
+OCR. No runtime/model was downloaded, installed or recognized text fabricated.
+Recognition, packaging and clean-machine qualification remain incomplete. OCR is
+still unavailable, but the temporary workbook-fix pause is lifted. Production
+receipt insertion/export and complex-accounting editing remain gated. No commit,
+push or deployment occurred.
+
+## Cycle 17 — 2026-11-03 — scrolling, hover and genuine source rendering
+
+Read AGENTS.md, GOALS.md, current PLANS/progress, accepted UI design/session/bridge
+contracts and relevant tests. Preserved all dirty Cycle 14–16 work. Recorded
+plans/phase-04-rendering-and-scrolling.md before the architecture extension. No
+broad UI redesign, original workbook write, commit/push/deployment or receipt-output
+policy change. Implemented scrolling first, verified it, then connected native
+PDF/image rendering. The user's additional Open workbook hover defect is fixed.
+
+### Delivered and changed files
+
+- styles.css / App.tsx: every task canvas permits vertical overflow; bounded grid
+  retains intentional cell scrolling. Expanded details/editors remain in canvas
+  flow. Header/footer do not shrink across last actions. Main/sidebar accept native
+  keyboard focus. No wheel handlers or new JavaScript scrolling implementation.
+  Primary hover explicitly retains foreground/background/border so the generic
+  hover rule cannot make Open workbook text disappear.
+- New src/TsekSheet.Renderer project (solution/build/test asset wiring included):
+  one-shot Windows.Data.Pdf/Windows imaging worker receives bytes over pipes, returns
+  real bounded PNG/page metadata, and never receives original paths or writes files.
+  SDK targeting pack 10.0.19041.34 is pinned; native decoders are OS-supplied. Actual
+  generated PDF/PNG/JPEG fixtures render. Parsed PDF page navigation and enlargement
+  are available in the existing Source inspector, independently of review association.
+- New Application/Documents/DocumentRendering.cs: path-free contract and supervised
+  process. At most one worker per bridge, a 512 MiB/one-process job assigned before
+  sending bytes, bounded stdin/stdout/stderr, 20-second timeout, cancellation, process
+  cleanup and PNG signature/dimension checks. No shell/network/model download.
+- WindowsDocumentReader.cs / LocalDocumentSources.cs: capture bytes and identity/hash
+  from the same validated native handle, rejecting unavailable/changed registrations.
+  DesktopReceiptReview.cs checks exact registration before/after render and retains
+  review/value/source versions and all existing verification rules. Render output
+  cannot authorize mapping or workbook changes.
+- BridgeSession.cs / MainWindow.xaml.cs: native renderer composition, sourceRendering
+  capability, strict receipt.render/cancelRender commands; explicit cancel waits for
+  worker cleanup, close/lifetime cancel in-flight work. Existing command restrictions
+  and original/source privacy checks remain.
+- New SourcePreview.tsx / SourcePreview.test.tsx, receipt/client bridge types and
+  App/WorkbookViewer/ReceiptReview props: real source image, page navigation, render
+  errors/cancel/retry, enlargement, generation/version checks, stale image/page-count
+  removal and blob revocation. CSP permits image blobs only; remote/frame/object
+  restrictions remain. Rendering never seeds sample values or verifies a field.
+- Tests: SourceRenderingTests.cs (new), DocumentRenderingTests.cs (new), hosted
+  overflow/native rendering/hover tests and frontend source-view tests. Existing
+  rapid-scroll test now synchronizes on admitted requests instead of a fixed delay,
+  and uses the same 5-second async observation limit as other workbook tests.
+- PLANS.md and docs/development/local-document-rendering.md: functional priority,
+  implementation, bounds, licensing/offline installation review and OCR handoff.
+
+### Actual checks
+
+Evidence: artifacts/rendering/; screenshots under screenshots/ and desktop test
+output. Native source/image and hover screenshots were visually inspected. No
+backend-only test is treated as proof of desktop integration.
+
+| Check | Actual result |
+| --- | --- |
+| Hosted scroll milestone, before enabling renderer | 1 passed (scroll-corrected). Last visible actions reached for Overview/Receipts/Worksheets/Settings at 1440×900, 1366×768, 1280×720, 1024×768, 390×768 and 1280×600 at 100%/125%, with details expanded. Native PageDown and wheel passed. |
+| Final extended hosted scroll/native UI checks | 2 passed (hosted-final). Added actual scrollbar drag and End-key bottom reachability. Real PDF page viewing/navigation/enlargement and Open workbook pointer-hover contrast >=4.5:1 pass in light/dark. |
+| Source rendering authority checks | 4 passed (source-final): unchanged/changed/closed/cancelled source scenarios; fields remain draft and original bytes unchanged unless deliberately modified by the synthetic test. |
+| First complete integration-boundary solution run | 1,071 passed: application 603, workbooks 446, desktop 22; zero failed/skipped. TRX counters inspected. Full frontend install/typecheck/build and solution build passed. |
+| Final focused native suite after cleanup/registration hardening and adding request-bounds test | 7 passed (focused-final): five worker cases including PNG/JPEG, PDF pages, malformed/missing/cancel/timeout/request-limit cases, plus scroll and hosted source/hover tests. No failures/skips. |
+| Final hosted rerun after clearing stale preview page metadata | 1 passed (preview-final), rebuilding final app/frontend. |
+| Final frontend suite | 79 tests across ten files passed, zero failed; frontend-final.txt retained. Typecheck passed. Focused scrolling/source UI checks also passed (11 tests). No test overlapped npm clean install. |
+| Protected input diff / git diff --check | Existing tracked workbook/media/branding/lock inputs unchanged; diff check passed with LF/CRLF notices only. New renderer project lockfile is separate. |
+
+Development failures: the first scroll harness clicked Start before selecting the
+expected synthetic profile/readiness; selecting explicitly fixed the fixture. A
+sandbox restore could not reach NuGet and used a different global cache; restoring
+the pinned SDK from the existing local cache under the build user's context fixed
+it without downloading a runtime. Worker project reference initially rejected the
+higher Windows target/runtime-pack resolution; it now builds as a separate executable
+reference without API assembly linkage, with matching restored SDK assets. First
+worker PDF test incorrectly expected PDF points rather than Windows DIPs (three
+passes/one assertion failure); expected pixel dimensions were corrected, not product
+limits. Two later full frontend runs had one timing failure each in the existing
+rapid-scroll test (78 passed): fixed-time admission and one-second initial async
+observation were unreliable under load. Causal request synchronization and the
+existing workbook-test timeout convention resolved this; final full suite passes.
+No test removed, disabled or skipped. Failed TRX evidence is retained.
+
+### Bounds, dependency evaluation and handoff
+
+Limits: 32 MiB input; up to 1000 PDF pages; bounded page geometry; up to 20M source
+image pixels; preview longest side 1600px; PNG output 12 MiB; 20-second job. Input,
+output and page versions are checked. Resource job containment is not claimed to be
+an AppContainer sandbox. Images remain observations; all later verification/mapping
+commands still freshly check source authority. No temporary document/image files.
+
+Windows SDK/license/redist and C#/WinRT sources are linked in the rendering report.
+Development build uses local targeting pack/projection assemblies and OS-native
+code. External redistribution/legal approval, complete installer notices, SDK
+servicing/vulnerability audit, self-contained worker packaging and clean-machine
+offline installation are not claimed complete. No publish/deployment executed.
+Physical trackpad/monitor-DPI transitions and a broad encrypted/hostile PDF corpus
+were not exercised; synthesized wheel, scrollbar and keyboard paths were tested.
+
+This execution ends with scrolling/hover and a genuine rendered-source vertical
+slice implemented and verified, not MVP completion. OCR remains unavailable.
+Microsoft documents Windows.Media.Ocr package-identity/language-pack requirements;
+this app is unpackaged, so it was not enabled through unsupported calls. Next is
+pinned distributable Tesseract/native/Python/runtime/model qualification and actual
+recognition feeding unverified source-linked drafts. Preserve manual corrections,
+renewed verification and all candidate/preservation/explicit-approval gates. Do not
+resume cosmetic redesign or isolated backend abstractions as the default priority.
+
+## Cycle 16 — 2026-11-03 — workbook-centered workspace
+
+Implemented the corrected product model: a selected workbook is the project.
+Read the pasted workbook-centered request, project instructions/goals/plans/progress,
+prior design report, relevant session/bridge/frontend architecture and source.
+Preserved the complete dirty Cycle 14/15 tree. Recorded focused implementation plan
+in docs/design/workbook-workspace.md before code edits. Backend services and
+contracts, accounting rules, authorization and workbook/source preservation policies
+were not changed in this cycle.
+
+### Changed presentation and navigation
+
+- App.tsx / ui/Workspace.tsx: single-workbook project picker and active project name,
+  Overview/Receipts/Worksheets context, Settings → Appearance/Troubleshooting. Native
+  workbook selection uses the existing viewer's guards. No recent-path persistence,
+  additional workbook sessions or duplicated workbook viewer. Live review/copy state
+  stays in the same mounted instances. Long names are clamped with full title text.
+- WorkbookViewer.tsx: publishes path-free display context and accepts sidebar open
+  intent; retains existing pending-copy/section-review guards. A live receipt blocks
+  UI workbook replacement/close until the receipt is explicitly closed, retaining
+  its drafts. This is a presentation safeguard, not new server-side authorization.
+  Overview reflects live workbook context; Worksheets remains available before
+  selection for validated open or read-only inspection. Existing independent-copy,
+  edit/merge/separate-output functions retain their original restrictions.
+- ReceiptReview.tsx: one Source → Fields → Destination → Review flow. Step changes
+  retain the same live review and unsaved field state. Destination uses the same
+  active workbook/copy/worksheet selectors; Review retains mapped literals, proposed
+  rows, duplicate warnings and required choices. Source/rendering status is compact;
+  full hashes/page/configuration details are expandable. Typed verification and all
+  source/destination invalidation remain in existing application services.
+- Shared Notice pattern: labelled symbols and semantic information/success/warning/
+  error/unavailable styles. Color alone never establishes state. Unavailable OCR,
+  rendering and receipt output are explicit. Unsaved preview attempts and duplicates
+  have warning hierarchy; operation/source failures have error hierarchy.
+- styles.css: compact workbook toolbar/selectors, main grid with bounded scroll
+  ownership, collapsed package/worksheet/section/planning diagnostics, larger visible
+  branding crop from the unmodified approved SVG, laptop layouts and legible secondary
+  text. No new framework/dependency. The SVG's 1500-square canvas and transformed
+  embedded image explain its previously tiny visible mark; only CSS framing changed.
+- App.test.tsx, Connection.test.tsx, ReceiptReview.test.tsx and DesktopSmokeTests.cs:
+  contextual navigation, settings diagnostics, four-step draft retention, native
+  project selection, source guards, visible keyboard focus, long filenames, explicit
+  step readiness, responsive grid bounds and WebView2 zoom. Existing tests retained.
+- PLANS.md, docs/design/workbook-workspace.md and workspace-redesign.md: current
+  priority, audit, implementation report, before/after review and remaining limits.
+
+No automatic commits/push/deployment, original workbook changes, fake extraction,
+new persistence or enabled production receipt insertion/export. Existing local
+sources, working copies and verification authorities are preserved across navigation.
+
+### Actual verification and evidence
+
+Evidence: artifacts/workbook-ux/. Baseline actual hosted test ran before source
+changes with --no-build; before/screenshots retains the prior active-workbook
+captures. after/ contains actual hosted receipt images in both themes at
+1366×768, 1280×720, 1440×900, 1024×768 and 390×768, worksheet images at those sizes
+and a 125% WebView2 zoom image. Multiple laptop/desktop/scaled views were inspected.
+Source placeholders/sidebar/toolbar were compacted after visual review. Cell scroll
+stays in the bounded grid; opening secondary technical reports may scroll that
+secondary body. Higher zoom shows fewer rows, accurately, without claiming more data.
+
+| Check | Executed result |
+| --- | --- |
+| Baseline hosted manual receipt test, Release --no-build --no-restore | 1 passed; before TRX retained. |
+| Final dotnet test TsekSheet.sln -c Release --no-restore --logger trx --results-directory artifacts/workbook-ux/solution-final | 1,061 passed: application 599, workbooks 446, desktop 16; zero failed/skipped. All counters inspected. Frontend install/typecheck/production build and WPF build succeeded. |
+| Corrected full desktop regression run | 16 passed; desktop-corrected TRX retained. |
+| Final focused hosted acceptance after typography/initial overview cleanup | 1 passed; acceptance-final TRX retained. Rebuilt final executable/frontend. |
+| Frontend typecheck and final npm.cmd run test -- --run | Passed; 76 tests across nine files passed. frontend-final.txt retained. No test overlapped dependency installation. |
+| Actual hosted manual workflow | Passed workbook selection, source registration, field save/verification/correction, step navigation/draft retention, destination context, proposed rows/duplicates, source-change rejection and source release. Switching workbook with an active receipt is blocked and keeps its draft. |
+| Laptop/theme/keyboard/zoom acceptance | Passed page-overflow and visible-grid/pane bounds at requested sizes, explicit light/dark themes, browser Tab focus, drawer Escape/focus recovery, long source/workbook names, and no-page-overflow at 125% WebView2 zoom. Captures retained. |
+| Source design lint / browser inspector | Final zero failures/warnings. Inspector reports 11px minimum secondary text; actual hosted views establish workflow acceptance. |
+| Protected input diff and git diff --check | Tracked workbook/media/SVG/lock files unchanged. Original and generated selected-workbook/source hashes passed in hosted tests, except the deliberate artificial source-change scenario. Diff check passes with LF/CRLF notices only. |
+
+Development failures: one leftover legacy Activity string failed TypeScript checking
+and was corrected. First focused destination assertion ran before the parent step
+update; later a disabled step click during in-flight field verification was ignored.
+The harness now waits for enabled controls and the exact current step before use.
+First full solution run had application/workbooks passing and 13 desktop passes/
+three failures: a grid border-box measurement, an obsolete validated-open assumption
+for an inspection fixture, and timing/visibility of secondary planning tools.
+Helpers now choose the appropriate entry point, disclose tools and measure the
+visible grid/pane bounds; final desktop suites pass. One new frontend test queried
+an adjacent number/label with the wrong accessible name (75 passes/one failure);
+step controls now have explicit labels and all 76 pass. Design lint initially
+flagged a check glyph; it was replaced by a plain status symbol. Inspector initially
+flagged 10px secondary text; it is now at least 11px with sentence-case labels.
+No checks or tests were disabled. No failures remain in final executed suites.
+
+Unexecuted: physical monitor-DPI transitions/multi-monitor acceptance (content zoom
+is not that test), physical native-file-picker usability, accounting-owner signoff,
+real receipt OCR/rendering and clean-machine installation/full MVP acceptance.
+The native WPF title bar remains Windows-controlled. No production receipt output.
+
+### Handoff
+
+The first verified workbook-centered implementation milestone is complete and the
+remaining dependency-ready presentation milestones are connected. Continue from
+observed workbook/receipt usability issues, with one active project and no invented
+recent data. Real renderer/OCR qualification and accounting-owner compatibility/
+preservation acceptance remain open. Do not return to global Placement/Diagnostics
+navigation or isolated backend abstraction work as the default priority. MVP is
+not claimed complete.
+
+## Cycle 15 — 2026-11-03 — task-based desktop UI/UX
+
+Implemented the first redesigned workspace under the user's new UI/UX priority.
+Read the pasted design request, project instructions/goals/current plans/progress,
+architecture, existing host/frontend and tests. Preserved all uncommitted Cycle 14
+work. No backend services, contracts, authorization, source verification or workbook
+preservation policies changed during this redesign. Audit and implementation plan
+were recorded before changes in docs/design/workspace-redesign.md.
+
+### Delivered
+
+- App.tsx: compact task sidebar, contextual header, dedicated Receipts/Workbook/
+  Placement/Diagnostics tasks, persistent connection status, session-only appearance
+  selection and responsive nonmodal menu. Navigation resets canvas scroll and keeps
+  live component instances mounted. Escape restores menu-trigger focus.
+- ui/Workspace.tsx (new): reusable accessible Navigation, StatusBadge and EmptyState.
+  Semantic tokens and shared native control/alert/confirmation styling in styles.css
+  replace scattered light-only colors. Existing specialist components are reused.
+- WorkbookViewer.tsx: separates workbook exploration from receipt intake; placement
+  retains destination workbook/sheet/copy controls without the large cell grid.
+  Original admission, working-copy, merge, Save As and discard behavior is retained.
+- ReceiptReview.tsx: source inspector beside fields, visible manual verification and
+  unsaved status, expandable source metadata/fingerprint, clear unavailable rendering,
+  links between tasks, mapped-value table and retained duplicate/unresolved warnings.
+  Narrow inspector omits the unavailable-image block and keeps the source name/details.
+  Existing correction/source/destination invalidation logic remains unchanged.
+- App.test.tsx, Connection.test.tsx and DesktopSmokeTests.cs: update obsolete welcome/
+  diagnostics-location assumptions and exercise task navigation/appearance, actual
+  browser Tab focus, menu Escape recovery, draft retention, light/dark resizing,
+  source invalidation and complete manual receipt placement. Existing tests retained.
+- PLANS.md and docs/design/workspace-redesign.md: UI-first priority, design decisions,
+  audit, before/after review, acceptance and remaining limitations.
+
+No new dependencies, mock extraction, original workbook writes, commits, pushes or
+deployment. Production receipt insertion/export stays disabled. Existing synthetic
+profiles remain explicitly labelled. No receipt/workbook data or theme preference
+is persisted in browser storage.
+
+### Executed checks
+
+Evidence directory: artifacts/ui-redesign/. Before screenshots were captured from
+an actual --no-build WPF/WebView2 receipt test, before changing the frontend. After
+captures are in after/: placement at 390/768/1100, receipts at 390/768/1440 in both
+light/dark, and workbook in dark. Desktop, narrow and medium captures were visually
+inspected and compared; narrow source information was compacted after that review.
+
+| Check | Actual result |
+| --- | --- |
+| Baseline hosted receipt test, Release --no-build --no-restore | 1 passed; before TRX and screenshots retained. |
+| dotnet test TsekSheet.sln -c Release --no-restore --logger trx --results-directory artifacts/ui-redesign/solution | 1,061 passed: application 599, workbooks 446, desktop 16; zero failures/skips. TRX counters inspected. Included successful frontend install/typecheck/build and host build. |
+| Full desktop rerun after focus/theme/draft tests, Release --no-restore | 16 passed, zero failed/skipped; desktop-final TRX. |
+| Final focused hosted receipt test after final responsive source-inspector change | 1 passed, zero failed/skipped; acceptance-responsive TRX. Final bundled frontend/host rebuilt successfully. |
+| npm.cmd run typecheck and final npm.cmd run test -- --run | Typecheck passed; 75 tests across nine files passed. frontend-final.txt retained. No test overlapped dependency installation. |
+| Design lint | Zero failures/warnings in App, ReceiptReview and shared workspace primitives. |
+| Browser inspector, local bundled build | Zero failures. Initial sidebar caption contrast warning fixed through shared muted token. Final two whitespace warnings are intentional disconnected-host empty space; no fake receipt data added to fill it. Report/screenshots under .taste-skill/inspect. |
+| Native keyboard/responsive acceptance | Tab focuses a field action with visible outline; narrow menu opens, Escape closes/restores trigger focus; task changes retain unsaved draft; light/dark color schemes and no-page-overflow checks pass. Actual receipt/source-change flow and source/workbook hashes pass. |
+| Protected inputs and git diff --check | Tracked workbook/media/lock inputs unchanged; diff check passes with LF/CRLF notices only. |
+
+Development failures: initial script-generated JSX had syntax errors, repaired before
+execution. First frontend run: four obsolete welcome/diagnostics-location assertions
+failed (70 passed). Next run: four navigation-name queries failed due to adjacent
+caption text (71 passed); navigation now has explicit accessible labels and tests
+use those names. Final frontend run passes all 75. Additional drawer acceptance
+first failed because programmatic click did not focus the menu trigger; harness
+now models actual trigger focus and waits for React state before asserting Escape
+recovery. acceptance-confirmed and acceptance-responsive pass. No tests disabled.
+
+Unexecuted: physical file-picker/manual accessibility signoff, accounting-owner
+usability review, live Windows OS-theme switching, clean-machine installer and OCR/
+rendering/full-MVP acceptance. Native WPF title bar remains Windows-controlled.
+System theme uses CSS preference support; explicit light/dark modes were tested.
+
+### Handoff
+
+UI-first priority is current. The first complete redesigned desktop workspace is
+built and verified. Next work should address observed workflow usability, real
+source renderer/OCR qualification and owner-validated accounting mappings; do not
+resume isolated backend abstractions by default. Backend/output safety gates from
+Cycle 14 remain open. No claim of full MVP completion or accounting acceptance.
+
+## Cycle 14 — 2026-11-03 — desktop integration first
+
+Completed the first usable desktop vertical slice and continued through the
+source-linked mapping/placement milestones. Starting HEAD `688b3c0`; starting
+working tree was clean. SDK 10.0.403; Node v24.22.1. Read the project instructions,
+goals, roadmap, architecture/ADRs and existing application, host, frontend and tests.
+Recorded `plans/phase-04-desktop-review-integration.md` before implementation and
+made integration-first work the current priority in PLANS.md. Historical cycle
+entries below are retained; their next-headless-task ordering is superseded.
+
+### Audit and scope
+
+| Capability at start | Desktop access / integration decision |
+| --- | --- |
+| WPF/WebView2 trusted-origin bridge and bundled React | Working infrastructure reused; origin, envelope, size, replay and command restrictions retained. |
+| Workbook viewer, native open/inspection, navigation, copies, narrow cell editing/merge/Save As | Already exposed; retained existing admission and save restrictions. |
+| Read-only SectionReview and synthetic PayablesProcessing | Already exposed; retained. Existing workflow.profiles, workbook.planRecords and candidate metadata commands were reused/left intact. |
+| LocalDocumentSources and SourceLinkedFieldReview | Headless at start; now connected through page-owned application authority, native PDF/PNG/JPEG selection and manual review UI. |
+| Verified mapping and placement | Headless at start; now exposed for one live source-linked record and the explicitly selected validated workbook/sheet or independent working copy. |
+| Bounded batches, structural preflight and verified candidate lifecycle | Remain headless. Receipt Apply/output is unsafe until adoption/preservation/authorization gates are satisfied; no disconnected metadata approval UI was added. |
+| OCR, PDF/image decoder/rendering and process supervision | No completed production adapter/runtime/model distribution to connect. UI explicitly reports unavailable OCR/rendering and supports genuine manual entry. |
+
+### Implemented behavior and changed files
+
+- `src/TsekSheet.Application/Documents/DesktopReceiptReview.cs` (new): page-owned,
+  single-source/manual-review coordinator using the existing native registry and
+  private SourceLinkedFieldReview. Paths enter only through the native selector.
+  Keeps exact review/value versions and source/page associations; edits, explicit
+  verification and retraction use server-retained field/source bindings. No caller
+  verification flags or replacement sources are accepted. Close releases even an
+  invalidated registration; disposal releases all state. Returned state is an
+  observation, not source or mutation authority.
+- `src/TsekSheet.Application/Foundation/BridgeSession.cs`: adds receipt capability
+  advertisement and strict receipt.select/state/start/correct/verify/retract/close/
+  preview commands, path-free results and structured source/review errors. Empty
+  selection cancels without creating a receipt. Existing commands remain intact.
+- `src/TsekSheet.Desktop/MainWindow.xaml.cs`: native PDF/PNG/JPEG picker with the
+  existing native-dialog exclusion; an injected native selector seam supports
+  hosted tests. Composes receipt selection into the existing page bridge.
+- `src/TsekSheet.Application/Verification/SourceLinkedFieldReview.cs`: adds
+  PreviewPlacement inside the existing serialized source-checking boundary. Reuses
+  typed projection, deterministic mapping and the pure planner; source checks
+  bracket analysis/planning and final destination checks follow source I/O.
+- `src/TsekSheet.Application/Workbooks/WorkbookWorkspace.cs`: serialized read-only
+  receipt preview against a page-owned exact session. Inspection sessions reject.
+- `src/TsekSheet.Frontend/src/ReceiptReview.tsx` and `bridge/receipts.ts` (new),
+  `bridge/client.ts`, `App.tsx`, `WorkbookViewer.tsx`, `styles.css`: source name,
+  format/size/hash, explicitly synthetic profile selection, PDF page association,
+  manual field entry/save/verify/retract, source-invalidated and unknown-outcome
+  recovery, mapped columns, section choices, similar entity information, duplicate
+  warnings and proposed rows. Corrections remove verification; unsaved edits hide
+  previews and cannot be verified. Saving one field preserves other unsaved drafts.
+  An optional field cleared after entry can be explicitly verified as absent.
+  Preview display is invalidated by destination/choice/value changes. No Apply or
+  receipt output command/control exists. No browser persistence or sample receipts.
+- `tests/TsekSheet.Application.Tests/DesktopReceiptBridgeTests.cs` (new),
+  `SourceLinkedMappingTests.cs`, `tests/TsekSheet.Workbooks.Tests/VerifiedMappingWorkbookTests.cs`,
+  `tests/TsekSheet.Desktop.Tests/DesktopSmokeTests.cs`, and frontend
+  `ReceiptReview.test.tsx` (new): bridge/security/lifetime/correction/source-change
+  tests, source-linked placement for both profiles, unchanged workbook cells,
+  formulas/formatting, clean/dirty independent copies and source hashes; actual
+  WPF/WebView2/React receipt flow and responsive screenshots.
+
+Native source registration still proves bounded identity/content observations and
+signature triage only. Tests use artificial signature-bearing document bytes and
+generated XLSX files. PDF ordinals are associations, not parsed-page proof. Manual
+verification is explicitly human verification of entered data, never OCR proof.
+Profiles remain synthetic compatibility configurations, not owner-approved real
+accounting mappings. Reviews are memory-only; closing/reloading loses them, as
+stated in the UI. No original/accounting workbook was opened or written. No
+dependencies, lockfiles, mutation gates, candidate adoption or save policy changed.
+
+### Executed verification
+
+Evidence is under ignored `artifacts/desktop-integration/`; desktop screenshots are
+under `tests/TsekSheet.Desktop.Tests/bin/Release/net10.0-windows/receipt-review-*.png`.
+
+| Check | Actual result |
+| --- | --- |
+| Application build, Release --no-restore | Passed, zero warnings/errors. |
+| Focused application/bridge tests, outside sandbox | 5 passed, zero failed/skipped; focused-native TRX retained. |
+| `dotnet test TsekSheet.sln -c Release --no-restore --logger trx --results-directory artifacts/desktop-integration/solution-final` | 1,061 passed: application 599, workbooks 446, desktop 16; zero failed/skipped. All three TRX counter sets inspected. Solution build includes clean frontend dependency install, typecheck, production build and WPF build. |
+| Final focused hosted desktop rerun after optional-field UI fix, same project/Release/--no-restore with filter FullyQualifiedName~ReceiptManualReview | 1 passed, zero failed/skipped; desktop-confirmed TRX retained. Rebuilt frontend and host successfully. |
+| Final frontend typecheck and `npm.cmd run test -- --run` | Typecheck passed; 74 tests across nine files passed, zero failed. frontend-final.txt retained. No test overlapped npm clean install. |
+| Actual WPF/WebView2 receipt acceptance | Passed native selector seam → registration → manual fields → explicit verification → workbook selection → mapping/duplicate warning → section choice/proposed row → correction/reverification → changed-source rejection → refresh/close. Source/workbook hashes unchanged before the deliberate artificial document edit; workbook hash unchanged afterward. |
+| Hosted viewport checks at 390, 768 and 1100 window widths | Passed no page overflow; screenshots captured. Desktop and narrow screenshots visually inspected. |
+| Design source lint | 0 failures/warnings for ReceiptReview.tsx. Standalone browser inspector failed with CDP Page.enable timeout; hosted viewport/screenshot evidence above completed. |
+| `git diff --exit-code -- '*.xlsx' '*.xlsm' '*.pdf' '*.png' '*.svg' '*lock*'` | Passed, 126 tracked protected workbook/media/lock files unchanged relative to HEAD. Generated-file hash/cell/revision checks also passed in tests. Historical cycle13 ignored baselines are absent in this checkout, so no claim of rerunning that baseline. |
+| `git diff --check` | Passed; LF-to-CRLF notices only. |
+
+Development failures retained/reported: the first focused application run inside
+the sandbox had four SOURCE_UNAVAILABLE failures and one pass because native
+parent-directory handle observations were denied; the same tests passed outside
+the sandbox without weakening checks. The first new frontend test run had two
+failures from unsupported jest-dom matchers (71 passed); assertions now use normal
+DOM properties. A later frontend run had one ambiguous text query after adding
+multiple-unsaved-field coverage (73 passed); it now asserts both statuses. The
+first two hosted receipt runs failed because automation typed/asserted before
+asynchronous field commands finished; explicit enabled/state waits corrected the
+harness. Final hosted and frontend runs pass. No test was disabled or skipped.
+
+Not executed: physical native-dialog acceptance, real receipt decoding/rendering,
+OCR/process-failure/offline model acceptance, accounting-owner validation,
+clean-machine offline installation, standalone file-commit/evaluation harnesses,
+Windows publish and new native Excel preservation captures. No MVP/release claim.
+
+### Handoff and remaining gates
+
+Milestones 1–4 are connected in the desktop for the supported **manual** single-
+record workflow. Stop at this execution boundary with a verified usable slice.
+MVP remains incomplete. No commit, push, deployment or original overwrite occurred.
+
+Next integration-first work: qualify a bounded local source renderer and OCR
+runtime/decoder with redistribution/license evidence and supervised cancellation,
+timeout and malformed-result tests, then connect genuine draft extraction to this
+same manual review interface without changing explicit verification. Until those
+requirements are satisfied, keep unavailable labels and manual entry. Production
+receipt output requires the existing structural preservation/adoption gates and
+explicit destination/approval checks first; never route a preview through ordinary
+cell edits, enable CanApply, or imply that metadata approval authorizes export.
+Real accounting profiles/owner acceptance and clean-machine full-flow acceptance
+remain open. Do not resume the former chain of isolated headless abstractions as
+the default priority.
+
 ## Cycle 13 - 2026-11-02
 
 Completed Cycle 12's documented next task: headless live source-linked single-

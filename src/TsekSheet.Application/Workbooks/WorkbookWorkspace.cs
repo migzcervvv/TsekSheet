@@ -77,7 +77,27 @@ public sealed class WorkbookWorkspace(IWorkbookEngine engine, Func<CancellationT
         lock (gate) if (HasPendingChangesLocked()) throw new WorkbookException("UNSAVED_CHANGES", "Discard pending changes before opening another workbook.");
         var path = await selectWorkbook(token);
         if (path == null) return new WorkbookOpenResult("cancelled");
-        var candidate = await Task.Run(() => inspectOnly ? engine.Inspect(path, token) : engine.Open(path, token), token);
+        CompatibilityFinding? editableRejection = null;
+        var candidate = await Task.Run(() =>
+        {
+            if (inspectOnly) return engine.Inspect(path, token);
+            try { return engine.Open(path, token); }
+            catch (WorkbookException ex) when (ex.Code is "LIMIT_EXCEEDED" or "UNSUPPORTED_FEATURE" or "EXTERNAL_RESOURCE" or "PROTECTED_WORKBOOK" or "INVALID_PACKAGE")
+            {
+                // Independent inspection admission, never an editable retry or a
+                // converted mutable session. The first error is not a full inventory.
+                token.ThrowIfCancellationRequested();
+                editableRejection = new(ex.Code, ex.Message);
+                try { return engine.Inspect(path, token); }
+                catch (WorkbookException inspection)
+                {
+                    if (inspection.Code == "INSPECTION_UNAVAILABLE") throw new WorkbookException(ex.Code, ex.Message, ex.Details);
+                    throw new WorkbookException(inspection.Code,
+                        "Workbook could not be opened for inspection. Any existing project was retained.",
+                        [new("EDITABLE_ADMISSION_" + ex.Code, ex.Message), new(inspection.Code, inspection.Message)]);
+                }
+            }
+        }, token);
         IWorkbookSession? previous;
         try
         {
@@ -86,7 +106,10 @@ public sealed class WorkbookWorkspace(IWorkbookEngine engine, Func<CancellationT
         }
         catch { candidate.Dispose(); throw; }
         previous?.Dispose();
-        return new WorkbookOpenResult("opened", candidate.Info);
+        var info = candidate.Info;
+        if (editableRejection != null)
+            info = info with { Findings = Array.AsReadOnly(new[] { new CompatibilityFinding("EDITABLE_ADMISSION_" + editableRejection.Code, editableRejection.Message) }.Concat(info.Findings).ToArray()) };
+        return new WorkbookOpenResult("opened", info);
     });
 
     public Task<CellViewport> ReadAsync(Guid sessionId, Guid worksheetId, int row, int column, int rows, int columns) => Run(token => Task.Run(() =>
@@ -120,6 +143,7 @@ public sealed class WorkbookWorkspace(IWorkbookEngine engine, Func<CancellationT
         {
             source = RequireSession(sessionId);
             if (!ReferenceEquals(source, active)) throw new WorkbookException("UNSUPPORTED_OPERATION", "Create a working copy from the original workbook.");
+            if (!source.Info.EditingAllowed || source.Info.Compatibility != null) throw new WorkbookException("EDIT_UNSUPPORTED", "Inspection-only projects cannot authorize working copies.");
             if (copies.Count >= 2) throw new WorkbookException("LIMIT_EXCEEDED", "Close the workbook to release its two working copies.");
         }
         var copy = source.CreateWorkingCopy(worksheetId, expectedRevision, token);
@@ -137,6 +161,15 @@ public sealed class WorkbookWorkspace(IWorkbookEngine engine, Func<CancellationT
         IWorkbookSession session; lock (gate) session = RequireSession(sessionId);
         if (session.WorkingCopy == null) throw new WorkbookException("READ_ONLY_WORKBOOK", "The desktop editor changes working copies only.");
         session.Edit(edit, token); return Summarize(session);
+    }, token));
+
+    public Task<TsekSheet.Application.Verification.VerifiedPlacementPreview> PreviewReceiptAsync(
+        TsekSheet.Application.Documents.DesktopReceiptReview receipt, TsekSheet.Application.Verification.ReviewVersion expected,
+        TsekSheet.Application.Verification.MappingDestination destination, TsekSheet.Application.Verification.PlacementChoices choices) => Run(token => Task.Run(() =>
+    {
+        IWorkbookSession session; lock (gate) session = RequireSession(destination.SessionId);
+        if (session.Info.Compatibility != null) throw new WorkbookException("READ_ONLY_INSPECTION", "Receipt mapping requires a validated workbook; package inspection cannot plan placement.");
+        return receipt.Preview(expected, session, destination, choices, token);
     }, token));
 
     public Task<TsekSheet.Application.Workflows.WorkflowPlan> PlanRecordsAsync(TsekSheet.Application.Workflows.WorkflowPlanRequest request) => Run(token => Task.Run(() =>

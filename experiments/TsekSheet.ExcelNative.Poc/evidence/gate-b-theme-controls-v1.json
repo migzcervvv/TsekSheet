@@ -1,0 +1,342 @@
+{
+  "schemaVersion": 1,
+  "experiment": "gate-b-theme-controls-v1",
+  "syntheticOnly": true,
+  "productionAuthorization": false,
+  "insertionAuthorization": false,
+  "gateA": "passed normal lifecycle on this host",
+  "gateB": "blocked",
+  "gateC": "not entered",
+  "gateD": "not entered",
+  "policy": "experimental-review-v3; raw strict oracle unchanged",
+  "originalFailureRetained": "0ef13cb9836b47f3bef060a20edfd599",
+  "originalSourceSha256": "CE86AA36A022D766D5C91027E4F315F353449DC6CAEE2FABDE9CF2E66CB9D5AB",
+  "themeSeed": "Only xl/theme/theme1.xml from the retained synthetic native candidate; major/minor Latin typefaces explicitly replaced with Calibri. No independent Excel-authored workbook baseline claimed.",
+  "conclusion": "Adding a complete Calibri theme prevents the font rewrite on this host; literal Calibri also survives. Missing theme with minor scheme reproduces Aptos Narrow. Exact internal open-versus-save transition and other Office environments are untested.",
+  "visualQualification": "not established",
+  "nativeCleanupQualification": "not established across controls; invalidated/timeouts remain invalidated despite later process exit",
+  "controls": [
+    {
+      "runId": "d6063112eaa54e52b5c10d79c288efbc",
+      "variant": "explicit-theme-v1",
+      "sourceSha256": "F7BDEB90771715DD1755F054D9C23D184C5B78A97DB79004CACDEEB53817EE50",
+      "workingSha256": "F7BDEB90771715DD1755F054D9C23D184C5B78A97DB79004CACDEEB53817EE50",
+      "candidateSha256": "794CBF7190EA1298DA6DA69985E9D2AA9B99C14552FF17EA8EB1EF89A82F9530",
+      "sourceBytes": 6170,
+      "candidateBytes": 12357,
+      "supervisor": {
+        "Worker": {
+          "Status": "completed",
+          "Code": "COMPLETED",
+          "OwnershipVerified": true,
+          "CleanupConfirmed": true,
+          "SourceUnchanged": true,
+          "ExactWorkingCopy": true,
+          "CandidateReopened": true,
+          "Ownership": {
+            "ProcessId": 25160,
+            "StartUtcTicks": 639292862009115562,
+            "WindowHandle": 1901574,
+            "SessionId": 1,
+            "ExistingProcessIds": []
+          },
+          "Stage": "reopen-candidate",
+          "ElapsedMilliseconds": 5230,
+          "ExcelPeakWorkingSet": 223240192,
+          "ExcelVersion": "16.0",
+          "ExcelBuild": "20326",
+          "Timings": {
+            "activationAndOwnership": 1484,
+            "openWorkingCopy": 356,
+            "serializeCandidate": 36,
+            "reopenCandidate": 53
+          },
+          "InstanceSettingsRestored": true
+        },
+        "OutcomeUnknown": false,
+        "Code": "COMPLETED",
+        "ExitCode": 0,
+        "ElapsedMilliseconds": 5390,
+        "PeakWorkerBytes": 56360960
+      },
+      "provider": {
+        "Status": "completed",
+        "Code": "COMPLETED",
+        "OwnershipVerified": true,
+        "CleanupConfirmed": true,
+        "SourceUnchanged": true,
+        "ExactWorkingCopy": true,
+        "CandidateReopened": true,
+        "Ownership": {
+          "ProcessId": 25160,
+          "StartUtcTicks": 639292862009115562,
+          "WindowHandle": 1901574,
+          "SessionId": 1,
+          "ExistingProcessIds": []
+        },
+        "Stage": "reopen-candidate",
+        "ElapsedMilliseconds": 5230,
+        "ExcelPeakWorkingSet": 223240192,
+        "ExcelVersion": "16.0",
+        "ExcelBuild": "20326",
+        "Timings": {
+          "activationAndOwnership": 1484,
+          "openWorkingCopy": 356,
+          "serializeCandidate": 36,
+          "reopenCandidate": 53
+        },
+        "InstanceSettingsRestored": true
+      },
+      "rawPartDifferences": 16,
+      "rawXmlDifferences": 224,
+      "semanticDifferences": 15,
+      "semanticCategories": [
+        {
+          "Name": "calculation-settings",
+          "Count": 1
+        },
+        {
+          "Name": "default-row-layout",
+          "Count": 5
+        },
+        {
+          "Name": "row-layout",
+          "Count": 9
+        }
+      ],
+      "beforeFonts": [
+        {
+          "Index": 0,
+          "Declared": "Calibri",
+          "Scheme": "minor",
+          "EffectiveLatin": "Calibri",
+          "Color": "system:windowText;fallback:000000",
+          "Size": "11",
+          "Definition": "<{http://schemas.openxmlformats.org/spreadsheetml/2006/main}font><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sz|val:2:11>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sz><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}color|theme:1:1>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}color><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}name|val:7:Calibri>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}name><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}family|val:1:2>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}family><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}scheme|val:5:minor>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}scheme></{http://schemas.openxmlformats.org/spreadsheetml/2006/main}font>"
+        }
+      ],
+      "afterFonts": [
+        {
+          "Index": 0,
+          "Declared": "Calibri",
+          "Scheme": "minor",
+          "EffectiveLatin": "Calibri",
+          "Color": "system:windowText;fallback:000000",
+          "Size": "11",
+          "Definition": "<{http://schemas.openxmlformats.org/spreadsheetml/2006/main}font><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sz|val:2:11>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sz><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}color|theme:1:1>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}color><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}name|val:7:Calibri>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}name><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}family|val:1:2>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}family><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}scheme|val:5:minor>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}scheme></{http://schemas.openxmlformats.org/spreadsheetml/2006/main}font>"
+        }
+      ],
+      "acceptedSerialization": 3,
+      "requiresReview": 33,
+      "alwaysFail": 0,
+      "formulaTextPreserved": true,
+      "formulaCachesPreserved": true,
+      "worksheetIdentitiesPreserved": true,
+      "qualified": false,
+      "insertionAuthorized": false
+    },
+    {
+      "runId": "e3c6c096e6574c39afe2e4f20dffdd84",
+      "variant": "literal-font-v1",
+      "sourceSha256": "DC593FC03A8FF5B26326113D22577BE5F37017F48FDC34ED5E972B35F7EE0050",
+      "workingSha256": "DC593FC03A8FF5B26326113D22577BE5F37017F48FDC34ED5E972B35F7EE0050",
+      "candidateSha256": "E2FE941E7056DFC11D1EF572585A24C41267FF235544DBA5AA6BD0932472C753",
+      "sourceBytes": 4287,
+      "candidateBytes": 12378,
+      "supervisor": {
+        "Worker": null,
+        "OutcomeUnknown": true,
+        "Code": "TIMEOUT_OUTCOME_UNKNOWN",
+        "ExitCode": -1,
+        "ElapsedMilliseconds": 50070,
+        "PeakWorkerBytes": 57344000
+      },
+      "provider": {
+        "Status": "invalidated",
+        "Code": "EXCEL_CLEANUP_UNCONFIRMED",
+        "OwnershipVerified": true,
+        "CleanupConfirmed": false,
+        "SourceUnchanged": true,
+        "ExactWorkingCopy": true,
+        "CandidateReopened": true,
+        "Ownership": {
+          "ProcessId": 11816,
+          "StartUtcTicks": 639292862151891025,
+          "WindowHandle": 2951376,
+          "SessionId": 1,
+          "ExistingProcessIds": []
+        },
+        "Stage": "reopen-candidate",
+        "ElapsedMilliseconds": 7071,
+        "ExcelPeakWorkingSet": 222564352,
+        "ExcelVersion": "16.0",
+        "ExcelBuild": "20326",
+        "Timings": {
+          "activationAndOwnership": 1422,
+          "openWorkingCopy": 233,
+          "serializeCandidate": 23,
+          "reopenCandidate": 62
+        },
+        "InstanceSettingsRestored": true
+      },
+      "rawPartDifferences": 16,
+      "rawXmlDifferences": 709,
+      "semanticDifferences": 15,
+      "semanticCategories": [
+        {
+          "Name": "calculation-settings",
+          "Count": 1
+        },
+        {
+          "Name": "default-row-layout",
+          "Count": 5
+        },
+        {
+          "Name": "row-layout",
+          "Count": 9
+        }
+      ],
+      "beforeFonts": [
+        {
+          "Index": 0,
+          "Declared": "Calibri",
+          "Scheme": "",
+          "EffectiveLatin": "Calibri",
+          "Color": "FF000000",
+          "Size": "11",
+          "Definition": "<{http://schemas.openxmlformats.org/spreadsheetml/2006/main}font><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sz|val:2:11>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sz><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}color|rgb:8:FF000000>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}color><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}name|val:7:Calibri>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}name><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}family|val:1:2>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}family></{http://schemas.openxmlformats.org/spreadsheetml/2006/main}font>"
+        }
+      ],
+      "afterFonts": [
+        {
+          "Index": 0,
+          "Declared": "Calibri",
+          "Scheme": "",
+          "EffectiveLatin": "Calibri",
+          "Color": "FF000000",
+          "Size": "11",
+          "Definition": "<{http://schemas.openxmlformats.org/spreadsheetml/2006/main}font><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sz|val:2:11>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sz><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}color|rgb:8:FF000000>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}color><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}name|val:7:Calibri>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}name><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}family|val:1:2>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}family></{http://schemas.openxmlformats.org/spreadsheetml/2006/main}font>"
+        }
+      ],
+      "acceptedSerialization": 2,
+      "requiresReview": 35,
+      "alwaysFail": 0,
+      "formulaTextPreserved": true,
+      "formulaCachesPreserved": true,
+      "worksheetIdentitiesPreserved": true,
+      "qualified": false,
+      "insertionAuthorized": false
+    },
+    {
+      "runId": "e30ef468986b4a8cb609442cd52eba81",
+      "variant": "incomplete-theme-v1",
+      "sourceSha256": "CE86AA36A022D766D5C91027E4F315F353449DC6CAEE2FABDE9CF2E66CB9D5AB",
+      "workingSha256": "CE86AA36A022D766D5C91027E4F315F353449DC6CAEE2FABDE9CF2E66CB9D5AB",
+      "candidateSha256": "5207CC52969D617F3402E141AEDC7D0227DD196C0AA95870FF3BBA930EAE5071",
+      "sourceBytes": 4294,
+      "candidateBytes": 12389,
+      "supervisor": {
+        "Worker": null,
+        "OutcomeUnknown": true,
+        "Code": "TIMEOUT_OUTCOME_UNKNOWN",
+        "ExitCode": -1,
+        "ElapsedMilliseconds": 50051,
+        "PeakWorkerBytes": 56991744
+      },
+      "provider": {
+        "Status": "invalidated",
+        "Code": "EXCEL_CLEANUP_UNCONFIRMED",
+        "OwnershipVerified": true,
+        "CleanupConfirmed": false,
+        "SourceUnchanged": true,
+        "ExactWorkingCopy": true,
+        "CandidateReopened": true,
+        "Ownership": {
+          "ProcessId": 4188,
+          "StartUtcTicks": 639292864009267306,
+          "WindowHandle": 4918522,
+          "SessionId": 1,
+          "ExistingProcessIds": []
+        },
+        "Stage": "reopen-candidate",
+        "ElapsedMilliseconds": 7201,
+        "ExcelPeakWorkingSet": 223059968,
+        "ExcelVersion": "16.0",
+        "ExcelBuild": "20326",
+        "Timings": {
+          "activationAndOwnership": 1511,
+          "openWorkingCopy": 236,
+          "serializeCandidate": 28,
+          "reopenCandidate": 58
+        },
+        "InstanceSettingsRestored": true
+      },
+      "rawPartDifferences": 16,
+      "rawXmlDifferences": 710,
+      "semanticDifferences": 33,
+      "semanticCategories": [
+        {
+          "Name": "calculation-settings",
+          "Count": 1
+        },
+        {
+          "Name": "default-row-layout",
+          "Count": 5
+        },
+        {
+          "Name": "row-layout",
+          "Count": 9
+        },
+        {
+          "Name": "style",
+          "Count": 18
+        }
+      ],
+      "beforeFonts": [
+        {
+          "Index": 0,
+          "Declared": "Calibri",
+          "Scheme": "minor",
+          "EffectiveLatin": "<unresolved-theme-font>",
+          "Color": "<unresolved-theme-color>",
+          "Size": "11",
+          "Definition": "<{http://schemas.openxmlformats.org/spreadsheetml/2006/main}font><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sz|val:2:11>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sz><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}color|theme:1:1>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}color><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}name|val:7:Calibri>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}name><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}family|val:1:2>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}family><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}scheme|val:5:minor>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}scheme></{http://schemas.openxmlformats.org/spreadsheetml/2006/main}font>"
+        }
+      ],
+      "afterFonts": [
+        {
+          "Index": 0,
+          "Declared": "Aptos Narrow",
+          "Scheme": "minor",
+          "EffectiveLatin": "Aptos Narrow",
+          "Color": "system:windowText;fallback:000000",
+          "Size": "11",
+          "Definition": "<{http://schemas.openxmlformats.org/spreadsheetml/2006/main}font><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sz|val:2:11>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sz><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}color|theme:1:1>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}color><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}name|val:12:Aptos Narrow>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}name><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}family|val:1:2>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}family><{http://schemas.openxmlformats.org/spreadsheetml/2006/main}scheme|val:5:minor>0:</{http://schemas.openxmlformats.org/spreadsheetml/2006/main}scheme></{http://schemas.openxmlformats.org/spreadsheetml/2006/main}font>"
+        }
+      ],
+      "acceptedSerialization": 2,
+      "requiresReview": 35,
+      "alwaysFail": 20,
+      "formulaTextPreserved": true,
+      "formulaCachesPreserved": true,
+      "worksheetIdentitiesPreserved": true,
+      "qualified": false,
+      "insertionAuthorized": false
+    }
+  ],
+  "diagnosticRuns": [
+    "dc125706e71643679e05613a0458097e",
+    "e6c6b9e3d23e4654bace1937b2ba5236",
+    "b93f4d61eed0451a9444da96d61a086a",
+    "749c8b0a1bdd463c811c6deb05328ded"
+  ],
+  "nativeReadback": "Removed from worker after cleanup failures; retained DTOs and invalidated captures are diagnostic only. Failures also occurred after removal, so the reader is not established as their sole cause.",
+  "tests": {
+    "experimental": 54,
+    "existingWorkbooks": 457,
+    "existingApplication": 608,
+    "failed": 0,
+    "skipped": 0,
+    "frontendOrDesktopUi": "not rerun; no product/UI changes"
+  }
+}

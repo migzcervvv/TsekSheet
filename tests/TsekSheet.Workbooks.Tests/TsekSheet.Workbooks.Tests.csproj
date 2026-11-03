@@ -6,6 +6,7 @@
     <Content Include="ReferenceCorpus\AccountingDisplay\*" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="ReferenceCorpus\corpus-v1.json" CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="..\Fixtures\PayablesFixture.cs" Link="Fixtures\PayablesFixture.cs" />
+    <Compile Include="..\Fixtures\AccountingCompatibilityFixture.cs" Link="Fixtures\AccountingCompatibilityFixture.cs" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="4.5.2" />
     <PackageReference Include="MSTest.TestFramework" Version="4.5.2" />

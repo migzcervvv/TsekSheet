@@ -55,6 +55,9 @@ public sealed class WorkbookInspection(InspectionLimits? configured = null)
         {
             zip?.Dispose(); file?.Dispose(); Interlocked.Decrement(ref sessions);
             if (ex is WorkbookException) throw;
+            if (ex is XmlException xml) throw new WorkbookException("INSPECTION_INVALID_XML", $"Inspection metadata XML is malformed or prohibited (line {xml.LineNumber}, position {xml.LinePosition}).");
+            if (ex is InvalidDataException) throw new WorkbookException("INSPECTION_INVALID_PACKAGE", "Inspection could not read the ZIP package or compressed content.");
+            if (ex is IOException or UnauthorizedAccessException) throw new WorkbookException("FILE_UNAVAILABLE", "Inspection could not read the selected file. It may be missing, inaccessible or locked by a writer.");
             throw new WorkbookException("INSPECTION_REJECTED", "Read-only inspection rejected an invalid, inaccessible or over-budget package. No source bytes were changed.");
         }
     }

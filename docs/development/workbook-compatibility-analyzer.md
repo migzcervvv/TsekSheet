@@ -1,5 +1,12 @@
 # Workbook compatibility analyzer — Step 46
 
+The [2026-11-03 project-opening fix](workbook-project-opening.md) allows Open
+workbook to adopt an independently admitted inspection project after editable
+admission fails. It retains the first rejection in Details; all inspection,
+editing and output restrictions below remain. A failed inspection retains the
+previous project and reports both blockers. Earlier text describing separate
+entry points reflects the original Step 46 behavior.
+
 Step 54 adds conservative per-format isolation and a **separate bounded read-only analysis capture**: explicit source/session/sheet/revision binding, up to 2,000 rows/32 role columns/40,000 cells and 16 MiB accounted payload, with existing XML/time budgets, shared-string/formula handling and hidden/styled-row coverage. It does not widen the 20x10 public viewport, editable limits or mutation capabilities, and it creates no disk index. [Actual requalification](step54-verification.md) reports 21 qualified numeric displays and an explicitly rejected section/identity partition. [Structured section diagnostics](read-only-payables-section-analysis.md) remain independent of production planning; the desktop adds format details, not a section editor or inspection export.
 
 Step 53 [qualifies the actual authorized duplicate](step53-verification.md): all five tabs browse read-only, source hash unchanged, 439,321 stored cells, extensive names/external links and advanced package content. Actual editable validation stops at 50,001 cells. Numeric interpretation is raw-only in this run because explicit number-format ID 43 triggers the current stylesheet fallback. Layout/vendor feasibility is partial; inspection planner/copy/edit/Merge/export gates are unchanged.
