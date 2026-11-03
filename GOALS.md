@@ -1,82 +1,91 @@
-# TsekSheet Goals
+# TsekSheet - Goals
 
-## Product Vision
+## Product
 
-TsekSheet is an offline-first Windows desktop application for turning scanned documents into human-verified spreadsheet entries while safely working with existing Excel workbooks.
+TsekSheet turns scanned, photographed and poor-quality PDF documents into human-verified rows
+in existing Microsoft Excel workbooks, fully offline on a Windows laptop.
 
-The initial use case is an accounting reimbursement workflow: process scanned receipts and PDFs, verify extracted information, and apply approved entries to selected worksheets. The product must remain adaptable to other spreadsheet workflows through generic, configurable workbook templates rather than accounting-specific assumptions.
+First workflow: accounting payables/reimbursements. The core stays generic: workflows are
+expressed as profiles (fields, sections, column mappings), not hard-coded accounting logic.
 
-## Target Users
+**The product is fast, trustworthy manual verification.** OCR accelerates it. If OCR returns
+nothing, the user can still finish the job quickly by reading the document and typing.
 
-- Accounting and administrative staff preparing or reviewing reimbursements.
-- Individuals and small teams that maintain existing Excel workbooks and need control over their formulas, formatting, and worksheet structure.
-- Future users handling other document-to-spreadsheet workflows that require local processing and human review.
+## Users
 
-## MVP Goals
+- Accounting and admin staff who process stacks of receipts, invoices and request forms into
+  existing Excel workbooks.
+- They already use Excel daily, keep files on local disk, and need formulas and formatting
+  to stay intact.
 
-### Local Document Processing and Verification
+## Non-negotiable features
 
-- Import scanned receipts and PDFs and process them using local OCR.
-- Present extracted information alongside its source for human verification and correction.
-- Require human verification before OCR-extracted information is applied to worksheet data. Treat OCR output as a draft, not an authoritative record.
+1. **OCR for poor-quality documents.** Printed text on scanned, photographed, skewed, faded or
+   noisy pages. Local engine only. Handwriting is read by the user, with the app making manual
+   entry fast (zoom, region select, keyboard flow).
+2. **Easy field extraction into Excel.** Document fields (date, payee, amount, reference no.,
+   description, etc.) are reviewed side by side with the source and written into the mapped
+   workbook columns.
+3. **Multiple workbooks open at once** for copy/paste between spreadsheets. Provided natively by
+   Excel windows that TsekSheet coordinates.
+4. **Formulas retained.** Writes never break existing formulas; subtotal/aggregate ranges grow to
+   include inserted rows.
+5. **Multiple sections in one sheet.** A worksheet can contain several independent sections
+   (e.g. per payee group or per month), each with its own header, data rows and subtotal.
+   Users can read, define and append into each section without disturbing the others.
 
-### Existing Workbook Editing
+## MVP scope
 
-- Open and navigate existing Excel workbooks and edit worksheet data.
-- Let users select the worksheets relevant to a task and focus the workflow on those sheets.
-- Create independent working copies of selected worksheets so users can review and edit changes without altering the original sheets.
-- Preserve formulas, formatting, worksheet structure, and workbook integrity throughout supported operations.
+The MVP is complete when a user can:
 
-### Controlled Integration and Saving
+1. Open one or more workbooks in Excel through TsekSheet.
+2. Add a batch of PDFs/images to a queue.
+3. For each document: see the page, get OCR proposals for printed fields, correct or type
+   values, and mark each field verified.
+4. Choose a destination section (defined once per workbook layout and saved as a profile).
+5. Preview the row(s) to be inserted, then insert them through Excel. Subtotals and formula
+   columns update; neighbouring sections do not move.
+6. See the inserted rows highlighted in Excel and save (or Save As) explicitly.
+7. Close the app mid-batch and resume review without losing verified fields.
 
-- Allow users to explicitly choose whether to merge changes into an existing worksheet, replace an existing worksheet, or create a new worksheet from a working copy.
-- Make the destination and effect of each integration operation clear before applying it.
-- Keep original workbooks untouched during opening, OCR, verification, editing, and preparation of changes.
-- Write changes to an original workbook only through an explicit save action authorized by the user. Support saving to a separate output workbook.
-- Report unsupported workbook content or operations that cannot preserve integrity instead of silently discarding or changing it.
+## Constraints
 
-### Configurable Templates
+- **Microsoft Excel desktop (Microsoft 365 or 2021+, 64-bit preferred) is required.**
+- Windows 10 22H2 / Windows 11 x64.
+- Fully offline after install. No cloud OCR, no telemetry, no paid services.
+- All dependencies free and AGPL-3.0 compatible. Project license: AGPL-3.0.
+- Local persistence allowed for review state, profiles, OCR cache and the action log
+  (embedded SQLite or JSON files). No server database.
+- Source documents and original workbooks are never modified by the app. Workbooks change only
+  through Excel, after a backup, and are saved only by explicit user action.
 
-- Support generic, configurable workbook templates that map verified information to worksheet fields and locations.
-- Provide an initial configuration for accounting reimbursements without hard-coding that workflow into the core workbook or OCR logic.
-- Keep MVP configuration focused on the mappings needed to complete the initial workflow safely.
+## Hardware targets
 
-## Future Features
+|         | Minimum                                                    | Recommended (reference machine)  |
+| ------- | ---------------------------------------------------------- | -------------------------------- |
+| CPU     | Intel Core i3 12th gen (e.g. i3-1215U) / AMD Ryzen 3 5300U | ASUS TUF Gaming A15 (dev laptop) |
+| RAM     | 8 GB                                                       | 24 GB                            |
+| Storage | SSD, 10 GB free                                            | SSD, 20 GB free                  |
+| GPU     | Integrated; OCR runs on CPU                                | Optional; never required         |
 
-These are extensions beyond the MVP, not requirements for its initial release:
+Budgets on the minimum machine (to be measured, adjusted after the OCR bake-off):
 
-- Additional template configurations for workflows beyond accounting reimbursements.
-- Richer template configuration, including more complex field mappings and workflow-specific validation rules.
-- Batch processing of larger document sets and coordinated work across multiple workbooks.
-- More detailed change comparison and conflict resolution for complex worksheet merges.
-- Improved local OCR extraction for a broader range of document layouts.
+- OCR worker peak RAM <= 1.5 GB, one page at a time.
+- Typical A4 page OCR <= 10 s in the background; the UI never blocks.
+- Inserting a 20-row batch into a workbook <= 5 s.
 
-Future features must retain local processing, human verification, and explicit control over saving original workbooks.
+## Success criteria (measured on real redacted documents and workbooks)
 
-## Technical Constraints
+- Processing a batch through TsekSheet takes less time than the current manual process.
+- Zero formula losses and zero changes outside the target range on the redacted workbook set
+  (checked by Excel readback).
+- Printed-field OCR accuracy reported per field type; low-quality pages still reviewable.
+- Interrupted sessions resume with no loss of verified fields.
 
-- Target Windows desktop using WPF, WebView2, React, TypeScript, C#, and Python for offline OCR.
-- Core workflows must function without an internet connection. Document contents and workbook data must remain local.
-- Do not introduce a database, cloud processing, cloud services, or paid AI APIs.
-- Use a modular architecture with clear separation of responsibilities. Keep business logic independent of WPF and WebView2.
-- Preserve workbook formulas, formatting, worksheet integrity, and unaffected content when manipulating supported workbooks.
-- Test workbook manipulation, including working-copy independence, merge, replacement, new-sheet creation, and explicit-save behavior.
-- Keep implementation simple, maintainable, and testable. Document compatibility limitations and report failed or unexecuted tests.
+## Non-goals (MVP)
 
-## Project Non-Goals
-
-- A complete replacement for Microsoft Excel or support for every Excel feature in the MVP.
-- A full accounting, bookkeeping, reimbursement approval, or enterprise resource planning system.
-- An accounting-only architecture that prevents reuse for other spreadsheet workflows.
-- Fully autonomous extraction or unverified posting of OCR results.
-- Automatic modification, background saving, or overwriting of original workbooks without explicit user authorization.
-- Database-backed storage, cloud synchronization, hosted document processing, or paid AI integration.
-- Real-time multi-user collaboration or non-Windows applications in the MVP.
-
-## MVP Success Criteria
-
-- A user can process a scanned receipt or PDF locally, verify and correct extracted information, and map it into a selected worksheet's independent working copy.
-- A user can review edits and explicitly choose to merge changes, replace a sheet, or create a new sheet before saving the result.
-- Original workbooks remain unchanged until the user explicitly saves to them.
-- Supported workbook operations preserve formulas, formatting, and workbook integrity, with limitations surfaced clearly.
-- The reimbursement workflow is expressed through configurable templates that leave room for other spreadsheet workflows.
+- Re-implementing Excel: no custom grid, formula engine or OOXML writer.
+- Handwriting recognition.
+- Cloud OCR, Google Sheets, sync or multi-user features (future).
+- Full accounting, approval workflows or ERP features.
+- macOS/Linux.
