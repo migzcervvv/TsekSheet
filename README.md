@@ -1,187 +1,189 @@
+<p align="center">
+  <img src="src/TsekSheet.Frontend/public/branding/TsekSheet.svg" alt="TsekSheet" width="120">
+</p>
+
 # TsekSheet
 
-Step 56 improves [read-only spreadsheet navigation and Section Review](docs/development/payables-section-review.md): scrollbars, wheel/trackpad browsing, Go To Cell, keyboard movement, useful-data bounds and six focused review categories. Discarding in-memory decisions requires confirmation, including worksheet/workbook changes and native window closing. Internal blank rows remain visible; the full stored range remains available. Editing, insertion, Merge and export remain unavailable in inspection. See [verification](docs/development/step56-verification.md). Phase 2 remains incomplete.
+**Turn scanned documents into verified Excel rows, offline.**
 
-Step 54 adds [conservative format isolation and separate read-only section diagnostics](docs/development/step54-verification.md). The real source is unchanged; 401 solution tests pass. Numeric support remains narrow (21 qualified of 23,452), and the incomplete hierarchy/25 blank vendors remain unverified and non-actionable. The inspector explains source/effective formats; no inspection editing, Apply or export is enabled. [A reviewed separate-output workflow](docs/development/reviewed-payables-output-design.md) is documented only.
+TsekSheet is a Windows desktop app for people who process stacks of receipts, invoices and
+request forms into existing Excel workbooks. It shows each document next to the fields you
+need, proposes values with local OCR, lets you correct and verify them quickly, and inserts the
+verified rows into the right section of your workbook through Microsoft Excel. Formulas,
+formatting and other sections stay intact. Nothing leaves your machine.
 
-Step 53 [qualifies the actual authorized Payables duplicate](docs/development/step53-verification.md): all five worksheets browse read-only, source fingerprint unchanged, and 359 solution tests pass. Editing is blocked by measured cell counts and complex package preservation requirements; numeric interpretation currently falls back to raw values. Section/vendor analysis remains partial, and production Apply stays disabled.
+First workflow: accounting payables and reimbursements. Workflows are defined by profiles
+(fields, sections, column mappings), so the same app works for other document-to-spreadsheet
+jobs.
 
-Step 52 repairs [Git provenance portability](docs/development/step52-verification.md): 359 solution tests pass with zero failures/skips, and independent Windows checkout verification passes. Retained native evidence and exact hash checks are preserved. Real-workbook qualification remains **UNEXECUTED** until an authorized duplicate is supplied in `local-test-workbooks/`; editing restrictions are unchanged.
+> **Status: early development.** Not ready for production accounting work.
+> See [Roadmap](#roadmap) for what works today.
 
-Step 51 records [diagnostic readiness](docs/development/step51-verification.md) and a [conditional compatibility strategy](docs/development/real-workbook-compatibility-strategy.md). The authorized input directory is absent, so real-workbook qualification remains **UNEXECUTED**. Current regression results include one provenance failure and one native-reference skip; production mutation restrictions are unchanged.
+## How it works
 
-Step 50 adds actual synthetic Excel precision evidence and rejects ambiguous over-precision monetary displays while retaining raw values. Real workbook qualification remains unexecuted. See [verification](docs/development/step50-verification.md).
-
-Step 49 retains actual synthetic native Excel accounting displays and corrects escaped saved formats and built-in percentages. See [verification](docs/development/step49-verification.md).
-
-Step 48 adds a restricted read-only accounting-number display subset and preserves intentionally blank formatted zeros. Real workbook qualification remains unavailable. See [verification](docs/development/step48-verification.md).
-
-Step 47 adds [read-only date/time and shared-formula interpretation](docs/development/read-only-cell-interpretation.md), cell details and a bounded recent-viewport cache. [Verification](docs/development/step47-verification.md) distinguishes synthetic evidence from untested real accounting files. Inspection never authorizes mutation.
-
-Step 46 adds **Inspect workbook read-only**, a separate bounded package analyzer and selected-sheet raw-value viewer. It reports compatibility without granting editing or export eligibility. See [compatibility analyzer](docs/development/workbook-compatibility-analyzer.md) and [verification](docs/development/step46-verification.md).
-
-TsekSheet is an offline-first Windows desktop application for safely working with existing Excel workbooks. Its longer-term goal is to turn scanned receipts and PDFs into human-verified spreadsheet entries using local OCR and configurable templates.
-
-The first intended workflow is accounting reimbursement. The architecture is designed for other spreadsheet workflows as well, without accounting-specific rules in the workbook engine.
-
-## Development status
-
-TsekSheet is an early development foundation, not a finished reimbursement or OCR product. The desktop shell, limited workbook editing, conservative in-memory Merge, and new-file-only Save As are implemented. Phase 0 evaluation and repository work remain in progress, Phase 1 acceptance still has outstanding checks, and Phase 2 is incomplete.
-
-The [.NET 10 migration](docs/development/dotnet-10-migration.md) is verified on this Windows PC: standard Release build, all regression suites, native file-commit checks and self-contained publish pass with SDK 10.0.403. Existing workbook safety behavior is retained. Phase 2 and clean-machine release acceptance remain incomplete.
-
-[GOALS.md](GOALS.md) defines the product direction; [PLANS.md](PLANS.md) defines the roadmap. Architecture documents describe accepted decisions, while development documents record individual implementation milestones. Older milestone descriptions may predate the latest capabilities described here and in [workbook-safe-saving.md](docs/development/workbook-safe-saving.md).
-
-## Implemented features
-
-- WPF desktop host with React and TypeScript bundled locally in WebView2 at `https://tseksheet.local`; no Vite server is needed to run the application.
-- Validated, versioned React-to-C# messaging with request correlation, restricted origins, diagnostic progress and cancellation, and native file dialogs.
-- Bounded local `.xlsx` opening, worksheet navigation, hidden-sheet inspection, and viewport rendering.
-- In-memory workbook sessions with original package bytes and SHA-256 fingerprints, revision checks, compatibility inspection, and resource limits.
-- Independent full-context worksheet working copies. Only the selected worksheet is editable; surrounding sheets remain read-only context.
-- Controlled text, number, date, and explicit formula edits to supported populated cells, with formula-overwrite protection and isolated candidate validation.
-- Reviewed Merge of recorded cell changes into the original worksheet in memory, with stable identities, strict base/revision checks, conflict rejection, candidate validation and atomic adoption.
-- [Manual workflow planning](docs/workflows/payables-processing.md) with approved versioned JSON profiles, bounded whole-worksheet section detection, explicit multi-section/vendor choices, duplicate warnings and batch proposals. **Structural insertion remains disabled.** The synthetic Payables and Laboratory profiles share one generic planner.
-- [Structural capability diagnostics](docs/development/structural-preservation-oracle.md) distinguish blocked structures and unresolved review from experimental package preflight. An independent synthetic preservation oracle and internal row candidate editor are tested; desktop Apply and structural Merge/export remain disabled.
-- [Candidate lifecycle review and Excel reference evidence](docs/development/excel-reference-corpus.md) distinguish planning from generation, oracle verification, approval, adoption, integration and export. A separately gated internal structural Merge/export path is tested; production Apply remains disabled and native Excel comparisons retain explicit formatting limitations.
-- [Interactive candidate review](docs/development/step45-verification.md) builds isolated candidates, displays actual oracle/native-format findings and records explicit review-only approval for the narrow qualified height policy. Approval leaves workbook data/revisions unchanged; public Apply/adoption remain disabled. Seventeen additional actual Excel captures retain exact formatting successes and failures.
-- **Save As to a separate, brand-new `.xlsx` file only**, using protected staging, a no-overwrite commit, and final file identity/content verification on supported local fixed NTFS paths.
-- Automated application, workbook, protocol, frontend, filesystem, and actual Windows desktop smoke tests, with artificial reimbursement and laboratory fixtures.
-
-The desktop editor changes working copies only. Review and confirm Merge to integrate supported edits into the original main session. **Save As exports the main session and excludes unintegrated working-copy edits.** Integration does not save automatically. Working copies cannot be saved directly.
-
-## Planned features
-
-- Worksheet Replace and Create New integration, pending independently verified reference/resource preservation.
-- Generic versioned JSON templates, reusable worksheet bindings, and template-driven row insertion.
-- Offline PDF/image processing and Python OCR, followed by mandatory human verification.
-- A separately proven existing-file save/replacement strategy with conflict detection and recovery safeguards.
-- Broader workbook compatibility evidence, installer and upgrade work, clean-machine offline validation, and release hardening.
-
-These features are planned; their presence in an architecture document or experimental project does not mean they are available in the desktop application. No database, cloud processing, or paid AI API is used.
-
-## Technology stack
-
-Approved logo assets live in `src/TsekSheet.Frontend/public/branding/`: `TsekSheet.svg` and `TsekSheet-No-BG.svg`. The header uses the transparent version; Vite copies both unchanged into the desktop's bundled frontend assets.
-
-| Component | Current choice |
-| --- | --- |
-| Desktop | WPF, `net10.0-windows`, Windows x64 |
-| Embedded browser | Microsoft.Web.WebView2 1.0.4314.35 |
-| Application and workbook code | C# 14/.NET 10; application libraries target `net10.0` |
-| Workbook processing | ClosedXML 0.105.1 and Open XML SDK 3.5.1 |
-| Interface | React 19.3.1, TypeScript 7.0.2, Vite 8.3.5 |
-| Tests | MSTest, Vitest, React Testing Library |
-| OCR | Python process integration is planned, not implemented |
-
-Dependency versions are pinned in project/package manifests and retained lockfiles. The SDK is fixed by [global.json](global.json). See [toolchain.md](docs/development/toolchain.md) for the baseline and [desktop-foundation.md](docs/development/desktop-foundation.md) for build/runtime details.
-
-## Prerequisites
-
-- Windows x64 with an interactive desktop for WPF/WebView2 smoke tests. A supported clean Windows environment remains a release-validation requirement.
-- **Stable .NET SDK 10.0.403 x64**. SDK roll-forward is disabled; another SDK version does not satisfy `global.json`.
-- Stable **Node.js >=24.16.0 <25 x64** and **npm >=11.13.0 <12** for frontend builds and tests. The current verified pair is 24.16.0/11.13.0; exact dependency versions remain locked. Put `node` and `npm.cmd` on PATH in the build shell.
-- A locally installed x64 WebView2 Runtime. Current-PC smoke tests used 156.0.4314.50; clean-machine runtime distribution and servicing still need validation. The app does not download a missing runtime.
-- Git. Use Windows CMD or VS Code with the installed .NET SDK for CLI development. Visual Studio 2026 is optional; Visual Studio 2022 does not officially support .NET 10 targeting.
-- Approved NuGet/npm sources or complete local caches for dependency provisioning. An initial developer restore/build can require network access; application document processing and bundled UI assets are local.
-
-Excel and Python are not prerequisites for the currently implemented application. Keep .NET 8 installed if you need the retained pre-migration comparison/rollback files; it is no longer the build SDK. [The migration report](docs/development/dotnet-10-migration.md) contains VS Code instructions and build guidance. [The dependency security review](docs/development/dependency-security-review.md) removes 14 of 19 evaluation-only advisories through a cryptography servicing patch; five ImageSharp advisories remain visible in the synthetic-only NPOI research graph. Production/solution and npm audits report no vulnerable packages on the queried feeds; that is not a production-readiness certification. Those research libraries are excluded from the production publish.
-
-## Build and test from Windows CMD
-
-Run these commands from the repository root. Stop after any failed command. The desktop build discovers `npm.cmd` on PATH, including NVM-managed installations.
-
-```cmd
-dotnet --version
-node --version
-where node
-where npm.cmd
-call npm.cmd --version
-dotnet restore TsekSheet.sln --locked-mode
-dotnet build TsekSheet.sln -c Release --no-restore
-dotnet test TsekSheet.sln -c Release --no-build --no-restore
-dotnet restore tests\WorkbookLibrary.Evaluation\WorkbookLibrary.Evaluation.csproj --locked-mode
-dotnet test tests\WorkbookLibrary.Evaluation\WorkbookLibrary.Evaluation.csproj --no-restore
+```text
+PDF / photo / scan
+      |
+      v
+ Render page  ->  Local OCR (printed text)  ->  Proposed fields (unverified)
+                                                     |
+                               You correct, type handwriting, verify
+                                                     |
+                                                     v
+                       Pick workbook + section  ->  Preview row
+                                                     |
+                     Backup, then insert through Excel (formulas and subtotals update)
+                                                     |
+                                                     v
+                         Rows highlighted in Excel, you review and save
 ```
 
-The desktop build runs `call npm.cmd ci --no-audit --no-fund`, then typechecks and builds React and copies its assets into the desktop output. This reinstalls the locked frontend dependencies; stop any Vite/Vitest process holding files in `node_modules` before building. NuGet lockfiles and `package-lock.json` must remain under version control.
+Key principles:
 
-Frontend tests are separate from `dotnet test`:
+- **Excel does the spreadsheet work.** TsekSheet never rewrites workbook files itself; it drives
+  your installed Excel, so formulas, formatting and features behave exactly as in Excel.
+- **Humans verify everything.** OCR output is a proposal. Only verified fields can be inserted.
+- **Originals are protected.** A backup is made before the first change, changes are visible in
+  Excel, and nothing is saved without your action.
+- **Fully local.** No cloud OCR, no telemetry, no accounts.
+
+## Roadmap
+
+| Milestone  | What you get                                                                              | Status      |
+| ---------- | ----------------------------------------------------------------------------------------- | ----------- |
+| Foundation | Desktop shell, workbook inspection, document viewer, manual field review and verification | Done        |
+| M1         | Verified fields inserted into a workbook section through Excel, with backup and preview   | In progress |
+| M2         | Local OCR for printed text on poor-quality scans and photos                               | Planned     |
+| M3         | Batch queue, resume after restart, define sections by selecting them in Excel             | Planned     |
+| M4         | Installer, CI, offline clean-machine validation                                           | Planned     |
+
+Details and tickets: [PLANS.md](PLANS.md). Product goals: [GOALS.md](GOALS.md).
+
+### Works today
+
+- Open and inspect `.xlsx` workbooks read-only (sheets, values, formulas, number formats).
+- Load local PDF, PNG and JPEG documents and page through them.
+- Enter, correct, verify and retract document fields against a workflow profile.
+- Read-only section analysis and placement preview for the sample Payables and Laboratory
+  profiles.
+
+### Not yet
+
+- Writing rows into workbooks (M1), OCR (M2), multiple documents in a queue and session
+  recovery (M3), installer (M4).
+- The older built-in cell editing / Merge / Save As path is being retired in favour of Excel.
+
+## Requirements
+
+**To run**
+
+- Windows 10 22H2 or Windows 11, x64.
+- Microsoft Excel desktop (Microsoft 365 or 2021+, 64-bit recommended). Required from M1.
+- .NET 10 Windows Desktop Runtime and Microsoft Edge WebView2 Runtime.
+
+|         | Minimum                                          | Recommended                               |
+| ------- | ------------------------------------------------ | ----------------------------------------- |
+| CPU     | Intel Core i3 12th gen / AMD Ryzen 3 5000 series | 6+ cores (reference: ASUS TUF Gaming A15) |
+| RAM     | 8 GB                                             | 16-24 GB                                  |
+| Storage | SSD, 10 GB free                                  | SSD, 20 GB free                           |
+| GPU     | Not required                                     | Not required                              |
+
+**To build**
+
+- .NET SDK **10.0.403** x64 (pinned in `global.json`, no roll-forward).
+- Node.js **>=24.16 <25** and npm **>=11.13 <12**, with `node` and `npm.cmd` on PATH.
+- Git. Visual Studio 2026 or VS Code. (Visual Studio 2022 does not support .NET 10.)
+
+## Build, test, run
+
+From the repository root in Windows CMD:
+
+```cmd
+dotnet restore TsekSheet.sln --locked-mode
+dotnet build TsekSheet.sln -c Release --no-restore
+dotnet test TsekSheet.sln -c Release --no-build --no-restore --filter "TestCategory!=Excel"
+```
+
+Frontend checks:
 
 ```cmd
 pushd src\TsekSheet.Frontend
-call npm.cmd run test:toolchain
 call npm.cmd run typecheck
 call npm.cmd run test -- --run
-call npm.cmd run build
 popd
 ```
 
-For an explicit launcher, use `-p:NpmExecutable="C:\path\to\npm.cmd"`. The legacy `-p:NpmCliPath="C:\path\to\npm-cli.js"` override is still supported and invokes that CLI through `node` on PATH. Overrides must meet the same toolchain range; they do not bypass locked installation.
-
-Optional filesystem research checks use only their own synthetic temporary files:
-
-```cmd
-dotnet restore tests\WindowsFileCommit.Evaluation\WindowsFileCommit.Evaluation.csproj --locked-mode
-dotnet run --project tests\WindowsFileCommit.Evaluation\WindowsFileCommit.Evaluation.csproj -c Release --no-restore
-dotnet restore tests\WindowsFileCommit.NativeEvaluation\WindowsFileCommit.NativeEvaluation.csproj --locked-mode
-dotnet run --project tests\WindowsFileCommit.NativeEvaluation\WindowsFileCommit.NativeEvaluation.csproj -c Release --no-restore
-```
-
-## Launch
-
-After the Release build:
+Run the app:
 
 ```cmd
 src\TsekSheet.Desktop\bin\Release\net10.0-windows\TsekSheet.Desktop.exe
 ```
 
-Keep the output folder, including its `frontend` subfolder and runtime dependencies, together. The framework-dependent build needs the .NET 10 Windows Desktop Runtime and WebView2 Runtime locally. No development server is required. Self-contained Windows x64 publishing instructions are in [desktop-foundation.md](docs/development/desktop-foundation.md); a production installer is not available yet.
+Notes:
 
-For a safe demonstration, open either workbook under `tests\WorkbookLibrary.Evaluation\Fixtures`, create a working copy and edit a supported populated cell. Review Merge, check the destination and effective edit count, then confirm integration in memory. Save As from the original view creates a separate new export containing integrated edits. Unintegrated copies remain excluded. Closing a session discards unsaved changes after confirmation.
-
-## Current limitations and safety restrictions
-
-- Only a bounded subset of plain `.xlsx` workbooks is supported. Unsupported, protected, active, externally linked, malformed, or ambiguous content is rejected or restricted to inspection. Do not assume full Excel fidelity from the small synthetic fixtures.
-- Formula text is preserved within the supported scope; formula results are cached and may be stale. Excel-equivalent recalculation is not implemented.
-- The desktop does not provide unrestricted cell/format editing, worksheet Replace/Create New, row insertion, templates, PDF processing, or OCR. Merge rejects any destination revision divergence since copy creation.
-- Original workbooks are not overwritten. Existing-file Save and replacement are disabled, and a concurrently created Save As destination is rejected.
-- New-file Save As requires a regular absolute path on a local fixed NTFS drive, with a maximum path length of 220 characters. Network paths, linked/redirected folders, device paths and unsupported volumes are rejected.
-- Save As does not rebind the session or clear pending working-copy changes. Native paths stay inside C#.
-- Unsaved sessions exist in memory only. There is no autosave or persistent session recovery. A crash can leave an owned staging file or a committed export with no in-memory receipt; uncertain results require inspection before retrying.
-- Power-loss durability, disk exhaustion, unsupported filesystems, representative real workbooks, native dialog interaction, and clean-machine offline installation are not fully qualified. Some desktop tests use internal dialog-selection seams.
-- Dependency notices, runtime redistribution, supported Windows versions, and release security review remain outstanding.
-
-Detailed guarantees, error handling and recovery procedures are in [workbook-safe-saving.md](docs/development/workbook-safe-saving.md). Research evidence is in [windows-safe-file-commit.md](docs/research/windows-safe-file-commit.md) and [workbook-library-evaluation.md](docs/research/workbook-library-evaluation.md).
+- The desktop build runs `npm ci` and bundles the React UI into the output folder; no dev
+  server is needed. Stop any running Vite/Vitest process before building.
+- Keep NuGet lockfiles and `package-lock.json` committed.
+- Tests marked `[TestCategory("Excel")]` need Excel installed and run locally only:
+  `dotnet test tests\TsekSheet.Excel.Tests -c Release --filter TestCategory=Excel`.
+  CI excludes this category. Test setup authors synthetic workbooks through Excel in
+  ignored `fixtures/excel/t1-*/` run directories; it never opens real accounting workbooks.
+- T1 provides native adapter APIs; receipt insertion and its UI remain T2. Writes create a
+  hash-verified backup, change the visible workbook in memory, and return highlighted ranges
+  and preservation results. Save in Excel explicitly; disposing the adapter leaves any open
+  workbooks visible. Bulk overwrites protect formulas and reject merged/array/spill/table targets.
+- Excel exposes number formats and fills as scalar metadata (null for mixed ranges), so the
+  adapter partitions mixed rectangles while transferring cell values/formulas in bulk arrays.
 
 ## Project structure
 
 ```text
-TsekSheet.sln
-global.json                       Pinned .NET SDK
-GOALS.md / PLANS.md / AGENTS.md    Product direction, roadmap, development rules
 src/
-  TsekSheet.Application/           Plain application services, contracts, bridge validation
-  TsekSheet.Workbooks/             Workbook engine, candidate checks, new-file commit
-  TsekSheet.Desktop/               WPF/WebView2 host and native dialogs
-  TsekSheet.Frontend/              React UI, TypeScript bridge, frontend tests
-tests/
-  TsekSheet.Application.Tests/
-  TsekSheet.Workbooks.Tests/
-  TsekSheet.Desktop.Tests/
-  contracts/                      Shared protocol fixture
-  WorkbookLibrary.Evaluation/     Isolated library research and synthetic .xlsx fixtures
-  WindowsFileCommit.Evaluation/   Isolated filesystem research
-  WindowsFileCommit.NativeEvaluation/
-docs/
-  architecture/                   Overview and accepted ADRs
-  development/                    Milestone behavior and reproduction instructions
-  research/                       Findings and retained synthetic research evidence
-plans/                            Incremental implementation plans
+  TsekSheet.Desktop/       WPF + WebView2 host, native dialogs
+  TsekSheet.Frontend/      React + TypeScript UI and bridge client
+  TsekSheet.Application/   Workflows, verification, documents, bridge validation (no UI/COM)
+  TsekSheet.Workbooks/     Read-only workbook inspection
+  TsekSheet.Excel/         Excel automation adapter (M1)
+  TsekSheet.Renderer/      Isolated PDF/image page renderer
+tests/                     MSTest suites per project, shared fixtures
+fixtures/excel/            Excel-authored synthetic workbooks
+experiments/archive/       Retired research and proofs of concept (not built)
+docs/                      Architecture, decisions, history
 ```
 
-Generated build output, installed dependencies, test results, local secrets and recovery files are excluded by `.gitignore`. The retained `.xlsx` fixtures contain artificial data only; do not add real receipts or user workbooks to the repository.
+## Tech stack
 
-## License status
+| Area                | Choice                                                                          |
+| ------------------- | ------------------------------------------------------------------------------- |
+| Desktop             | WPF on .NET 10 (`net10.0-windows`), Windows x64                                 |
+| UI                  | React 19, TypeScript, Vite, hosted in WebView2 at `https://tseksheet.local`     |
+| Spreadsheet engine  | Microsoft Excel via COM automation                                              |
+| Workbook inspection | ClosedXML, Open XML SDK (read-only)                                             |
+| OCR                 | Local engine, selected by benchmark (Tesseract 5 or PaddleOCR via ONNX Runtime) |
+| Tests               | MSTest, Vitest, React Testing Library                                           |
 
-No project license has been selected or supplied in this repository. Do not infer a TsekSheet license from any dependency's license. Third-party components retain their own terms, and redistribution review remains incomplete. Existing dependency-license findings are recorded in [the workbook library evaluation](docs/research/workbook-library-evaluation.md) and [the toolchain baseline](docs/development/toolchain.md).
+## Data and privacy
+
+- Documents and workbooks are processed locally. The app makes no network calls.
+- Do not commit real receipts or workbooks. Redacted test copies belong in
+  `fixtures/redacted/`, which is gitignored.
+
+## Contributing
+
+Work happens in small tickets defined in [PLANS.md](PLANS.md), following the rules in
+[AGENTS.md](AGENTS.md): one branch and one PR per ticket, targeting `main`. Changes are listed
+in [CHANGELOG.md](CHANGELOG.md).
+
+## License
+
+[GNU Affero General Public License v3.0](LICENSE). Third-party components keep their own
+licenses. New dependencies must be AGPL-3.0 compatible.
+
+The build-only `Microsoft.Office.Interop.Excel` 16.0.18925.20022 NuGet package declares no
+license and describes itself as an unsupported repackaging of Office assemblies; AGPL
+compatibility cannot be confirmed from that metadata. `ExcelDna.Interop` 16.0.0 supplies the
+Office core enum PIA under package-declared MIT terms. Both references embed interop types
+and disable runtime/copy-local assets: neither `Microsoft.Office.Interop.Excel.dll` nor
+`office.dll` is distributed in the app output. A licensed desktop Excel installation remains
+required. Package metadata: [Excel interop](https://www.nuget.org/packages/Microsoft.Office.Interop.Excel/16.0.18925.20022),
+[Excel-DNA interop](https://www.nuget.org/packages/ExcelDna.Interop/16.0.0).

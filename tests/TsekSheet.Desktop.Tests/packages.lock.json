@@ -150,7 +150,14 @@
         "dependencies": {
           "Microsoft.Web.WebView2": "[1.0.4314.35, )",
           "TsekSheet.Application": "[1.0.0, )",
+          "TsekSheet.Excel": "[1.0.0, )",
           "TsekSheet.Workbooks": "[1.0.0, )"
+        }
+      },
+      "tseksheet.excel": {
+        "type": "Project",
+        "dependencies": {
+          "TsekSheet.Application": "[1.0.0, )"
         }
       },
       "tseksheet.workbooks": {

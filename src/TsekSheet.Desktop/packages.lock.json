@@ -56,6 +56,12 @@
       "tseksheet.application": {
         "type": "Project"
       },
+      "tseksheet.excel": {
+        "type": "Project",
+        "dependencies": {
+          "TsekSheet.Application": "[1.0.0, )"
+        }
+      },
       "tseksheet.workbooks": {
         "type": "Project",
         "dependencies": {

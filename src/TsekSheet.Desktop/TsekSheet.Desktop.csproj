@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\TsekSheet.Excel\TsekSheet.Excel.csproj" />
     <ProjectReference Include="..\TsekSheet.Renderer\TsekSheet.Renderer.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" />
     <ProjectReference Include="..\TsekSheet.Application\TsekSheet.Application.csproj" />
     <ProjectReference Include="..\TsekSheet.Workbooks\TsekSheet.Workbooks.csproj" />
