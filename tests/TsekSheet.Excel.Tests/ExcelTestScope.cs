@@ -11,9 +11,12 @@ internal sealed class ExcelTestScope : IAsyncDisposable
         if (disposed) return;
         disposed = true;
         var process = (await Host.StartAsync()).ProcessId;
+        Console.Error.WriteLine($"Host cleanup started: owned Excel PID={process}.");
         try
         {
-            foreach (var book in await Host.ListWorkbooksAsync())
+            var workbooks = await Host.ListWorkbooksAsync();
+            Console.Error.WriteLine($"Host cleanup: owned Excel PID={process}, open workbooks={workbooks.Count}.");
+            foreach (var book in workbooks)
             {
                 var path = Path.GetFullPath(book.FullPath);
                 var repository = new DirectoryInfo(AppContext.BaseDirectory);
@@ -27,6 +30,7 @@ internal sealed class ExcelTestScope : IAsyncDisposable
         finally
         {
             await Host.DisposeAsync();
+            Console.Error.WriteLine($"Host disposal returned: owned Excel PID={process}; checking process exit.");
             await ExcelFixture.WaitForExitAsync(process);
         }
     }

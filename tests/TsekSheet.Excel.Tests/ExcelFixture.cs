@@ -35,9 +35,10 @@ internal sealed record ExcelFixture(string Root, string Path)
         try
         {
             app = new Interop.Application();
-            GetWindowThreadProcessId((nint)app.Hwnd, out var pid);
+            var nativeThread = GetWindowThreadProcessId((nint)app.Hwnd, out var pid);
             if (previous.Contains((int)pid) || pid == 0) throw new InvalidOperationException("Fixture Excel is not isolated.");
             owned = true;
+            Console.Error.WriteLine($"Fixture Excel owned: PID={pid}, native thread={nativeThread}, managed thread={Environment.CurrentManagedThreadId}, apartment={Thread.CurrentThread.GetApartmentState()}.");
             app.Visible = true;
             app.UserControl = true;
             app.AutomationSecurity = Microsoft.Office.Core.MsoAutomationSecurity.msoAutomationSecurityForceDisable;
@@ -95,11 +96,25 @@ internal sealed record ExcelFixture(string Root, string Path)
         finally
         {
             ComLifetime.Release(other); ComLifetime.Release(sheet); ComLifetime.Release(sheets);
-            try { if (book is not null) book.Close(SaveChanges: false); }
+            try
+            {
+                if (book is not null)
+                {
+                    book.Close(SaveChanges: false);
+                    Console.Error.WriteLine("Fixture workbook closed without saving changes.");
+                }
+            }
             finally
             {
                 ComLifetime.Release(book);
-                try { if (owned && books is not null && books.Count == 0) app!.Quit(); }
+                try
+                {
+                    if (owned && books is not null && books.Count == 0)
+                    {
+                        app!.Quit();
+                        Console.Error.WriteLine("Fixture Quit returned with zero open workbooks.");
+                    }
+                }
                 finally { ComLifetime.Release(books); ComLifetime.Release(app); }
             }
         }
@@ -110,11 +125,24 @@ internal sealed record ExcelFixture(string Root, string Path)
         try
         {
             using var process = Process.GetProcessById(pid);
+            string identity;
+            try { identity = $"PID={pid}, started UTC={process.StartTime.ToUniversalTime():O}"; }
+            catch (InvalidOperationException) when (process.HasExited)
+            {
+                Console.Error.WriteLine($"Test-owned Excel PID={pid} exited before identity capture.");
+                return;
+            }
+            var elapsed = Stopwatch.StartNew();
+            Console.Error.WriteLine($"Waiting for test-owned Excel exit: {identity}.");
             using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-            await process.WaitForExitAsync(deadline.Token);
+            try { await process.WaitForExitAsync(deadline.Token); }
+            catch (OperationCanceledException)
+            {
+                throw new InvalidOperationException($"Test-owned EXCEL.EXE remains after ten seconds: {identity}; elapsed={elapsed.Elapsed}; HasExited={process.HasExited}.");
+            }
+            Console.Error.WriteLine($"Test-owned Excel exited: {identity}; elapsed={elapsed.Elapsed}.");
         }
-        catch (ArgumentException) { }
-        catch (OperationCanceledException) { throw new InvalidOperationException($"Test-owned EXCEL.EXE {pid} remains after ten seconds."); }
+        catch (ArgumentException) { Console.Error.WriteLine($"Test-owned Excel PID={pid} already exited before the exit check."); }
     }
 
     private static void AddSectionSheets(Interop.Application app, Interop.Workbook book)

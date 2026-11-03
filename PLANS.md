@@ -94,7 +94,7 @@ Status: DONE (PR #3, 2026-11-03)
 
 ### T2 - Insert verified record into a section (vertical slice)
 
-Status: IMPLEMENTED, VERIFICATION INCOMPLETE (Release build; Application 629/0/0, Desktop 24/0/0, frontend 83/0/0; full Excel runs 7/7/0 and 5/9/0 passed/failed/skipped; EXCEL.EXE 0->5 then 5->4; ten-second code-only cleanup prerequisite not met; no redacted fixtures)
+Status: IMPLEMENTED, VERIFICATION INCOMPLETE (Draft PR #4; focused lifecycle investigation unresolved: original ten-second exit check still fails after empty-workbook Quit; process/COM/STA/native-stack evidence retained, speculative fixes removed; two clean consecutive Excel suites not achieved; no redacted fixtures)
 
 - Prerequisites from T1 review:
   - Allow writes into ListObject data rows created by `ListRows.Add` (T1 rejects table targets).
