@@ -45,7 +45,7 @@ structural lifecycle/oracle, Save As of edited copies) and the Excel-native pres
 
 ### T0 - Repository reset
 
-Status: TODO
+Status: DONE (2026-11-03; Release build passes; baseline test counts preserved)
 
 - Step 0 (before any edit): if `snapshot/cycles-9-20` does not exist on the remote, create it from
   the current working tree, commit all existing uncommitted work (excluding anything matched by
