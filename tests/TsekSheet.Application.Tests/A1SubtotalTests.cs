@@ -13,6 +13,8 @@ public sealed class A1SubtotalTests
     [DataRow("=SUM('Same sheet'!B3:B4)/2", "=SUM('Same sheet'!B3:B5)/2")]
     [DataRow("=SUMIF(A3:A4,\"B3:B4\",B3:B4)", "=SUMIF(A3:A5,\"B3:B4\",B3:B5)")]
     [DataRow("=SUM(B1:B2)+SUM(B3:B7)", "=SUM(B1:B2)+SUM(B3:B7)")]
+    [DataRow("=SUM(B3:B4,C3:C4)+B4+$C$4", "=SUM(B3:B5,C3:C5)+B4+$C$4")]
+    [DataRow("=SUM('Same sheet'!$B3:C$4)+SUM(D1:D3)", "=SUM('Same sheet'!$B3:C$5)+SUM(D1:D3)")]
     public void ExtendsOnlySameSheetRangeEndsAtOldLastRow(string formula, string expected)
     {
         Assert.IsTrue(A1Formula.TryExtendSubtotal(formula, "Same sheet", 4, 5, out var actual));
@@ -26,6 +28,9 @@ public sealed class A1SubtotalTests
     [DataRow("=SUM(B3:B4")]
     [DataRow("=SUM([Other.xlsx]Sheet1!B3:B4)")]
     [DataRow("=SUM(B3#)")]
+    [DataRow("=SUM(B3:B4)+NamedAmount")]
+    [DataRow("=SUM(B3:B4)+SUM(Other!B3:B4)")]
+    [DataRow("=SUM(B3:B4 C3:C4)")]
     public void UnsupportedFormulaRemainsVerbatimAndRequiresManualReview(string formula)
     {
         Assert.IsFalse(A1Formula.TryExtendSubtotal(formula, "Same sheet", 4, 5, out var actual));

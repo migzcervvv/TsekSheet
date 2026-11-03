@@ -159,6 +159,7 @@ internal sealed record ExcelFixture(string Root, string Path)
                             finally { ComLifetime.Release(table); ComLifetime.Release(source); ComLifetime.Release(tables); }
                         }
                         Put(sheet, new(5, 5, 1, 1), range => range.Formula2 = new object[,] { { "=SUM(E3:E4)" } });
+                        Put(sheet, new(5, 3, 1, 1), range => range.Formula2 = new object[,] { { "=SUM(E3:E4)+SUM(E3:E3)+E4" } });
                         Put(sheet, new(5, 7, 1, 1), range => range.Formula2 = new object[,] { { "=SUM(G3:G4)" } });
                     }
                     finally

@@ -293,6 +293,7 @@ public partial class MainWindow : Window
     {
         session?.Dispose(); selectedPath = null;
         excelHost?.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        excelHost = null;
         if (closed) return;
         StatusPanel.Visibility = Visibility.Visible;
         HostStatus.Text = message;
@@ -303,6 +304,8 @@ public partial class MainWindow : Window
     {
         closed = true;
         session?.Dispose(); selectedPath = null;
+        excelHost?.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        excelHost = null;
         FrontendWebView.Dispose();
     }
 }

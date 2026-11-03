@@ -43,6 +43,9 @@ public sealed class SectionInsertTests
             Assert.AreEqual($"=SUM(E3:E{5 + i})", subtotal.Formulas[0, 0]);
             Assert.AreEqual(50d + Enumerable.Range(0, i + 1).Sum(n => 100d + n), subtotal.Values[0, 0]);
             Assert.AreEqual($"=SUM(G3:G{5 + i})", subtotal.Formulas[0, 2]);
+            var mixedSubtotal = await host.ReadAsync(book.Id, section.SheetName, new(6 + i, 3, 1, 1));
+            Assert.AreEqual($"=SUM(E3:E{5 + i})+SUM(E3:E3)+E4", mixedSubtotal.Formulas[0, 0],
+                "Only range ends equal to the old last data row may extend; single-cell references stay unchanged.");
             Assert.AreEqual(0, result.ManualReview.Count);
             await Assert.ThrowsExactlyAsync<ExcelInsertRejectedException>(() => host.InsertAsync(plan.Token));
         }
