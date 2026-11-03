@@ -83,9 +83,10 @@ test('receipt workflow steps retain unsaved fields and keep placement in the sam
   fireEvent.change(screen.getByLabelText('Receipt amount'),{target:{value:'125.50'}});
   fireEvent.click(screen.getByRole('button',{name:'Source'}));
   fireEvent.click(screen.getByRole('button',{name:'Destination'}));
-  expect(screen.getByText('Validated destination unavailable')).toBeDefined();
+  expect(screen.getByText('Choose a workbook in Excel')).toBeDefined();
   fireEvent.click(screen.getByRole('button',{name:'Review'}));
-  expect((screen.getByRole('button',{name:'Preview verified receipt placement'}) as HTMLButtonElement).disabled).toBe(true);
+  expect(screen.getByText('No workbook selected in the TsekSheet Excel instance.')).toBeDefined();
+  expect(screen.queryByRole('button',{name:'Insert verified row'})).toBeNull();
   fireEvent.click(screen.getByRole('button',{name:'Fields'}));
   expect((screen.getByLabelText('Receipt amount') as HTMLInputElement).value).toBe('125.50');
 });

@@ -66,10 +66,12 @@ Details and tickets: [PLANS.md](PLANS.md). Product goals: [GOALS.md](GOALS.md).
 - Enter, correct, verify and retract document fields against a workflow profile.
 - Read-only section analysis and placement preview for the sample Payables and Laboratory
   profiles.
+- Preview and insert verified receipt fields into a profile-defined section of a workbook
+  open in TsekSheet's visible Excel instance. Inserted rows are highlighted and listed in the app.
 
 ### Not yet
 
-- Writing rows into workbooks (M1), OCR (M2), multiple documents in a queue and session
+- Owner validation on redacted workbooks (M1), OCR (M2), multiple documents in a queue and session
   recovery (M3), installer (M4).
 - The older built-in cell editing / Merge / Save As path is being retired in favour of Excel.
 
@@ -128,10 +130,27 @@ Notes:
   `dotnet test tests\TsekSheet.Excel.Tests -c Release --filter TestCategory=Excel`.
   CI excludes this category. Test setup authors synthetic workbooks through Excel in
   ignored `fixtures/excel/t1-*/` run directories; it never opens real accounting workbooks.
-- T1 provides native adapter APIs; receipt insertion and its UI remain T2. Writes create a
-  hash-verified backup, change the visible workbook in memory, and return highlighted ranges
-  and preservation results. Save in Excel explicitly; disposing the adapter leaves any open
-  workbooks visible. Bulk overwrites protect formulas and reject merged/array/spill/table targets.
+- In Receipt review, enter and verify the fields and at least one record identifier. Choose
+  **Open workbook in Excel**, a workbook and profile section, **Preview Excel insert**, then
+  **Insert verified row**. Save in Excel explicitly. Closing TsekSheet leaves open Excel
+  workbooks visible; no insertion saves the original automatically.
+- A hash-verified backup precedes the first modification. Each insert checks Excel readback,
+  highlights the new row, and adds it to the app's inserted-row list. Formula columns fill from
+  the preceding row. Stale previews require a fresh preview; an unknown submission outcome
+  requires checking Excel before another submission.
+- Section definitions live in each workflow profile's `excelSections`: sheet name, header-row
+  anchor, field-to-column map, formula columns, subtotal marker/column, and `tableRow`,
+  `entireRow`, or `columnsOnly` mode. The embedded sample layouts use sheets `Columns`,
+  `Stacked`, and `Table`, header row 2, fields A–F, formula column G, and the `Subtotal` marker
+  in column A. The table layout uses ListObject `Records`. User-defined selection remains T6.
+- Only same-sheet A1 range endpoints equal to the old last data row are extended in that
+  section's moved subtotal row. Unsupported formulas remain verbatim and are listed for manual
+  review. Native Excel owns table-row extension and structural shifts. Value writes protect
+  formulas and reject merged/array/spill cells; table writes target the newly added data row.
+- Date values honor the workbook's 1900 or 1904 date system. Verified decimals that would
+  change when limited to Excel's fifteen significant digits are rejected before insertion.
+- Excel tests clean up their own synthetic hosts in code and wait up to ten seconds for process
+  exit. No GUI action, manual window cleanup, process kill, or unrelated Excel attachment is used.
 - Excel exposes number formats and fills as scalar metadata (null for mixed ranges), so the
   adapter partitions mixed rectangles while transferring cell values/formulas in bulk arrays.
 

@@ -24,6 +24,7 @@ public partial class MainWindow : Window
     private readonly Func<CancellationToken, Task<string?>>? sectionProfileSelector;
     private bool dialogOpen;
     private readonly Func<CancellationToken, Task<string?>>? documentSelector;
+    private TsekSheet.Excel.ExcelHost? excelHost;
 
     public MainWindow() : this(null, null, null) { }
 
@@ -115,7 +116,9 @@ public partial class MainWindow : Window
         if (session?.HasPendingWorkbookChanges == true && MessageBox.Show(this, "Discard all in-memory workbook changes and reload?", "Unsaved workbook changes", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) { e.Cancel = true; return; }
         session?.Dispose();
         selectedPath = null;
-        session = new BridgeSession(Send, SelectFileAsync, workbooks: new WorkbookWorkspace(workbookEngine, SelectWorkbookAsync, SelectSaveDestinationAsync, SelectSectionProfileAsync), selectDocument: SelectDocumentAsync, renderer: new TsekSheet.Application.Documents.LocalDocumentRenderer(Path.Combine(AppContext.BaseDirectory,"renderer","TsekSheet.Renderer.exe")));
+        excelHost ??= new TsekSheet.Excel.ExcelHost();
+        session = new BridgeSession(Send, SelectFileAsync, workbooks: new WorkbookWorkspace(workbookEngine, SelectWorkbookAsync, SelectSaveDestinationAsync, SelectSectionProfileAsync), selectDocument: SelectDocumentAsync, renderer: new TsekSheet.Application.Documents.LocalDocumentRenderer(Path.Combine(AppContext.BaseDirectory,"renderer","TsekSheet.Renderer.exe")),
+            excel: new TsekSheet.Application.Excel.ExcelReceiptInsertion(excelHost, excelHost), selectExcelWorkbook: SelectExcelWorkbookAsync);
     }
 
     internal static void ValidateAssets(string directory)
@@ -189,6 +192,20 @@ public partial class MainWindow : Window
             var selected = dialog.ShowDialog(this) == true ? dialog.FileName : null;
             token.ThrowIfCancellationRequested();
             return Task.FromResult(selected);
+        }
+        finally { dialogOpen = false; }
+    }
+
+    private Task<string?> SelectExcelWorkbookAsync(CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        if (workbookSelector is not null) return workbookSelector(token);
+        if (dialogOpen) throw new WorkbookException("BUSY", "A native file dialog is already open.");
+        dialogOpen = true;
+        try
+        {
+            var dialog = new OpenFileDialog { Title = "Open workbook in Excel", Filter = "Excel workbooks|*.xlsx;*.xlsm;*.xlsb;*.xls", CheckFileExists = true, Multiselect = false };
+            return Task.FromResult(dialog.ShowDialog(this) == true ? dialog.FileName : null);
         }
         finally { dialogOpen = false; }
     }
@@ -275,6 +292,7 @@ public partial class MainWindow : Window
     private void Fail(string message, bool retry = true)
     {
         session?.Dispose(); selectedPath = null;
+        excelHost?.DisposeAsync().AsTask().GetAwaiter().GetResult();
         if (closed) return;
         StatusPanel.Visibility = Visibility.Visible;
         HostStatus.Text = message;

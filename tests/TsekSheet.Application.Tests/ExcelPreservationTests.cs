@@ -7,6 +7,13 @@ namespace TsekSheet.Application.Tests;
 public sealed class ExcelPreservationTests
 {
     [TestMethod]
+    public void VerifiedNumbersMustRoundTripWithinExcelPrecision()
+    {
+        Assert.AreEqual(123.5d, ExcelReceiptInsertion.MapNumber(123.50m));
+        Assert.AreEqual(1234567890.1234d, ExcelReceiptInsertion.MapNumber(1234567890.1234m));
+        Assert.ThrowsExactly<TsekSheet.Application.Verification.FieldReviewException>(() => ExcelReceiptInsertion.MapNumber(999999999999.1234m));
+    }
+    [TestMethod]
     public void CompareRejectsUnintendedValuesFormulasFormatsAndEveryRequiredStructure()
     {
         var beforeSheet = new SheetSnapshot("Entry",

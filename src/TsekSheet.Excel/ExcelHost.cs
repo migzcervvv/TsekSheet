@@ -5,7 +5,7 @@ using Interop = Microsoft.Office.Interop.Excel;
 
 namespace TsekSheet.Excel;
 
-public sealed partial class ExcelHost : IExcelHost, IWorkbookReader, IWorkbookWriter
+public sealed partial class ExcelHost : IExcelHost, IWorkbookReader, IWorkbookWriter, ISectionWriter
 {
     private readonly StaCommandQueue queue = new();
     private readonly WorkbookBackupService backups;

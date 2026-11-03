@@ -17,6 +17,22 @@ public sealed class DesktopReceiptReview : IDisposable
     private SourceLinkedFieldReview? review;
     private int page = 1;
     private bool disposed;
+    private bool excelBusy, disposeAfterExcel;
+
+    public async Task<T> WithVerifiedExcelAsync<T>(ReviewVersion expected, Func<TypedReviewRecord, Task<T>> operation, CancellationToken token)
+    {
+        TypedReviewRecord record;
+        lock (gate) { record = Require(expected).Project(expected, token); excelBusy = true; }
+        try { return await operation(record).ConfigureAwait(false); }
+        finally
+        {
+            lock (gate)
+            {
+                excelBusy = false;
+                if (disposeAfterExcel) Dispose();
+            }
+        }
+    }
 
     public ReceiptState State
     {
@@ -121,6 +137,10 @@ public sealed class DesktopReceiptReview : IDisposable
             source = null; page = 1;
         }
     }
-    public void Dispose() { lock (gate) { review?.Dispose(); sources.Dispose(); disposed = true; } }
-    private void CheckOpen() { if (disposed) throw new FieldReviewException("SOURCE_SESSION_CLOSED", "Receipt session is closed."); }
+    public void Dispose() { lock (gate) { if (excelBusy) { disposeAfterExcel = true; return; } review?.Dispose(); sources.Dispose(); disposed = true; } }
+    private void CheckOpen()
+    {
+        if (disposed || disposeAfterExcel) throw new FieldReviewException("SOURCE_SESSION_CLOSED", "Receipt session is closed.");
+        if (excelBusy) throw new FieldReviewException("EXCEL_INSERT_BUSY", "Wait for the Excel preview or insert to finish before changing this receipt.");
+    }
 }

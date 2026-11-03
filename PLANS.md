@@ -21,16 +21,18 @@ structural lifecycle/oracle, Save As of edited copies) and the Excel-native pres
 
 ## Decisions (2026-11-03)
 
-| #   | Decision                                                                                      |
-| --- | --------------------------------------------------------------------------------------------- |
-| D1  | Microsoft Excel desktop is a required dependency and the only workbook writer.                |
-| D2  | Correctness = Excel readback preservation check (AGENTS.md 5), not package/XML diffs.         |
-| D3  | Safety = backup before first write + visible changes + explicit user save.                    |
-| D4  | TsekSheet runs its own visible Excel instance; multi-workbook copy/paste is native Excel.     |
-| D5  | OCR is local, printed text only. Handwriting is manual entry. Engine picked by bake-off (T3). |
-| D6  | Local persistence (SQLite or JSON) allowed for review state, profiles, OCR cache, action log. |
-| D7  | Free, AGPL-3.0-compatible dependencies only.                                                  |
-| D8  | Agents work ticket by ticket, branch + PR per ticket, report per AGENTS.md section 8.         |
+| #   | Decision                                                                                                                                                                                                                                                        |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D1  | Microsoft Excel desktop is a required dependency and the only workbook writer.                                                                                                                                                                                  |
+| D2  | Correctness = Excel readback preservation check (AGENTS.md 5), not package/XML diffs.                                                                                                                                                                           |
+| D3  | Safety = backup before first write + visible changes + explicit user save.                                                                                                                                                                                      |
+| D4  | TsekSheet runs its own visible Excel instance; multi-workbook copy/paste is native Excel.                                                                                                                                                                       |
+| D5  | OCR is local, printed text only. Handwriting is manual entry. Engine picked by bake-off (T3).                                                                                                                                                                   |
+| D6  | Local persistence (SQLite or JSON) allowed for review state, profiles, OCR cache, action log.                                                                                                                                                                   |
+| D7  | Free, AGPL-3.0-compatible dependencies only.                                                                                                                                                                                                                    |
+| D8  | Agents work ticket by ticket, branch + PR per ticket, report per AGENTS.md section 8.                                                                                                                                                                           |
+| D9  | `main` is the trunk. Every ticket branches from `main` and its PR targets `main`.                                                                                                                                                                               |
+| D10 | Keep `Microsoft.Office.Interop.Excel` as a build-time-only package (`PrivateAssets=all`, `EmbedInteropTypes=true`). No Microsoft binary is redistributed. Record in `docs/architecture/decisions/ADR-excel-interop.md`; the license scan allowlists it by name. |
 
 ## Milestones
 
@@ -45,7 +47,7 @@ structural lifecycle/oracle, Save As of edited copies) and the Excel-native pres
 
 ### T0 - Repository reset
 
-Status: TODO
+Status: DONE (PR #1, 2026-11-03)
 
 - Step 0 (before any edit): if `snapshot/cycles-9-20` does not exist on the remote, create it from
   the current working tree, commit all existing uncommitted work (excluding anything matched by
@@ -67,7 +69,7 @@ Status: TODO
 
 ### T1 - Excel adapter (product code, not an experiment)
 
-Status: TODO
+Status: DONE (PR #3, 2026-11-03)
 
 - New project `src/TsekSheet.Excel` (net10.0-windows), referenced only by Desktop.
   Interfaces in Application: `IExcelHost`, `IWorkbookReader`, `IWorkbookWriter` (plain DTOs).
@@ -92,8 +94,14 @@ Status: TODO
 
 ### T2 - Insert verified record into a section (vertical slice)
 
-Status: TODO (after T1)
+Status: IN PROGRESS (implementation committed at owner stop; Release build and non-Excel tests pass; final two-run Excel/process-count verification incomplete; no redacted fixtures)
 
+- Prerequisites from T1 review:
+  - Allow writes into ListObject data rows created by `ListRows.Add` (T1 rejects table targets).
+    Keep rejecting merged, array and spill targets.
+  - Excel tests must clean up in code only. No GUI/computer-use or manual cleanup. Report the
+    EXCEL.EXE count before and after two consecutive full Excel-suite runs.
+  - Write the ADR for D10.
 - Section definition in the workflow profile: sheet name, header row anchor, column map
   (field -> column letter), formula columns, subtotal row marker, insert mode
   `tableRow | entireRow | columnsOnly`.
@@ -120,7 +128,8 @@ Status: TODO (after T1)
   3. Formula cells are never overwritten; a value starting with `=` is stored as text.
   4. 5 repeated inserts into the same section stay correct.
   5. Same checks pass on the redacted real workbooks in `fixtures/redacted/` (local run, report
-     results; skipped in CI).
+     results; skipped in CI). If the folder is empty, report "not run: no redacted fixtures"
+     and continue; this criterion is then re-run by the owner.
 
 ### T2b - Remove the superseded write path
 
@@ -130,6 +139,9 @@ Status: TODO (after T2 accepted)
   (`workbook.createCopy/editCopy/discard/merge/previewMerge/generateCandidate/
 approveCandidate/cancelCandidate/saveAsNew`) and tests that only cover them. Keep
   read-only inspection. Report removed line counts.
+- Move the evaluation-only projects `tests/WorkbookLibrary.Evaluation`,
+  `tests/WindowsFileCommit.Evaluation` and `tests/WindowsFileCommit.NativeEvaluation` to
+  `experiments/archive/` (removes the ImageSharp advisories from the active build).
 
 ### T3 - OCR bake-off (can run in parallel with T1/T2)
 

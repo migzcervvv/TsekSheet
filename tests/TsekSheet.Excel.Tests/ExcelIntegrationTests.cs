@@ -28,7 +28,7 @@ public sealed class ExcelIntegrationTests
     {
         var fixture = await ExcelFixture.CreateAsync();
         var original = Hash(fixture.Path);
-        await using var host = new ExcelHost();
+        await using var scope = new ExcelTestScope(); var host = scope.Host;
         var book = await host.OpenAsync(fixture.Path);
         try
         {
@@ -73,7 +73,7 @@ public sealed class ExcelIntegrationTests
     public async Task FormulaTargetsAreRejectedAndLeadingEqualsIsStoredAsLiteralText()
     {
         var fixture = await ExcelFixture.CreateAsync();
-        await using var host = new ExcelHost();
+        await using var scope = new ExcelTestScope(); var host = scope.Host;
         var book = await host.OpenAsync(fixture.Path);
         try
         {
@@ -94,7 +94,7 @@ public sealed class ExcelIntegrationTests
         var fixture = await ExcelFixture.CreateAsync();
         for (var i = 0; i < 20; i++)
         {
-            var host = new ExcelHost();
+            await using var scope = new ExcelTestScope(); var host = scope.Host;
             var info = await host.StartAsync();
             try
             {
@@ -102,7 +102,7 @@ public sealed class ExcelIntegrationTests
                 try { await host.WriteAsync(book.Id, "Entry", new(3, 2, 10, 1), TenValues()); }
                 finally { await host.CloseAsync(book.Id, discardChanges: true); }
             }
-            finally { await host.DisposeAsync(); }
+            finally { await scope.DisposeAsync(); }
             await AssertExited(info.ProcessId);
         }
     }
@@ -113,14 +113,14 @@ public sealed class ExcelIntegrationTests
         var fixture = await ExcelFixture.CreateAsync();
         // This independent host supplies the pre-existing instance; the adapter under test
         // must neither attach to it nor close its open synthetic workbook.
-        await using var user = new ExcelHost();
+        await using var userScope = new ExcelTestScope(); var user = userScope.Host;
         var userBook = await user.OpenAsync(fixture.Path);
         var userInfo = await user.StartAsync();
         var before = await user.CaptureAsync(userBook.Id);
         try
         {
             var ownFixture = await ExcelFixture.CreateAsync();
-            var host = new ExcelHost();
+            await using var scope = new ExcelTestScope(); var host = scope.Host;
             var ownInfo = await host.StartAsync();
             Assert.AreNotEqual(userInfo.ProcessId, ownInfo.ProcessId);
             try
@@ -130,7 +130,7 @@ public sealed class ExcelIntegrationTests
                 try { await host.WriteAsync(book.Id, "Entry", new(3, 2, 10, 1), TenValues()); }
                 finally { await host.CloseAsync(book.Id, discardChanges: true); }
             }
-            finally { await host.DisposeAsync(); }
+            finally { await scope.DisposeAsync(); }
             await AssertExited(ownInfo.ProcessId);
             using var process = Process.GetProcessById(userInfo.ProcessId);
             Assert.IsFalse(process.HasExited);

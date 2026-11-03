@@ -16,7 +16,8 @@ public sealed record WorkflowProfile(int SchemaVersion, string Id, int Revision,
     IReadOnlyList<string> ContextFields, IReadOnlyList<WorkflowField> Fields, IReadOnlyList<WorkflowSectionRule> Sections,
     IReadOnlyList<WorkflowAlias> Aliases, bool FoldCase, bool CollapseWhitespace, string FallbackSectionId,
     string ExistingDestination, string MissingDestination, string DuplicatePolicy, string InsertionPolicy,
-    string StylePolicy, bool RequireReview, bool RequireDuplicateReview);
+    string StylePolicy, bool RequireReview, bool RequireDuplicateReview,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyList<TsekSheet.Application.Excel.ExcelSectionDefinition>? ExcelSections = null);
 
 public static class WorkflowProfiles
 {
@@ -95,6 +96,21 @@ public static class WorkflowProfiles
         Check(!p.Aliases.Select(a => Normalize(a.Alias, p)).Intersect(p.Aliases.Select(a => Normalize(a.Canonical, p))).Any());
         Check(p.ExistingDestination == "after-last-match" && p.MissingDestination == "before-subtotal" && p.DuplicatePolicy == "entity-and-any-identifier"
             && p.InsertionPolicy == "disabled" && p.StylePolicy == "explicit-template-required" && p.RequireReview && p.RequireDuplicateReview);
+        if (p.ExcelSections is not null)
+        {
+            Check(p.ExcelSections.Count is >= 1 and <= 16 && p.ExcelSections.Select(s => s.Id).Distinct().Count() == p.ExcelSections.Count);
+            foreach (var section in p.ExcelSections)
+            {
+                Check(Id(section.Id) && Label(section.Label) && Label(section.SheetName) && section.HeaderRow is >= 1 and < 1048576
+                    && Label(section.SubtotalMarker) && section.InsertMode is "tableRow" or "entireRow" or "columnsOnly"
+                    && (section.InsertMode != "tableRow" || Label(section.TableName))
+                    && section.ColumnMap.Count == p.Fields.Count && section.ColumnMap.Keys.All(k => p.Fields.Any(f => f.Key == k)));
+                var columns = section.ColumnMap.Values.Concat(section.FormulaColumns).Append(section.SubtotalColumn).ToArray();
+                try { foreach (var column in columns) _ = TsekSheet.Application.Excel.A1Formula.ColumnNumber(column); }
+                catch (FormatException) { Check(false); }
+                Check(section.ColumnMap.Values.Concat(section.FormulaColumns).Distinct(StringComparer.OrdinalIgnoreCase).Count() == section.ColumnMap.Count + section.FormulaColumns.Count);
+            }
+        }
     }
     internal static WorkbookException Error(string code, string message) => new(code, message);
 }

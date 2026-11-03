@@ -7,21 +7,78 @@
   "maxRows": 2000,
   "maxColumns": 16,
   "entityField": "vendor",
-  "identifierFields": ["rfp", "invoice"],
-  "contextFields": ["amount", "date"],
+  "identifierFields": [
+    "rfp",
+    "invoice"
+  ],
+  "contextFields": [
+    "amount",
+    "date"
+  ],
   "fields": [
-    { "key": "vendor", "header": "Vendor name", "kind": "text", "required": true, "maxLength": 128 },
-    { "key": "particulars", "header": "Particulars", "kind": "text", "required": false, "maxLength": 256 },
-    { "key": "rfp", "header": "RFP number", "kind": "text", "required": false, "maxLength": 64 },
-    { "key": "invoice", "header": "Invoice number", "kind": "text", "required": false, "maxLength": 64 },
-    { "key": "amount", "header": "Amount", "kind": "decimal", "required": true, "maxLength": 32 },
-    { "key": "date", "header": "Record date", "kind": "date", "required": false, "maxLength": 10 }
+    {
+      "key": "vendor",
+      "header": "Vendor name",
+      "kind": "text",
+      "required": true,
+      "maxLength": 128
+    },
+    {
+      "key": "particulars",
+      "header": "Particulars",
+      "kind": "text",
+      "required": false,
+      "maxLength": 256
+    },
+    {
+      "key": "rfp",
+      "header": "RFP number",
+      "kind": "text",
+      "required": false,
+      "maxLength": 64
+    },
+    {
+      "key": "invoice",
+      "header": "Invoice number",
+      "kind": "text",
+      "required": false,
+      "maxLength": 64
+    },
+    {
+      "key": "amount",
+      "header": "Amount",
+      "kind": "decimal",
+      "required": true,
+      "maxLength": 32
+    },
+    {
+      "key": "date",
+      "header": "Record date",
+      "kind": "date",
+      "required": false,
+      "maxLength": 10
+    }
   ],
   "sections": [
-    { "id": "internal", "label": "Synthetic internal payables", "heading": "2025 PAYABLES (INTERNAL)", "subtotal": "INTERNAL SUBTOTAL" },
-    { "id": "external", "label": "Synthetic external payables", "heading": "2025 PAYABLES (EXTERNAL)", "subtotal": "EXTERNAL SUBTOTAL" }
+    {
+      "id": "internal",
+      "label": "Synthetic internal payables",
+      "heading": "2025 PAYABLES (INTERNAL)",
+      "subtotal": "INTERNAL SUBTOTAL"
+    },
+    {
+      "id": "external",
+      "label": "Synthetic external payables",
+      "heading": "2025 PAYABLES (EXTERNAL)",
+      "subtotal": "EXTERNAL SUBTOTAL"
+    }
   ],
-  "aliases": [ { "alias": "Acme Trading", "canonical": "Acme Trading Incorporated" } ],
+  "aliases": [
+    {
+      "alias": "Acme Trading",
+      "canonical": "Acme Trading Incorporated"
+    }
+  ],
   "foldCase": true,
   "collapseWhitespace": true,
   "fallbackSectionId": "external",
@@ -31,5 +88,70 @@
   "insertionPolicy": "disabled",
   "stylePolicy": "explicit-template-required",
   "requireReview": true,
-  "requireDuplicateReview": true
+  "requireDuplicateReview": true,
+  "excelSections": [
+    {
+      "id": "columns",
+      "label": "Columns section",
+      "sheetName": "Columns",
+      "headerRow": 2,
+      "columnMap": {
+        "vendor": "A",
+        "particulars": "B",
+        "rfp": "C",
+        "invoice": "D",
+        "amount": "E",
+        "date": "F"
+      },
+      "formulaColumns": [
+        "G"
+      ],
+      "subtotalColumn": "A",
+      "subtotalMarker": "Subtotal",
+      "insertMode": "columnsOnly",
+      "tableName": null
+    },
+    {
+      "id": "stacked",
+      "label": "Stacked section",
+      "sheetName": "Stacked",
+      "headerRow": 2,
+      "columnMap": {
+        "vendor": "A",
+        "particulars": "B",
+        "rfp": "C",
+        "invoice": "D",
+        "amount": "E",
+        "date": "F"
+      },
+      "formulaColumns": [
+        "G"
+      ],
+      "subtotalColumn": "A",
+      "subtotalMarker": "Subtotal",
+      "insertMode": "entireRow",
+      "tableName": null
+    },
+    {
+      "id": "table",
+      "label": "Table section",
+      "sheetName": "Table",
+      "headerRow": 2,
+      "columnMap": {
+        "vendor": "A",
+        "particulars": "B",
+        "rfp": "C",
+        "invoice": "D",
+        "amount": "E",
+        "date": "F"
+      },
+      "formulaColumns": [
+        "G"
+      ],
+      "subtotalColumn": "A",
+      "subtotalMarker": "Subtotal",
+      "insertMode": "tableRow",
+      "tableName": "Records"
+    }
+  ]
 }
