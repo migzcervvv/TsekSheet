@@ -31,7 +31,6 @@ structural lifecycle/oracle, Save As of edited copies) and the Excel-native pres
 | D6  | Local persistence (SQLite or JSON) allowed for review state, profiles, OCR cache, action log. |
 | D7  | Free, AGPL-3.0-compatible dependencies only.                                                  |
 | D8  | Agents work ticket by ticket, branch + PR per ticket, report per AGENTS.md section 8.         |
-| D9  | `main` is the trunk. Every ticket branches from `main` and its PR targets `main`.             |
 
 ## Milestones
 
@@ -46,7 +45,7 @@ structural lifecycle/oracle, Save As of edited copies) and the Excel-native pres
 
 ### T0 - Repository reset
 
-Status: DONE (PR #1, 2026-11-03)
+Status: TODO
 
 - Step 0 (before any edit): if `snapshot/cycles-9-20` does not exist on the remote, create it from
   the current working tree, commit all existing uncommitted work (excluding anything matched by
@@ -68,7 +67,7 @@ Status: DONE (PR #1, 2026-11-03)
 
 ### T1 - Excel adapter (product code, not an experiment)
 
-Status: DONE (2026-11-03; Release Excel acceptance and unit tests pass; embedded interop verified; package license is undeclared)
+Status: TODO
 
 - New project `src/TsekSheet.Excel` (net10.0-windows), referenced only by Desktop.
   Interfaces in Application: `IExcelHost`, `IWorkbookReader`, `IWorkbookWriter` (plain DTOs).
@@ -131,9 +130,6 @@ Status: TODO (after T2 accepted)
   (`workbook.createCopy/editCopy/discard/merge/previewMerge/generateCandidate/
 approveCandidate/cancelCandidate/saveAsNew`) and tests that only cover them. Keep
   read-only inspection. Report removed line counts.
-- Move the evaluation-only projects `tests/WorkbookLibrary.Evaluation`,
-  `tests/WindowsFileCommit.Evaluation` and `tests/WindowsFileCommit.NativeEvaluation` to
-  `experiments/archive/` (removes the ImageSharp advisories from the active build).
 
 ### T3 - OCR bake-off (can run in parallel with T1/T2)
 
