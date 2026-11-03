@@ -18,6 +18,7 @@ internal sealed record ExcelFixture(string Root, string Path)
         await using var queue = new StaCommandQueue();
         var pid = await queue.InvokeAsync(() => Author(path, sections, unsupportedSubtotal, date1904));
         await queue.DisposeAsync();
+        LifecycleWorkflowDiagnostics.Current?.OwnerThreadStopped(pid, queue);
         await WaitForExitAsync(pid);
         return new(root, path);
     }
@@ -32,16 +33,19 @@ internal sealed record ExcelFixture(string Root, string Path)
         Interop.Sheets? sheets = null;
         Interop.Worksheet? sheet = null, other = null;
         var owned = false;
+        var ownedProcess = 0;
         try
         {
             app = new Interop.Application();
             var nativeThread = GetWindowThreadProcessId((nint)app.Hwnd, out var pid);
             if (previous.Contains((int)pid) || pid == 0) throw new InvalidOperationException("Fixture Excel is not isolated.");
             owned = true;
+            ownedProcess = (int)pid;
             Console.Error.WriteLine($"Fixture Excel owned: PID={pid}, native thread={nativeThread}, managed thread={Environment.CurrentManagedThreadId}, apartment={Thread.CurrentThread.GetApartmentState()}.");
             app.Visible = true;
             app.UserControl = true;
             app.AutomationSecurity = Microsoft.Office.Core.MsoAutomationSecurity.msoAutomationSecurityForceDisable;
+            LifecycleWorkflowDiagnostics.Current?.FixtureCreated((int)pid, nativeThread, app.Version, Convert.ToString(app.Build)!);
             books = app.Workbooks;
             book = books.Add(Interop.XlWBATemplate.xlWBATWorksheet);
             book.Date1904 = date1904;
@@ -112,6 +116,7 @@ internal sealed record ExcelFixture(string Root, string Path)
                     if (owned && books is not null && books.Count == 0)
                     {
                         app!.Quit();
+                        LifecycleWorkflowDiagnostics.Current?.FixtureQuit(ownedProcess);
                         Console.Error.WriteLine("Fixture Quit returned with zero open workbooks.");
                     }
                 }
@@ -122,6 +127,11 @@ internal sealed record ExcelFixture(string Root, string Path)
 
     internal static async Task WaitForExitAsync(int pid)
     {
+        if (LifecycleWorkflowDiagnostics.Current is { } diagnostics)
+        {
+            await diagnostics.ObserveAsync(pid);
+            return;
+        }
         try
         {
             using var process = Process.GetProcessById(pid);
@@ -144,6 +154,7 @@ internal sealed record ExcelFixture(string Root, string Path)
         }
         catch (ArgumentException) { Console.Error.WriteLine($"Test-owned Excel PID={pid} already exited before the exit check."); }
     }
+
 
     private static void AddSectionSheets(Interop.Application app, Interop.Workbook book)
     {

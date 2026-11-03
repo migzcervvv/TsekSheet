@@ -9,6 +9,7 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\ExcelLifecycle.Diagnostics\ExitObservation.cs" Link="Diagnostics\ExitObservation.cs" />
     <ProjectReference Include="..\..\src\TsekSheet.Excel\TsekSheet.Excel.csproj" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="4.5.2" />

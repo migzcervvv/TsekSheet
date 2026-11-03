@@ -11,6 +11,7 @@ internal sealed class ExcelTestScope : IAsyncDisposable
         if (disposed) return;
         disposed = true;
         var process = (await Host.StartAsync()).ProcessId;
+        LifecycleWorkflowDiagnostics.Current?.HostCleanup(process);
         Console.Error.WriteLine($"Host cleanup started: owned Excel PID={process}.");
         try
         {
@@ -30,6 +31,8 @@ internal sealed class ExcelTestScope : IAsyncDisposable
         finally
         {
             await Host.DisposeAsync();
+            LifecycleWorkflowDiagnostics.Current?.HostDisposed(process);
+            LifecycleWorkflowDiagnostics.Current?.OwnerThreadStopped(process, Host);
             Console.Error.WriteLine($"Host disposal returned: owned Excel PID={process}; checking process exit.");
             await ExcelFixture.WaitForExitAsync(process);
         }
