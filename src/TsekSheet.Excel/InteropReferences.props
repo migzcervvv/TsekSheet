@@ -1,0 +1,18 @@
+<Project>
+  <ItemGroup>
+    <!-- Explicit Reference metadata is required: PackageReference EmbedInteropTypes alone
+         does not enable C# type embedding. These packages supply compile-time PIAs only. -->
+    <PackageReference Include="Microsoft.Office.Interop.Excel" Version="16.0.18925.20022" GeneratePathProperty="true" IncludeAssets="none" PrivateAssets="all" />
+    <PackageReference Include="ExcelDna.Interop" Version="16.0.0" GeneratePathProperty="true" IncludeAssets="none" PrivateAssets="all" />
+    <Reference Include="Microsoft.Office.Interop.Excel">
+      <HintPath>$(PkgMicrosoft_Office_Interop_Excel)\lib\net5.0\Microsoft.Office.Interop.Excel.dll</HintPath>
+      <EmbedInteropTypes>true</EmbedInteropTypes>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="office">
+      <HintPath>$(PkgExcelDna_Interop)\lib\net6.0-windows7.0\office.dll</HintPath>
+      <EmbedInteropTypes>true</EmbedInteropTypes>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+</Project>

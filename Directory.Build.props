@@ -2,5 +2,6 @@
   <PropertyGroup>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <VSTestTestCaseFilter Condition="'$(CI)' == 'true'">TestCategory!=Excel</VSTestTestCaseFilter>
   </PropertyGroup>
 </Project>
