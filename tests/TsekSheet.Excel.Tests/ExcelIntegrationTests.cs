@@ -89,22 +89,39 @@ public sealed class ExcelIntegrationTests
     }
 
     [TestMethod]
-    public async Task TwentyConsecutiveLifecyclesReleaseTheirOwnedExcelProcess()
+    public async Task ThirtyConsecutiveLifecyclesReleaseTheirOwnedExcelProcess()
     {
-        var fixture = await ExcelFixture.CreateAsync();
-        for (var i = 0; i < 20; i++)
+        var failures = new List<string>();
+        ExcelFixture fixture;
+        try { fixture = await ExcelFixture.CreateAsync(); }
+        catch (ExcelExitDeadlineException error) when (error.Evidence.ExitUtc is not null && error.Fixture is not null)
         {
-            await using var scope = new ExcelTestScope(); var host = scope.Host;
-            var info = await host.StartAsync();
-            try
-            {
-                var book = await host.OpenAsync(fixture.Path);
-                try { await host.WriteAsync(book.Id, "Entry", new(3, 2, 10, 1), TenValues()); }
-                finally { await host.CloseAsync(book.Id, discardChanges: true); }
-            }
-            finally { await scope.DisposeAsync(); }
-            await AssertExited(info.ProcessId);
+            fixture = error.Fixture;
+            failures.Add("Fixture: " + error.Message);
         }
+        try
+        {
+            for (var i = 0; i < 30; i++)
+            {
+                ExcelFixture.MeasurementCycle = i + 1;
+                await using var scope = new ExcelTestScope(); var host = scope.Host;
+                await host.StartAsync();
+                try
+                {
+                    var book = await host.OpenAsync(fixture.Path);
+                    try { await host.WriteAsync(book.Id, "Entry", new(3, 2, 10, 1), TenValues()); }
+                    finally { await host.CloseAsync(book.Id, discardChanges: true); }
+                }
+                finally
+                {
+                    try { await scope.DisposeAsync(); }
+                    catch (ExcelExitDeadlineException error) when (error.Evidence.ExitUtc is not null)
+                    { failures.Add($"Cycle {i + 1}: {error.Message}"); }
+                }
+            }
+        }
+        finally { ExcelFixture.MeasurementCycle = 0; }
+        Assert.IsEmpty(failures, string.Join(Environment.NewLine, failures));
     }
 
     [TestMethod]
@@ -161,10 +178,10 @@ public sealed class ExcelIntegrationTests
         try
         {
             using var process = Process.GetProcessById(pid);
-            using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(30));
             await process.WaitForExitAsync(deadline.Token);
         }
         catch (ArgumentException) { /* Process already exited. */ }
-        catch (OperationCanceledException) { Assert.Fail($"TsekSheet-owned EXCEL.EXE {pid} remains after 10 seconds."); }
+        catch (OperationCanceledException) { Assert.Fail($"TsekSheet-owned EXCEL.EXE {pid} remains after 30 seconds."); }
     }
 }

@@ -10,6 +10,14 @@ internal sealed record ExcelFixture(string Root, string Path)
 {
     private static readonly Dictionary<int, Process> ownedProcesses = [];
     private static readonly Dictionary<int, DateTime> quitTimes = [];
+    internal static int MeasurementCycle { get; set; }
+
+    internal static void AssertNoPreviousOwnedInstance()
+    {
+        var alive = ownedProcesses.Where(p => !ExitObservation.WaitForExit(p.Value, 0)).Select(p => p.Key).ToArray();
+        Console.Error.WriteLine($"{DateTime.UtcNow:O} previous owned instances alive at start: {string.Join(",", alive)} (count={alive.Length})");
+        if (alive.Length != 0) throw new InvalidOperationException("Host start found a previous owned Excel instance alive.");
+    }
 
     internal static void TrackProcess(int pid)
     {
@@ -32,12 +40,14 @@ internal sealed record ExcelFixture(string Root, string Path)
         await queue.DisposeAsync();
         Console.Error.WriteLine($"{DateTime.UtcNow:O} fixture PID={pid}: STA exited");
         LifecycleWorkflowDiagnostics.Current?.OwnerThreadStopped(pid, queue);
-        await WaitForExitAsync(pid);
+        try { await WaitForExitAsync(pid); }
+        catch (ExcelExitDeadlineException error) { error.Fixture = new(root, path); throw; }
         return new(root, path);
     }
 
     private static int Author(string path, bool sections, bool unsupportedSubtotal, bool date1904)
     {
+        AssertNoPreviousOwnedInstance();
         var previous = new HashSet<int>();
         foreach (var p in Process.GetProcessesByName("EXCEL")) using (p) previous.Add(p.Id);
         Interop.Application? app = null;
@@ -149,32 +159,42 @@ internal sealed record ExcelFixture(string Root, string Path)
     {
         try
         {
-            using var process = ownedProcesses.Remove(pid, out var tracked) ? tracked : Process.GetProcessById(pid);
-            if (quitTimes.Remove(pid, out var fixtureQuit)) quitUtc = fixtureQuit;
-            if (LifecycleWorkflowDiagnostics.Current is { } diagnostics)
+            var process = ownedProcesses.TryGetValue(pid, out var tracked) ? tracked : Process.GetProcessById(pid);
+            try
             {
-                await diagnostics.ObserveAsync(pid, process);
-                return;
+                if (quitTimes.Remove(pid, out var fixtureQuit)) quitUtc = fixtureQuit;
+                if (LifecycleWorkflowDiagnostics.Current is { } diagnostics)
+                {
+                    await diagnostics.ObserveAsync(pid, process);
+                    return;
+                }
+                string identity;
+                try { identity = $"PID={pid}, started UTC={process.StartTime.ToUniversalTime():O}"; }
+                catch (InvalidOperationException) when (process.HasExited)
+                {
+                    Console.Error.WriteLine($"Test-owned Excel PID={pid} exited before identity capture.");
+                    return;
+                }
+                var trial = new Trial
+                {
+                    Environment = "exit30",
+                    Scenario = fixtureQuit == default ? "host" : "fixture",
+                    Repeat = fixtureQuit == default ? MeasurementCycle : 0,
+                    Pid = pid,
+                    StartUtc = process.StartTime.ToUniversalTime(),
+                    QuitReturnedUtc = quitUtc ?? throw new InvalidOperationException("Quit timestamp unavailable."),
+                    QuitStatus = "Quit returned with zero workbooks",
+                    StaTerminated = true
+                };
+                var output = Environment.GetEnvironmentVariable("TSEKSHEET_LIFECYCLE_OUTPUT") ?? System.IO.Path.Combine(AppContext.BaseDirectory, "TestResults", "exit30");
+                await ExitObservation.ObserveAsync(trial, process, output, null, acceptanceSeconds: 30, observationSeconds: 90);
+                Console.Error.WriteLine($"Test-owned Excel: {identity}; exit UTC={trial.ExitUtc:O}; seconds={trial.ExitSeconds}; thirty-second={trial.PassedThirtySeconds}.");
+                if (!trial.PassedThirtySeconds) throw new ExcelExitDeadlineException(trial);
             }
-            string identity;
-            try { identity = $"PID={pid}, started UTC={process.StartTime.ToUniversalTime():O}"; }
-            catch (InvalidOperationException) when (process.HasExited)
+            finally
             {
-                Console.Error.WriteLine($"Test-owned Excel PID={pid} exited before identity capture.");
-                return;
+                if (ExitObservation.WaitForExit(process, 0)) { ownedProcesses.Remove(pid); process.Dispose(); }
             }
-            var elapsed = Stopwatch.StartNew();
-            Console.Error.WriteLine($"Waiting for test-owned Excel exit: {identity}.");
-            var deadline = (quitUtc ?? DateTime.UtcNow).AddSeconds(10);
-            var remaining = (int)Math.Clamp(Math.Ceiling((deadline - DateTime.UtcNow).TotalMilliseconds), 0, 10_000);
-            if (!await Task.Run(() => ExitObservation.WaitForExit(process, remaining)))
-            {
-                throw new InvalidOperationException($"Test-owned EXCEL.EXE remains after ten seconds: {identity}; elapsed={elapsed.Elapsed}; HasExited={process.HasExited}.");
-            }
-            var exit = ExitObservation.ExitUtc(process);
-            Console.Error.WriteLine($"Test-owned Excel exited: {identity}; exit UTC={exit:O}; elapsed={elapsed.Elapsed}.");
-            if (exit < process.StartTime.ToUniversalTime() || exit > deadline)
-                throw new InvalidOperationException($"Owned Excel PID={pid} has an invalid or late OS exit timestamp: {exit:O}.");
         }
         catch (ArgumentException) { Console.Error.WriteLine($"Test-owned Excel PID={pid} already exited before the exit check."); }
     }
@@ -292,4 +312,11 @@ internal sealed record ExcelFixture(string Root, string Path)
 
     [DllImport("user32.dll")]
     private static extern uint GetWindowThreadProcessId(nint window, out uint processId);
+}
+
+internal sealed class ExcelExitDeadlineException(Trial evidence) : InvalidOperationException(
+    $"Owned Excel PID={evidence.Pid} missed thirty seconds after Quit; exit seconds={evidence.ExitSeconds?.ToString("F3") ?? ">90"}.")
+{
+    internal Trial Evidence { get; } = evidence;
+    internal ExcelFixture? Fixture { get; set; }
 }

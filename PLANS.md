@@ -94,9 +94,15 @@ Status: DONE (PR #3, 2026-11-03)
 
 ### T2 - Insert verified record into a section (vertical slice)
 
-Status: IMPLEMENTED, VERIFICATION INCOMPLETE (Draft PR #4; 2026-11-04 cleanup audit: STA termination race and exit observer corrected; final Release Excel 14/3/0 passed/failed/skipped; two consecutive full suites failed, immediate Excel before/after counts 0/1 and 0/0; post-Quit delay persists despite Close(false), zero workbooks, root RCW release to zero and STA exit; not run: no redacted fixtures)
+Status: IMPLEMENTED, VERIFICATION INCOMPLETE (Draft PR #4; revised 30-second criterion: 30 lifecycles completed, 28 within deadline, Quit-to-exit min/median/p95/max 2.458/2.928/60.220/60.426 s, nearest-rank p95; zero previous-owned instances at checked starts; final Release Excel 15/2/0 passed/failed/skipped, both full suites failed with before/after counts 0/0 and 0/0 after natural-exit observation; native fallback captured an Office UI wait, requested Sysinternals capture unavailable without Windows elevation/working UI runtime; production cleanup unchanged; not run: no redacted fixtures)
 
 - Prerequisites from T1 review:
+  - Planner revision (2026-11-04), superseding the T1/T2 ten-second exit criterion:
+    no owned EXCEL.EXE may be alive 30 s after Quit, and no host start may find a previous
+    owned instance alive. Measure 30 lifecycles and report Quit-to-exit latency
+    min/median/p95/max; capture the slowest lingering process with Sysinternals Process
+    Explorer (threads and loaded DLLs) or ProcMon. Inventory HKCU/HKLM Excel COM add-ins
+    and LoadBehavior first. Cleanup code changes require evidence of a leak.
   - Allow writes into ListObject data rows created by `ListRows.Add` (T1 rejects table targets).
     Keep rejecting merged, array and spill targets.
   - Excel tests must clean up in code only. No GUI/computer-use or manual cleanup. Report the

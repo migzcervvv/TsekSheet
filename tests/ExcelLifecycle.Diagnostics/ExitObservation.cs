@@ -26,6 +26,7 @@ public sealed class Trial
     public DateTime? ExitUtc { get; set; }
     public double? ExitSeconds { get; set; }
     public bool PassedTenSeconds { get; set; }
+    public bool PassedThirtySeconds { get; set; }
     public bool AliveAtObservationLimit { get; set; }
     public string? Error { get; set; }
     public List<string> Events { get; } = [];
@@ -37,20 +38,23 @@ public sealed class Trial
 
 public static class ExitObservation
 {
-    // The extra 20 seconds are diagnostic observation, never an acceptance extension.
-    public static async Task ObserveAsync(Trial trial, Process process, string output, string? stackTool)
+    // Observation after the acceptance deadline never converts a failure to a pass.
+    public static async Task ObserveAsync(Trial trial, Process process, string output, string? stackTool,
+        int acceptanceSeconds = 10, int observationSeconds = 30)
     {
         Directory.CreateDirectory(output);
-        var tenSecondDeadline = trial.QuitReturnedUtc.AddSeconds(10);
-        var observationDeadline = trial.QuitReturnedUtc.AddSeconds(30);
+        var acceptanceDeadline = trial.QuitReturnedUtc.AddSeconds(acceptanceSeconds);
+        var observationDeadline = trial.QuitReturnedUtc.AddSeconds(observationSeconds);
         await File.WriteAllTextAsync(Path.Combine(output, $"{trial.Environment}-{trial.Scenario}-{trial.Repeat}-{trial.Pid}.running.json"),
             JsonSerializer.Serialize(trial));
-        await Task.Run(() => WaitForExit(process, RemainingMilliseconds(tenSecondDeadline)));
-        trial.Windows.Add(WindowState(process, "10-second check"));
+        await Task.Run(() => WaitForExit(process, RemainingMilliseconds(acceptanceDeadline)));
+        trial.Windows.Add(WindowState(process, $"{acceptanceSeconds}-second check"));
         // Use OS exit time: a delayed observer must not turn an on-time exit into a failure.
         SetExit(trial, process);
-        trial.PassedTenSeconds = trial.ExitUtc <= tenSecondDeadline && trial.Error is null;
-        if (!trial.PassedTenSeconds && !WaitForExit(process, 0) && stackTool is not null && File.Exists(stackTool))
+        trial.PassedTenSeconds = trial.ExitUtc <= trial.QuitReturnedUtc.AddSeconds(10) && trial.Error is null;
+        trial.PassedThirtySeconds = trial.ExitUtc <= trial.QuitReturnedUtc.AddSeconds(30) && trial.Error is null;
+        var passed = trial.ExitUtc <= acceptanceDeadline && trial.Error is null;
+        if (!passed && !WaitForExit(process, 0) && stackTool is not null && File.Exists(stackTool))
         {
             var nativePath = Path.Combine(output, $"{trial.Environment}-{trial.Scenario}-{trial.Repeat}-{trial.Pid}.stack.log");
             var start = new ProcessStartInfo(stackTool) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
@@ -74,10 +78,11 @@ public static class ExitObservation
             await Task.Run(() => WaitForExit(process, RemainingMilliseconds(observationDeadline)));
         }
         SetExit(trial, process);
+        trial.PassedThirtySeconds = trial.ExitUtc <= trial.QuitReturnedUtc.AddSeconds(30) && trial.Error is null;
         trial.AliveAtObservationLimit = !WaitForExit(process, 0);
         await File.WriteAllTextAsync(Path.Combine(output, $"{trial.Environment}-{trial.Scenario}-{trial.Repeat}-{trial.Pid}.json"),
             JsonSerializer.Serialize(trial, new JsonSerializerOptions { WriteIndented = true }));
-        Console.WriteLine($"{trial.Environment} {trial.Scenario} #{trial.Repeat}: PID={trial.Pid}, ten-second={(trial.PassedTenSeconds ? "PASS" : "FAIL")}, exit seconds={trial.ExitSeconds?.ToString("F3") ?? ">30"}");
+        Console.WriteLine($"{trial.Environment} {trial.Scenario} #{trial.Repeat}: PID={trial.Pid}, {acceptanceSeconds}-second={(passed ? "PASS" : "FAIL")}, exit seconds={trial.ExitSeconds?.ToString("F3") ?? ">" + observationSeconds}");
     }
 
     private static void SetExit(Trial trial, Process process)

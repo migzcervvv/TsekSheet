@@ -85,8 +85,9 @@ public sealed class LifecycleWorkflowDiagnostics
             if (process.StartTime.ToUniversalTime() != trial.StartUtc) throw new InvalidOperationException("Owned PID identity changed.");
             trial.Events.Add($"{DateTime.UtcNow:O} original exit check entered; original COM helper methods have returned");
             await ExitObservation.ObserveAsync(trial, process, output,
-                Path.Combine(repository, "artifacts", "lifecycle-debugger", "engine", "content", "amd64", "ExcelStack.exe"));
-            Assert.IsTrue(trial.PassedTenSeconds, $"Original T2 owned PID={pid} missed its unchanged ten-second deadline; late exit={trial.ExitSeconds} seconds.");
+                Path.Combine(repository, "artifacts", "lifecycle-debugger", "engine", "content", "amd64", "ExcelStack.exe"),
+                acceptanceSeconds: 30, observationSeconds: 90);
+            Assert.IsTrue(trial.PassedThirtySeconds, $"Original T2 owned PID={pid} missed the revised thirty-second deadline; late exit={trial.ExitSeconds} seconds.");
         }
     }
 }

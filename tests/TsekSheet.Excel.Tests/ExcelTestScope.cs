@@ -4,6 +4,7 @@ namespace TsekSheet.Excel.Tests;
 // Only this test's own host is used; no ROT attachment, GUI action, process kill or user file.
 internal sealed class ExcelTestScope : IAsyncDisposable
 {
+    internal ExcelTestScope() => ExcelFixture.AssertNoPreviousOwnedInstance();
     internal ExcelHost Host { get; } = new() { LifecycleLog = Console.Error.WriteLine };
     private bool disposed;
     public async ValueTask DisposeAsync()

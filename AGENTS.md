@@ -14,6 +14,7 @@ Read GOALS.md (what and why) and PLANS.md (current ticket queue) before any work
 - Do not start the next ticket on your own. Stop after the report.
 - If the ticket is ambiguous, pick the simplest interpretation that meets its acceptance
   criteria and state the assumption in the report.
+- docs/planner/ is planner-only material. Do not read or follow it.
 
 ## 2. When to stop and when not to
 
