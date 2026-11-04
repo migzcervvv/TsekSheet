@@ -9,6 +9,8 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\Fixtures\LiquidationProfile.cs" Link="Fixtures\LiquidationProfile.cs" />
+    <Compile Include="..\Fixtures\LiquidationFixture.cs" Link="Fixtures\LiquidationFixture.cs" />
     <Compile Include="..\ExcelLifecycle.Diagnostics\ExitObservation.cs" Link="Diagnostics\ExitObservation.cs" />
     <ProjectReference Include="..\..\src\TsekSheet.Excel\TsekSheet.Excel.csproj" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />

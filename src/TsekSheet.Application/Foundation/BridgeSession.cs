@@ -34,7 +34,8 @@ public sealed class BridgeSession : IDisposable
     private bool ready, selecting, disposed;
     private readonly WorkbookWorkspace? workbooks;
     private readonly Func<CancellationToken, Task<string?>>? selectDocument;
-    private readonly DesktopReceiptReview receipts = new();
+    private readonly DesktopReceiptReview receipts;
+    private readonly IReadOnlyList<WorkflowProfile>? profiles;
     private readonly ILocalDocumentRenderer? renderer;
     private readonly ExcelReceiptInsertion? excel;
     private readonly Func<CancellationToken, Task<string?>>? selectExcelWorkbook;
@@ -46,7 +47,8 @@ public sealed class BridgeSession : IDisposable
     public BridgeSession(Action<string> send, Func<CancellationToken, Task<FileSelection>> selectFile,
         Func<int, CancellationToken, Task>? delay = null, WorkbookWorkspace? workbooks = null,
         Func<CancellationToken, Task<string?>>? selectDocument = null, ILocalDocumentRenderer? renderer = null,
-        ExcelReceiptInsertion? excel = null, Func<CancellationToken, Task<string?>>? selectExcelWorkbook = null)
+        ExcelReceiptInsertion? excel = null, Func<CancellationToken, Task<string?>>? selectExcelWorkbook = null,
+        IReadOnlyList<WorkflowProfile>? profiles = null)
     {
         this.send = send;
         this.selectFile = selectFile;
@@ -56,6 +58,8 @@ public sealed class BridgeSession : IDisposable
         this.renderer = renderer;
         this.excel = excel;
         this.selectExcelWorkbook = selectExcelWorkbook;
+        this.profiles = profiles;
+        receipts = new(profiles is null ? null : id => profiles.Single(p => p.Id == id));
     }
 
     private void Emit(object message)
@@ -122,16 +126,17 @@ public sealed class BridgeSession : IDisposable
                         finally { lock (gate) selecting = false; }
                     }
                     var profile = receipts.State.Version?.ProfileId;
-                    Success(id!, new { workbooks = await excel.ListAsync(path), sections = profile is null ? [] : ExcelReceiptInsertion.Sections(profile),
+                    Success(id!, new { workbooks = await excel.ListAsync(path, profile), sections = profile is null ? [] : excel.Sections(profile),
                         changes = excel.Changes.Select(c => new { c.Workbook, c.Sheet, c.Range, manualReview = c.ManualReview.Select(w => new { w.Cell, w.Reason }) }) });
                     return;
                 }
-                if (!HasOnly(payload, command == "excel.previewInsert" ? ["expected", "workbookId", "sectionId"] : ["expected", "previewToken"])
+                if (!(command == "excel.previewInsert" ? HasOnly(payload, "expected", "workbookId", "sectionId") || HasOnly(payload, "expected", "workbookId", "sectionId", "sheet") : HasOnly(payload, "expected", "previewToken"))
                     || !HasOnly(payload.GetProperty("expected"), "reviewId", "revision", "profileId", "profileHash")) throw new JsonException();
                 var expected = JsonSerializer.Deserialize<ReviewVersion>(payload.GetProperty("expected"), JsonOptions)!;
                 if (command == "excel.previewInsert")
                 {
-                    var preview = await excel.PreviewAsync(receipts, expected, payload.GetProperty("workbookId").GetString()!, payload.GetProperty("sectionId").GetString()!, lifetime.Token);
+                    var preview = await excel.PreviewAsync(receipts, expected, payload.GetProperty("workbookId").GetString()!, payload.GetProperty("sectionId").GetString()!, lifetime.Token,
+                        payload.TryGetProperty("sheet", out var sheetValue) ? sheetValue.GetString() : null);
                     Success(id!, new { preview.Token, preview.WorkbookId, preview.SectionId, preview.Sheet, preview.Range, preview.InsertRow, preview.Values,
                         manualReview = preview.ManualReview.Select(w => new { w.Cell, w.Reason }) });
                 }
@@ -236,7 +241,7 @@ public sealed class BridgeSession : IDisposable
             if (command == "workflow.profiles")
             {
                 if (!HasOnly(payload) || workbooks == null) { Error(id!, "INVALID_REQUEST", "Workflow catalog accepts no paths or arguments and requires a workbook host."); return; }
-                Success(id!, new { profiles = WorkflowProfiles.Catalog }); return;
+                Success(id!, new { profiles = profiles is null ? WorkflowProfiles.Catalog : profiles.Select(WorkflowProfiles.Summary).ToArray() }); return;
             }
             if (command!.StartsWith("workbook.", StringComparison.Ordinal))
             {

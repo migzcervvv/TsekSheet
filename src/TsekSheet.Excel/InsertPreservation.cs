@@ -11,7 +11,7 @@ public sealed partial class ExcelHost
         var affected = plan.Section.SheetName;
         var left = plan.Section.InsertMode == "entireRow" ? 1 : plan.Left;
         var right = plan.Section.InsertMode == "entireRow" ? 16384 : plan.Right;
-        string ShiftFormula(string formula, string formulaSheet) => A1Formula.TryShift(formula, formulaSheet, affected, plan.Row, left, right, out var shifted) ? shifted : formula;
+        string ShiftFormula(string formula, string formulaSheet) => plan.InsertNew && A1Formula.TryShift(formula, formulaSheet, affected, plan.Row, left, right, out var shifted) ? shifted : formula;
         string ShiftAddress(string address, string sheet)
         {
             var qualified = $"='{sheet.Replace("'", "''")}'!{address}";
@@ -34,14 +34,14 @@ public sealed partial class ExcelHost
             if (second.ValidationCells != first.ValidationCells + (changedSheet ? plan.AddedValidation : 0)
                 || second.ValidationAreas != first.ValidationAreas || second.ConditionalFormats != first.ConditionalFormats)
                 errors.Add($"{first.Name}: validation/conditional-format counts changed unexpectedly.");
-            var bottom = Math.Max(second.Data.Range.Row + second.Data.Range.Rows, first.Data.Range.Row + first.Data.Range.Rows + (changedSheet ? 1 : 0));
+            var bottom = Math.Max(second.Data.Range.Row + second.Data.Range.Rows, first.Data.Range.Row + first.Data.Range.Rows + (changedSheet && plan.InsertNew ? 1 : 0));
             var endColumn = Math.Max(second.Data.Range.Column + second.Data.Range.Columns, first.Data.Range.Column + first.Data.Range.Columns);
             for (var row = Math.Min(first.Data.Range.Row, second.Data.Range.Row); row < bottom; row++)
                 for (var column = Math.Min(first.Data.Range.Column, second.Data.Range.Column); column < endColumn; column++)
                 {
                     var inBand = changedSheet && column >= left && column <= right;
-                    var inserted = inBand && row == plan.Row;
-                    var sourceRow = inBand && row > plan.Row ? row - 1 : row;
+                    var inserted = plan.InsertNew && inBand && row == plan.Row;
+                    var sourceRow = plan.InsertNew && inBand && row > plan.Row ? row - 1 : row;
                     object? expectedValue = inserted ? null : Cell(first.Data, sourceRow, column);
                     var expectedFormula = inserted ? null : Formula(first.Data, sourceRow, column);
                     var expectedFormat = NumberFormat(first.Data, inserted ? plan.Row - 1 : sourceRow, column);
@@ -56,7 +56,9 @@ public sealed partial class ExcelHost
                             expectedFormula = A1Formula.TryFillDown(template, out var filled) ? filled : template;
                         }
                     }
-                    if (changedSheet && row == plan.Row + 1 && column >= plan.Left && column <= plan.Right && plan.Rewritten[column - plan.Left] is string subtotal)
+                    if (!plan.InsertNew && inBand && row == plan.Row && plan.Values.SingleOrDefault(v => v.Column == column) is { } value)
+                        expectedValue = value.Value;
+                    if (plan.InsertNew && changedSheet && row == plan.Row + 1 && column >= plan.Left && column <= plan.Right && plan.Rewritten[column - plan.Left] is string subtotal)
                         expectedFormula = subtotal;
                     var actualFormula = Formula(second.Data, row, column);
                     if (actualFormula != expectedFormula || (expectedFormula is null && !Equals(expectedValue, Cell(second.Data, row, column))))

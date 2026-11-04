@@ -37,13 +37,19 @@ public sealed class WorkbookInspection(InspectionLimits? configured = null)
             var current = root;
             foreach (var segment in full[root.Length..].Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
             { current = Path.Combine(current, segment); if ((File.GetAttributes(current) & FileAttributes.ReparsePoint) != 0) throw Error("Linked or redirected source paths are unavailable."); }
-            file = new FileStream(full, FileMode.Open, FileAccess.Read, FileShare.Read);
-            if (file.Length > limits.FileBytes) throw Error($"Inspection file budget is {limits.FileBytes} bytes.");
             var budget = new Budget(limits, token);
-            // Incremental fingerprint; no compressed-file byte array is retained.
             using var sha = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-            var buffer = new byte[65536]; int read;
-            while ((read = file.Read(buffer)) != 0) { budget.Check(); sha.AppendData(buffer, 0, read); }
+            // Inspection owns a stable, delete-on-close snapshot, never a lifetime
+            // read lock on the original. Excel must be able to open/save that file.
+            using (var source = new FileStream(full, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                if (source.Length > limits.FileBytes) throw Error($"Inspection file budget is {limits.FileBytes} bytes.");
+                file = new FileStream(Path.Combine(Path.GetTempPath(), "TsekSheet-inspect-" + Guid.NewGuid().ToString("N") + ".tmp"),
+                    FileMode.CreateNew, FileAccess.ReadWrite, FileShare.Read | FileShare.Delete, 65536, FileOptions.DeleteOnClose);
+                var buffer = new byte[65536]; int read;
+                while ((read = source.Read(buffer)) != 0) { budget.Check(); sha.AppendData(buffer, 0, read); file.Write(buffer, 0, read); }
+                file.Flush();
+            }
             var hash = Convert.ToHexString(sha.GetHashAndReset()); file.Position = 0;
             PreflightDirectory(file, limits, budget);
             zip = new ZipArchive(file, ZipArchiveMode.Read, true);
