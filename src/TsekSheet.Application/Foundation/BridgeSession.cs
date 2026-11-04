@@ -34,7 +34,9 @@ public sealed class BridgeSession : IDisposable
     private bool ready, selecting, disposed;
     private readonly WorkbookWorkspace? workbooks;
     private readonly Func<CancellationToken, Task<string?>>? selectDocument;
-    private readonly DesktopReceiptReview receipts;
+    private readonly ReceiptQueue receiptQueue;
+    private DesktopReceiptReview receipts => receiptQueue.Active;
+    private readonly Func<CancellationToken, Task<IReadOnlyList<string>>>? selectDocuments;
     private readonly IReadOnlyList<WorkflowProfile>? profiles;
     private readonly ILocalDocumentRenderer? renderer;
     private readonly ExcelReceiptInsertion? excel;
@@ -48,7 +50,7 @@ public sealed class BridgeSession : IDisposable
         Func<int, CancellationToken, Task>? delay = null, WorkbookWorkspace? workbooks = null,
         Func<CancellationToken, Task<string?>>? selectDocument = null, ILocalDocumentRenderer? renderer = null,
         ExcelReceiptInsertion? excel = null, Func<CancellationToken, Task<string?>>? selectExcelWorkbook = null,
-        IReadOnlyList<WorkflowProfile>? profiles = null)
+        IReadOnlyList<WorkflowProfile>? profiles = null, Func<CancellationToken, Task<IReadOnlyList<string>>>? selectDocuments = null)
     {
         this.send = send;
         this.selectFile = selectFile;
@@ -59,7 +61,8 @@ public sealed class BridgeSession : IDisposable
         this.excel = excel;
         this.selectExcelWorkbook = selectExcelWorkbook;
         this.profiles = profiles;
-        receipts = new(profiles is null ? null : id => profiles.Single(p => p.Id == id));
+        this.selectDocuments = selectDocuments;
+        receiptQueue = new(profiles is null ? null : id => profiles.Single(p => p.Id == id));
     }
 
     private void Emit(object message)
@@ -108,9 +111,32 @@ public sealed class BridgeSession : IDisposable
                 Success(id!, new { selectedVersion = 1, applicationName = new ApplicationMetadataService().ApplicationName, version = "0.1.0", capabilities = new { sourceRendering = renderer != null, receipts = selectDocument != null, diagnostics = true, fileSelection = true, workbooks = workbooks != null, templates = false, ocr = false } });
                 return;
             }
-            if (command is not ("excel.listWorkbooks" or "excel.previewInsert" or "excel.insert" or "receipt.render" or "receipt.cancelRender" or "receipt.select" or "receipt.state" or "receipt.start" or "receipt.correct" or "receipt.verify" or "receipt.retract" or "receipt.close" or "receipt.preview" or "sectionReview.start" or "sectionReview.decide" or "sectionReview.retract" or "sectionReview.cancel" or "foundation.getInfo" or "foundation.selectFile" or "diagnostics.run" or "diagnostics.cancel" or "workbook.open" or "workbook.inspect" or "workbook.readViewport" or "workbook.close" or "workbook.discard" or "workbook.createCopy" or "workbook.editCopy" or "workbook.saveAsNew" or "workbook.previewMerge" or "workbook.merge" or "workflow.profiles" or "workbook.planRecords" or "workbook.generateCandidate" or "workbook.approveCandidate" or "workbook.cancelCandidate"))
+            if (command is not ("receipt.changeProfile" or "receipt.queue" or "receipt.enqueue" or "receipt.navigate" or "receipt.prepare" or "excel.previewDraft" or "excel.addRow" or "excel.listWorkbooks" or "excel.previewInsert" or "excel.insert" or "receipt.render" or "receipt.cancelRender" or "receipt.select" or "receipt.state" or "receipt.start" or "receipt.correct" or "receipt.verify" or "receipt.retract" or "receipt.close" or "receipt.preview" or "sectionReview.start" or "sectionReview.decide" or "sectionReview.retract" or "sectionReview.cancel" or "foundation.getInfo" or "foundation.selectFile" or "diagnostics.run" or "diagnostics.cancel" or "workbook.open" or "workbook.inspect" or "workbook.readViewport" or "workbook.close" or "workbook.discard" or "workbook.createCopy" or "workbook.editCopy" or "workbook.saveAsNew" or "workbook.previewMerge" or "workbook.merge" or "workflow.profiles" or "workbook.planRecords" or "workbook.generateCandidate" or "workbook.approveCandidate" or "workbook.cancelCandidate"))
             { Error(id!, "UNSUPPORTED_COMMAND", "Command is unavailable."); return; }
             if (!ready) { Error(id!, "NOT_READY", "Handshake is required."); return; }
+            if (command == "receipt.queue")
+            {
+                if (!HasOnly(payload)) throw new JsonException();
+                Success(id!, receiptQueue.State); return;
+            }
+            if (command == "receipt.enqueue")
+            {
+                if (!HasOnly(payload) || selectDocuments == null) throw new JsonException();
+                lock (gate) { if (selecting) throw new InvalidOperationException(); selecting = true; }
+                try
+                {
+                    var paths = await selectDocuments(lifetime.Token);
+                    Success(id!, paths.Count == 0 ? receiptQueue.State : await Task.Run(() => receiptQueue.Add(paths, lifetime.Token)));
+                }
+                finally { lock (gate) selecting = false; }
+                return;
+            }
+            if (command == "receipt.navigate")
+            {
+                if (!HasOnly(payload, "expectedId", "targetId", "skip")) throw new JsonException();
+                lock (gate) renderOperation?.Cancel();
+                Success(id!, receiptQueue.Navigate(payload.GetProperty("expectedId").GetString()!, payload.GetProperty("targetId").GetString()!, payload.GetProperty("skip").GetBoolean())); return;
+            }
             if (command!.StartsWith("excel.", StringComparison.Ordinal))
             {
                 if (excel is null) { Error(id!, "UNSUPPORTED_COMMAND", "Excel insertion is unavailable in this host."); return; }
@@ -130,19 +156,27 @@ public sealed class BridgeSession : IDisposable
                         changes = excel.Changes.Select(c => new { c.Workbook, c.Sheet, c.Range, manualReview = c.ManualReview.Select(w => new { w.Cell, w.Reason }) }) });
                     return;
                 }
-                if (!(command == "excel.previewInsert" ? HasOnly(payload, "expected", "workbookId", "sectionId") || HasOnly(payload, "expected", "workbookId", "sectionId", "sheet") : HasOnly(payload, "expected", "previewToken"))
+                if (!(command is "excel.previewInsert" or "excel.previewDraft" ? HasOnly(payload, "expected", "workbookId", "sectionId") || HasOnly(payload, "expected", "workbookId", "sectionId", "sheet") : command == "excel.addRow" ? HasOnly(payload, "expected", "previewToken", "queueId") : HasOnly(payload, "expected", "previewToken"))
                     || !HasOnly(payload.GetProperty("expected"), "reviewId", "revision", "profileId", "profileHash")) throw new JsonException();
                 var expected = JsonSerializer.Deserialize<ReviewVersion>(payload.GetProperty("expected"), JsonOptions)!;
-                if (command == "excel.previewInsert")
+                receiptQueue.RequireEditable();
+                if (command is "excel.previewInsert" or "excel.previewDraft")
                 {
                     var preview = await excel.PreviewAsync(receipts, expected, payload.GetProperty("workbookId").GetString()!, payload.GetProperty("sectionId").GetString()!, lifetime.Token,
-                        payload.TryGetProperty("sheet", out var sheetValue) ? sheetValue.GetString() : null);
+                        payload.TryGetProperty("sheet", out var sheetValue) ? sheetValue.GetString() : null, draft: command == "excel.previewDraft");
                     Success(id!, new { preview.Token, preview.WorkbookId, preview.SectionId, preview.Sheet, preview.Range, preview.InsertRow, preview.Values,
                         manualReview = preview.ManualReview.Select(w => new { w.Cell, w.Reason }) });
                 }
                 else
                 {
-                    var result = await excel.InsertAsync(receipts, expected, payload.GetProperty("previewToken").GetString()!, lifetime.Token);
+                    var queueId = command == "excel.addRow" ? payload.GetProperty("queueId").GetString() : null;
+                    if (command == "excel.addRow" && (queueId is not { Length: 32 } || !queueId.All(char.IsAsciiHexDigit))) throw new JsonException();
+                    if (queueId != null && receiptQueue.State.ActiveId != queueId) throw new FieldReviewException("STALE_QUEUE", "The active receipt changed. Request a fresh preview.");
+                    var result = await excel.InsertAsync(receipts, expected, payload.GetProperty("previewToken").GetString()!, lifetime.Token, confirm: command == "excel.addRow");
+                    if (queueId != null)
+                    {
+                        Success(id!, new { change = new { result.Workbook, result.Sheet, result.Range, manualReview = result.ManualReview.Select(w => new { w.Cell, w.Reason }) }, queue = receiptQueue.Complete(queueId) }); return;
+                    }
                     Success(id!, new { result.Workbook, result.Sheet, result.Range, manualReview = result.ManualReview.Select(w => new { w.Cell, w.Reason }) });
                 }
                 return;
@@ -176,6 +210,7 @@ public sealed class BridgeSession : IDisposable
                 if (command is "receipt.state" or "receipt.close" or "receipt.select")
                 {
                     if (!HasOnly(payload)) throw new JsonException();
+                    if (command != "receipt.state" && receiptQueue.State.Items.Count > 0) throw new FieldReviewException("QUEUE_ACTIVE", "Navigate the queue; queued reviews are kept until this session closes.");
                     if (command == "receipt.select")
                     {
                         lock (gate) { if (selecting) { Error(id!, "BUSY", "A file dialog is already open."); return; } selecting = true; }
@@ -195,15 +230,32 @@ public sealed class BridgeSession : IDisposable
                 if (command == "receipt.start")
                 {
                     if (!HasOnly(payload, "profileId", "pageNumber")) throw new JsonException();
+                    receiptQueue.RequireEditable();
                     Success(id!, await Task.Run(() => receipts.Start(payload.GetProperty("profileId").GetString()!, payload.GetProperty("pageNumber").GetInt32(), lifetime.Token))); return;
                 }
                 var names = command switch {
+                    "receipt.changeProfile" => new[] { "expected", "profileId", "values" },
+                    "receipt.prepare" => new[] { "expected", "values" },
                     "receipt.correct" => new[] { "expected", "key", "valueRevision", "value" },
                     "receipt.preview" => new[] { "expected", "destination", "sectionId", "confirmNewEntity" },
                     _ => new[] { "expected", "key", "valueRevision" }
                 };
                 if (!HasOnly(payload, names) || !HasOnly(payload.GetProperty("expected"), "reviewId", "revision", "profileId", "profileHash")) throw new JsonException();
                 var expected = JsonSerializer.Deserialize<ReviewVersion>(payload.GetProperty("expected"), JsonOptions)!;
+                if (command == "receipt.changeProfile")
+                {
+                    receiptQueue.RequireEditable();
+                    var values = payload.GetProperty("values");
+                    if (values.ValueKind != JsonValueKind.Object || values.EnumerateObject().Count() > 16 || values.EnumerateObject().Any(p => p.Value.ValueKind != JsonValueKind.String)) throw new JsonException();
+                    Success(id!, await Task.Run(() => receipts.ChangeProfile(expected, payload.GetProperty("profileId").GetString()!, values.EnumerateObject().ToDictionary(p => p.Name, p => p.Value.GetString()!), lifetime.Token))); return;
+                }
+                if (command == "receipt.prepare")
+                {
+                    receiptQueue.RequireEditable();
+                    var values = payload.GetProperty("values");
+                    if (values.ValueKind != JsonValueKind.Object || values.EnumerateObject().Count() > 16 || values.EnumerateObject().Any(p => p.Value.ValueKind != JsonValueKind.String)) throw new JsonException();
+                    Success(id!, await Task.Run(() => receipts.Prepare(expected, values.EnumerateObject().ToDictionary(p => p.Name, p => p.Value.GetString()!), lifetime.Token))); return;
+                }
                 if (command == "receipt.preview")
                 {
                     if (workbooks == null || !HasOnly(payload.GetProperty("destination"), "sessionId", "worksheetId", "revision", "sourceSha256", "profileId", "profileHash")) throw new JsonException();
@@ -211,6 +263,7 @@ public sealed class BridgeSession : IDisposable
                     var choices = new PlacementChoices(payload.GetProperty("sectionId").GetString(), payload.GetProperty("confirmNewEntity").GetBoolean());
                     Success(id!, await workbooks.PreviewReceiptAsync(receipts, expected, destination, choices)); return;
                 }
+                receiptQueue.RequireEditable();
                 Success(id!, await Task.Run(() => receipts.Change(command[8..], expected, payload.GetProperty("key").GetString()!, payload.GetProperty("valueRevision").GetInt32(),
                     command == "receipt.correct" ? payload.GetProperty("value").GetString() : null, lifetime.Token))); return;
             }
@@ -393,7 +446,7 @@ public sealed class BridgeSession : IDisposable
     public void Dispose()
     {
         lock (gate) { if (disposed) return; disposed = true; lifetime.Cancel(); lifetime.Dispose(); seen.Clear(); }
-        receipts.Dispose();
+        receiptQueue.Dispose();
         workbooks?.Dispose();
         // Active handlers own their linked tokens; cancellation prevents any further sends.
     }

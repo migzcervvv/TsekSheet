@@ -24,13 +24,15 @@ public partial class MainWindow : Window
     private readonly Func<CancellationToken, Task<string?>>? sectionProfileSelector;
     private bool dialogOpen;
     private readonly Func<CancellationToken, Task<string?>>? documentSelector;
+    private readonly Func<CancellationToken, Task<IReadOnlyList<string>>>? documentQueueSelector;
     private TsekSheet.Excel.ExcelHost? excelHost;
     private readonly IReadOnlyList<TsekSheet.Application.Workflows.WorkflowProfile>? workflowProfiles;
 
     public MainWindow() : this(null, null, null) { }
 
     internal MainWindow(string? assetDirectory, string? profileDirectory, string? browserExecutableFolder, Func<CancellationToken, Task<string?>>? workbookSelector = null, Func<bool>? confirmDiscard = null, Func<CancellationToken, Task<string?>>? saveSelector = null, Func<CancellationToken, Task<string?>>? sectionProfileSelector = null, Func<CancellationToken, Task<string?>>? documentSelector = null,
-        IReadOnlyList<TsekSheet.Application.Workflows.WorkflowProfile>? workflowProfiles = null, TsekSheet.Excel.ExcelHost? ownedExcelHost = null)
+        IReadOnlyList<TsekSheet.Application.Workflows.WorkflowProfile>? workflowProfiles = null, TsekSheet.Excel.ExcelHost? ownedExcelHost = null,
+        Func<CancellationToken, Task<IReadOnlyList<string>>>? documentQueueSelector = null)
     {
         assets = assetDirectory ?? Path.Combine(AppContext.BaseDirectory, "frontend");
         profile = profileDirectory ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TsekSheet", "WebView2");
@@ -40,6 +42,7 @@ public partial class MainWindow : Window
         this.saveSelector = saveSelector;
         this.sectionProfileSelector = sectionProfileSelector;
         this.documentSelector = documentSelector;
+        this.documentQueueSelector = documentQueueSelector;
         this.workflowProfiles = workflowProfiles;
         excelHost = ownedExcelHost;
         InitializeComponent();
@@ -123,7 +126,7 @@ public partial class MainWindow : Window
         excelHost ??= new TsekSheet.Excel.ExcelHost();
         var profiles = workflowProfiles ?? TsekSheet.Application.Workflows.WorkflowProfiles.All;
         session = new BridgeSession(Send, SelectFileAsync, workbooks: new WorkbookWorkspace(workbookEngine, SelectWorkbookAsync, SelectSaveDestinationAsync, SelectSectionProfileAsync), selectDocument: SelectDocumentAsync, renderer: new TsekSheet.Application.Documents.LocalDocumentRenderer(Path.Combine(AppContext.BaseDirectory,"renderer","TsekSheet.Renderer.exe")),
-            excel: new TsekSheet.Application.Excel.ExcelReceiptInsertion(excelHost, excelHost, id => profiles.Single(p => p.Id == id)), selectExcelWorkbook: SelectExcelWorkbookAsync, profiles: profiles);
+            excel: new TsekSheet.Application.Excel.ExcelReceiptInsertion(excelHost, excelHost, id => profiles.Single(p => p.Id == id)), selectExcelWorkbook: SelectExcelWorkbookAsync, profiles: profiles, selectDocuments: SelectDocumentsAsync);
     }
 
     internal static void ValidateAssets(string directory)
@@ -270,6 +273,21 @@ public partial class MainWindow : Window
         var text = reader.ReadToEnd();
         TsekSheet.Application.Workflows.ReadOnlySectionAnalysis.ParseProfile(text);
         return text;
+    }
+
+    private Task<IReadOnlyList<string>> SelectDocumentsAsync(CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        if (documentQueueSelector != null) return documentQueueSelector(token);
+        if (dialogOpen) throw new WorkbookException("BUSY", "A native dialog is already open.");
+        dialogOpen = true;
+        try
+        {
+            var dialog = new OpenFileDialog { Title = "Add receipt queue", Filter = "Local receipts (*.pdf;*.png;*.jpg;*.jpeg)|*.pdf;*.png;*.jpg;*.jpeg", CheckFileExists = true, Multiselect = true };
+            IReadOnlyList<string> selected = dialog.ShowDialog(this) == true ? dialog.FileNames : [];
+            token.ThrowIfCancellationRequested(); return Task.FromResult(selected);
+        }
+        finally { dialogOpen = false; }
     }
 
     private Task<string?> SelectDocumentAsync(CancellationToken token)

@@ -11,8 +11,8 @@ public sealed record ExcelInsertDisplay(string Workbook, string Sheet, string Ra
 public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer, Func<string, WorkflowProfile>? profiles = null)
 {
     private WorkflowProfile Profile(string id) => (profiles ?? WorkflowProfiles.Get)(id);
-    private readonly Dictionary<string, (ReviewVersion Version, SectionInsertPreview Preview, string Workbook)> previews = [];
-    private readonly HashSet<(Guid Review, int Revision)> inserted = [];
+    private readonly Dictionary<string, (ReviewVersion Version, SectionInsertPreview Preview, string Workbook, bool Draft)> previews = [];
+    private readonly HashSet<Guid> inserted = [];
     private readonly SemaphoreSlim commands = new(1, 1);
     private readonly List<ExcelInsertDisplay> changes = [];
     public IReadOnlyList<ExcelInsertDisplay> Changes { get { lock (changes) return changes.ToArray(); } }
@@ -50,14 +50,15 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
             : (p.ExcelSections ?? []).Select(s => new ExcelSectionChoice(s.Id, s.Label, s.SheetName)).ToArray();
     }
 
-    public async Task<SectionInsertPreview> PreviewAsync(DesktopReceiptReview receipt, ReviewVersion version, string workbookId, string sectionId, CancellationToken token, string? sheetName = null)
+    public async Task<SectionInsertPreview> PreviewAsync(DesktopReceiptReview receipt, ReviewVersion version, string workbookId, string sectionId, CancellationToken token, string? sheetName = null, bool draft = false)
     {
         await commands.WaitAsync(token);
         try
         {
-            return await receipt.WithVerifiedExcelAsync(version, async record =>
+            return await (draft ? receipt.WithDraftExcelAsync(version, Build, token) : receipt.WithVerifiedExcelAsync(version, Build, token));
+            async Task<SectionInsertPreview> Build(TypedReviewRecord record)
             {
-                if (inserted.Contains((version.ReviewId, version.Revision))) throw new FieldReviewException("ALREADY_INSERTED", "This verified revision was already inserted. Review the highlighted row in Excel.");
+                if (inserted.Contains(version.ReviewId)) throw new FieldReviewException("ALREADY_INSERTED", "This receipt was already inserted or submitted. Review the highlighted row in Excel.");
                 var profile = Profile(version.ProfileId);
                 if (WorkflowProfiles.Hash(profile) != version.ProfileHash) throw new FieldReviewException("STALE_PROFILE", "The local profile changed. Start a new review.");
                 var section = profile.Layout is { } layout
@@ -81,10 +82,15 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
                     }, field.LiteralText, field.Kind == "date")).ToArray();
                 var book = (await host.ListWorkbooksAsync()).SingleOrDefault(w => w.Id == workbookId) ?? throw new InvalidOperationException("Choose an open Excel workbook.");
                 var preview = await writer.PreviewInsertAsync(workbookId, section, values);
+                if (draft)
+                {
+                    if (preview.ManualReview.Count > 0) throw new FieldReviewException("AMBIGUOUS_TOTAL", "A subtotal formula needs manual review in Excel before Add Row is available.");
+                    await RejectDuplicateAsync(workbookId, section, profile, record);
+                }
                 if (previews.Count >= 64) previews.Clear();
-                previews[preview.Token] = (version, preview, book.Name);
+                previews[preview.Token] = (version, preview, book.Name, draft);
                 return preview;
-            }, token);
+            }
         }
         finally { commands.Release(); }
     }
@@ -103,21 +109,23 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
         return date.ToDateTime(TimeOnly.MinValue).ToOADate();
     }
 
-    public async Task<ExcelInsertDisplay> InsertAsync(DesktopReceiptReview receipt, ReviewVersion version, string previewToken, CancellationToken token)
+    public async Task<ExcelInsertDisplay> InsertAsync(DesktopReceiptReview receipt, ReviewVersion version, string previewToken, CancellationToken token, bool confirm = false)
     {
         await commands.WaitAsync(token);
         try
         {
             if (!previews.Remove(previewToken, out var plan) || plan.Version != version) throw new FieldReviewException("STALE_INSERT_PREVIEW", "Request a fresh preview for the current receipt.");
+            if (plan.Draft && !confirm) throw new FieldReviewException("CONFIRMATION_REQUIRED", "Explicitly confirm the draft values and destination with Add Row.");
+            if (confirm) version = receipt.ConfirmAll(version, token).Version!;
             return await receipt.WithVerifiedExcelAsync(version, async _ =>
             {
-                if (!inserted.Add((version.ReviewId, version.Revision))) throw new FieldReviewException("ALREADY_INSERTED", "This verified revision was already submitted. Review Excel before retrying.");
-                // Once submitted, a failed/unknown outcome cannot be retried with the same revision.
+                if (!inserted.Add(version.ReviewId)) throw new FieldReviewException("ALREADY_INSERTED", "This receipt was already submitted. Review Excel before retrying.");
+                // Once submitted, a failed/unknown outcome cannot be retried as another revision.
                 SectionInsertResult result;
                 try { result = await writer.InsertAsync(previewToken); }
                 catch (ExcelInsertRejectedException error)
                 {
-                    inserted.Remove((version.ReviewId, version.Revision));
+                    inserted.Remove(version.ReviewId);
                     throw new FieldReviewException("STALE_INSERT_PREVIEW", error.Message);
                 }
                 var display = new ExcelInsertDisplay(plan.Workbook, result.Sheet, result.Range, result.ManualReview);
@@ -126,5 +134,42 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
             }, token);
         }
         finally { commands.Release(); }
+    }
+
+    private async Task RejectDuplicateAsync(string workbookId, ExcelSectionDefinition section, WorkflowProfile profile, TypedReviewRecord record)
+    {
+        var reader = host as IWorkbookReader ?? throw new InvalidOperationException("Excel readback is unavailable.");
+        var data = await reader.ReadAsync(workbookId, section.SheetName, await reader.UsedRangeAsync(workbookId, section.SheetName));
+        var boundary = ExcelLayoutMatching.Resolve(data, section);
+        var identifiers = profile.IdentifierFields.Count > 0 ? profile.IdentifierFields
+            : profile.Fields.Where(f => f.Required && f.Kind == "text").Take(1).Select(f => f.Key).ToArray();
+        for (var row = boundary.First; row < boundary.Subtotal; row++)
+        {
+            foreach (var key in identifiers)
+            {
+                var value = record.Fields.Single(f => f.Key == key).LiteralText.Trim();
+                if (value.Length == 0 || !section.ColumnMap.TryGetValue(key, out var column)) continue;
+                var existing = Convert.ToString(ExcelLayoutMatching.Value(data, row, A1Formula.ColumnNumber(column)), System.Globalization.CultureInfo.InvariantCulture)?.Trim();
+                if (StringComparer.OrdinalIgnoreCase.Equals(value, existing))
+                    throw new FieldReviewException("DUPLICATE_RECORD", $"Duplicate {profile.Fields.Single(f => f.Key == key).Header} at row {row}. Review the existing Excel row.");
+            }
+            // Layout profiles expose invoice/vendor fields without legacy IdentifierFields.
+            // Missing vendor identity cannot safely distinguish two equal invoice references.
+            if (profile.Layout is not null && Match("invoice", out var invoice) && invoice)
+            {
+                var hasVendor = Match("vendor", out var sameVendor);
+                if (!hasVendor || sameVendor)
+                    throw new FieldReviewException("DUPLICATE_RECORD", $"Potential duplicate invoice at row {row}. Review the existing vendor and invoice in Excel.");
+            }
+            bool Match(string key, out bool same)
+            {
+                same = false;
+                var value = record.Fields.SingleOrDefault(f => f.Key == key)?.LiteralText.Trim();
+                if (string.IsNullOrEmpty(value) || !section.ColumnMap.TryGetValue(key, out var col)) return false;
+                var existing = Convert.ToString(ExcelLayoutMatching.Value(data, row, A1Formula.ColumnNumber(col)), System.Globalization.CultureInfo.InvariantCulture)?.Trim();
+                if (string.IsNullOrEmpty(existing)) return false;
+                same = StringComparer.OrdinalIgnoreCase.Equals(value, existing); return true;
+            }
+        }
     }
 }

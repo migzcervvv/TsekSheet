@@ -303,6 +303,9 @@ button.primary:hover:not(:disabled) { background:var(--accent); color:var(--acce
 .excel-insertion { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
 .excel-insertion h3 { margin: 0 0 6px; }
 .excel-insertion .excel-destination { align-items: end; margin: 16px 0; flex-wrap: wrap; }
+.fast-receipt-loop .source-inspector { position:sticky; top:0; max-height:calc(100vh - 160px); overflow:auto; }
+.fast-receipt-loop [aria-label="Queue row preview"] { margin-top:16px; }
+@media(max-width:800px) { .fast-receipt-loop .source-inspector { position:static; max-height:none; } }
 .excel-insertion label { display: grid; gap: 6px; flex: 1 1 220px; min-width: 0; }
 .excel-insertion select { width: 100%; max-width: 100%; margin-left: 0; }
 .excel-insertion table { width: 100%; }

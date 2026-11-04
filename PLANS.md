@@ -186,7 +186,7 @@ Status: TODO (after T2 accepted)
 
 ### T2e - Fast Receipt Entry Loop
 
-Status: WAITING (Phase 0 integration follow-up must merge; resulting main must be verified before implementation)
+Status: DONE (T2 verification checkpoint satisfied; in-memory fast receipt loop implemented; 20-receipt synthetic UI/Excel acceptance passed; final Release regressions: Application 638/0/0, Workbooks 457/0/0, Desktop 26/0/0, Excel 23/0/0 in both full runs, Frontend 90/0/0 passed/failed/skipped; old/new measured overhead 41.866/41.339 s; real-workbook acceptance remains manual)
 
 - Phase 0: PR #4 merged at 502de1c; PR #5 already integrated all five reopened T2
   commits through e4a4f96 into main at 41922aa. Their source trees are identical;

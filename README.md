@@ -70,11 +70,13 @@ Details and tickets: [PLANS.md](PLANS.md). Product goals: [GOALS.md](GOALS.md).
   profiles.
 - Preview and insert verified receipt fields into a profile-defined section of a workbook
   open in TsekSheet's visible Excel instance. Inserted rows are highlighted and listed in the app.
+- Process an in-memory PDF/image receipt queue with retained destinations and account choices,
+  draft previews, explicit Add Row confirmation, automatic advance and skip/review.
+  See [Receipt entry and measured timing](docs/receipt-entry.md).
 
 ### Not yet
 
-- Owner validation on redacted workbooks (M1), OCR (M2), multiple documents in a queue and session
-  recovery (M3), installer (M4).
+- Owner validation on redacted workbooks (M1), OCR (M2), session recovery (M3), installer (M4).
 - The older built-in cell editing / Merge / Save As path is being retired in favour of Excel.
 
 ## Requirements

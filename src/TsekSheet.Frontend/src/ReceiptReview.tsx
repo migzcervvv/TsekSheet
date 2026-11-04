@@ -1,5 +1,6 @@
 import SourcePreview from './SourcePreview';
 import ExcelInsertion from './ExcelInsertion';
+import FastReceiptLoop from './FastReceiptLoop';
 import { EmptyState, StatusBadge, Notice } from './ui/Workspace';
 import type { Activity } from './ui/Workspace';
 import { useEffect, useRef, useState } from 'react';
@@ -9,6 +10,7 @@ import type { ReceiptState, ReceiptField, ReceiptDestination, ReceiptPreview } f
 
 export default function ReceiptReview({ bridge, destination, disabled, renderingAvailable = false, view = 'all', onNavigate, onActiveChange, onStepChange }: { bridge: BridgeClient; destination: Omit<ReceiptDestination, 'profileId' | 'profileHash'> | null; disabled: boolean; renderingAvailable?:boolean; view?: 'all' | 'receipt' | 'placement' | 'workflow'; onActiveChange?:(active:boolean)=>void; onStepChange?:(step:number)=>void; onNavigate?: (activity: Activity) => void }) {
   const [step, setStep] = useState(0);
+  const [queueMode,setQueueMode]=useState(false);
   const guided = view==='workflow';
   useEffect(()=>{onStepChange?.(step);},[step,onStepChange]);
   const [state, setState] = useState<ReceiptState | null>(null);
@@ -66,8 +68,10 @@ export default function ReceiptReview({ bridge, destination, disabled, rendering
   const blocked = busy || disabled || uncertain || state?.status === 'Invalidated';
   const dirty = state?.fields.some(f => drafts[f.key] !== f.value) ?? false;
   const boundPreview = preview && destination && preview.mapping.destination.sessionId === destination.sessionId && preview.mapping.destination.worksheetId === destination.worksheetId && preview.mapping.destination.revision === destination.revision ? preview : null;
+  if(queueMode)return <FastReceiptLoop bridge={bridge} profiles={profiles} disabled={disabled} renderingAvailable={renderingAvailable} onActiveChange={onActiveChange}/>;
   return <section className="receipt-review" data-view={view} aria-busy={busy} aria-label="Receipt review">
     <div className="reader-heading"><div><h2>{view==='placement'?'Receipt placement':'Receipt review'}</h2><p>Manual entry · explicit human verification</p></div>
+      {!state?.source&&<button disabled={busy||disabled||profiles.length===0} onClick={()=>setQueueMode(true)}>Receipt queue</button>}
       {!state?.source && <button disabled={busy || disabled || uncertain || !state} onClick={() => void run(() => bridge.request('receipt.select', {}).promise)}>Select receipt PDF or image</button>}
       {state?.source && <button disabled={busy || disabled} onClick={() => void run(() => bridge.request('receipt.close', {}).promise)}>Close receipt and discard review</button>}
       <button disabled={busy || disabled} onClick={() => void run(() => bridge.request('receipt.state', {}).promise)}>Refresh receipt state</button>
