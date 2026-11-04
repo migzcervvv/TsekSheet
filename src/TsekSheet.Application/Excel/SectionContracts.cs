@@ -2,7 +2,10 @@ namespace TsekSheet.Application.Excel;
 
 public sealed record ExcelSectionDefinition(string Id, string Label, string SheetName, int HeaderRow,
     IReadOnlyDictionary<string, string> ColumnMap, IReadOnlyList<string> FormulaColumns,
-    string SubtotalColumn, string SubtotalMarker, string InsertMode, string? TableName = null);
+    string SubtotalColumn, string SubtotalMarker, string InsertMode, string? TableName = null,
+    Workflows.SheetMatch? SheetMatch = null, Workflows.SectionStart? Start = null,
+    int SubtotalOccurrence = 0, bool FillBlankRowsFirst = false, IReadOnlyList<string>? InputColumns = null,
+    IReadOnlyList<Workflows.RowMarker>? ProtectedRows = null);
 public sealed record InsertValue(string Key, string Header, int Column, object? Value, string? DisplayValue = null, bool IsDate = false);
 public sealed record FormulaReview(string Cell, string Formula, string Reason);
 public sealed record SectionInsertPreview(string Token, string WorkbookId, string SectionId, string Sheet,

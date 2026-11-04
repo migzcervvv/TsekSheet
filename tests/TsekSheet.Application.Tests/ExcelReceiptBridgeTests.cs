@@ -39,7 +39,7 @@ public sealed class ExcelReceiptBridgeTests
                 state = (await Send("receipt.correct", new { expected = state.Version, key = item.Item1, valueRevision = 0, value = item.Item2 })).Deserialize<ReceiptState>(BridgeSession.JsonOptions)!;
                 state = (await Send("receipt.verify", new { expected = state.Version, key = item.Item1, valueRevision = 1 })).Deserialize<ReceiptState>(BridgeSession.JsonOptions)!;
             }
-            var preview = await Send("excel.previewInsert", new { expected = state.Version, workbookId = host.Id, sectionId = "columns" });
+            var preview = await Send("excel.previewInsert", new { expected = state.Version, workbookId = host.Id, sectionId = "columns", sheet = "Columns" });
             Assert.AreEqual(1, host.Previews);
             Assert.IsFalse(preview.ToString().Contains("C:\\"), "Unparseable native formulas must not expose external file paths.");
             var oldVersion = state.Version;

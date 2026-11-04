@@ -8,15 +8,16 @@ public sealed partial class ExcelHost
 {
     private sealed record PendingInsert(string WorkbookId, ExcelSectionDefinition Section, InsertValue[] Values,
         PreservationSnapshot Before, int Row, int Left, int Right, string?[] Subtotals, string?[] Rewritten,
-        FormulaReview[] Warnings, long AddedValidation);
+        FormulaReview[] Warnings, long AddedValidation, bool InsertNew);
     private readonly Dictionary<string, PendingInsert> insertPlans = [];
 
     public Task<SectionInsertPreview> PreviewInsertAsync(string workbookId, ExcelSectionDefinition section, IReadOnlyList<InsertValue> values) =>
         queue.InvokeAsync(() => WithSheet(workbookId, section.SheetName, (workbook, sheet) =>
         {
-            if (books[workbookId].Faulted || workbook.ReadOnly || sheet.ProtectContents) throw new InvalidOperationException("The selected workbook cannot be written.");
+            if (books[workbookId].Faulted) throw new ExcelInsertRejectedException("This workbook needs manual review after a readback failure.");
+            if (sheet.ProtectContents) throw new ExcelInsertRejectedException("The target worksheet is protected. Unprotect it in Excel before inserting.");
             var fields = values.ToArray();
-            var columns = section.ColumnMap.Values.Concat(section.FormulaColumns).Append(section.SubtotalColumn).Select(A1Formula.ColumnNumber).ToArray();
+            var columns = section.ColumnMap.Values.Concat(section.InputColumns ?? []).Concat(section.FormulaColumns).Append(section.SubtotalColumn).Select(A1Formula.ColumnNumber).ToArray();
             var left = columns.Min(); var right = columns.Max();
             if (fields.Length != section.ColumnMap.Count || fields.Select(v => v.Column).Distinct().Count() != fields.Length ||
                 fields.Any(v => !section.ColumnMap.TryGetValue(v.Key, out var column) || A1Formula.ColumnNumber(column) != v.Column))
@@ -33,24 +34,26 @@ public sealed partial class ExcelHost
             }).ToArray();
             var before = ExcelReadback.Capture(workbook);
             var snapshot = before.Sheets.Single(s => s.Name == sheet.Name);
-            var markerColumn = A1Formula.ColumnNumber(section.SubtotalColumn);
-            var markerRows = Enumerable.Range(snapshot.Data.Range.Row, snapshot.Data.Range.Rows)
-                .Where(r => r > section.HeaderRow && Equals(Cell(snapshot.Data, r, markerColumn), section.SubtotalMarker)).ToArray();
-            if (markerRows.Length != 1 || markerRows[0] <= section.HeaderRow + 1) throw new InvalidOperationException("The section needs one exact subtotal marker and at least one template data row.");
-            var row = markerRows[0];
+            var boundary = ExcelLayoutMatching.Resolve(snapshot.Data, section);
+            var inputColumns = (section.InputColumns ?? section.ColumnMap.Values.ToArray()).Select(A1Formula.ColumnNumber).ToArray();
+            var blank = section.FillBlankRowsFirst ? Enumerable.Range(boundary.First, boundary.Subtotal - boundary.First)
+                .FirstOrDefault(r => inputColumns.All(c => Formula(snapshot.Data, r, c) is null && Cell(snapshot.Data, r, c) is null or "")) : 0;
+            var insertNew = blank == 0;
+            var row = insertNew ? boundary.Subtotal : blank;
             foreach (var field in fields)
             {
-                if (!Equals(Cell(snapshot.Data, section.HeaderRow, field.Column), field.Header)) throw new InvalidOperationException("The profile headers do not match this workbook section.");
-                if (Formula(snapshot.Data, row - 1, field.Column) is not null) throw new InvalidOperationException("A mapped value column contains a formula.");
+                if (section.SheetMatch is null && !Equals(Cell(snapshot.Data, section.HeaderRow, field.Column), field.Header)) throw new ExcelInsertRejectedException("The profile headers do not match this workbook section.");
+                if (Formula(snapshot.Data, insertNew ? row - 1 : row, field.Column) is not null) throw new ExcelInsertRejectedException("A mapped input column contains a formula; the profile layout does not match this target.");
             }
             foreach (var formulaColumn in section.FormulaColumns.Select(A1Formula.ColumnNumber))
-                if (Formula(snapshot.Data, row - 1, formulaColumn) is null) throw new InvalidOperationException("A formula column needs a formula in the preceding template row.");
-            ValidateTarget(sheet, new(row - 1, left, 1, right - left + 1), section.InsertMode == "tableRow" ? section.TableName : null, row - 1);
+                if (Formula(snapshot.Data, insertNew ? row - 1 : row, formulaColumn) is null) throw new ExcelInsertRejectedException("A formula column is missing its profile template formula.");
+            try { ValidateTarget(sheet, new(insertNew ? row - 1 : row, left, 1, right - left + 1), section.InsertMode == "tableRow" ? section.TableName : null, insertNew ? row - 1 : row); }
+            catch (InvalidOperationException error) { throw new ExcelInsertRejectedException(error.Message); }
             if (section.InsertMode is not ("tableRow" or "entireRow" or "columnsOnly")) throw new ArgumentException("Unknown insert mode.");
             if (section.InsertMode == "tableRow") ValidateTable(sheet, section, row, left, right);
             var originals = new string?[right - left + 1]; var rewritten = new string?[originals.Length];
             var warnings = new List<FormulaReview>();
-            for (var c = left; c <= right; c++)
+            for (var c = left; insertNew && c <= right; c++)
             {
                 var formula = Formula(snapshot.Data, row, c);
                 originals[c - left] = formula;
@@ -60,7 +63,8 @@ public sealed partial class ExcelHost
             }
             var token = Guid.NewGuid().ToString("N");
             if (insertPlans.Count >= 64) insertPlans.Clear();
-            var pending = new PendingInsert(workbookId, section, fields, before, row, left, right, originals, rewritten, warnings.ToArray(), TemplateValidation(sheet, row - 1, section.InsertMode == "entireRow" ? 1 : left, section.InsertMode == "entireRow" ? 16384 : right));
+            var pending = new PendingInsert(workbookId, section, fields, before, row, left, right, originals, rewritten, warnings.ToArray(),
+                insertNew ? TemplateValidation(sheet, row - 1, section.InsertMode == "entireRow" ? 1 : left, section.InsertMode == "entireRow" ? 16384 : right) : 0, insertNew);
             insertPlans.Add(token, pending);
             return new SectionInsertPreview(token, workbookId, section.Id, sheet.Name, new CellRange(row, left, 1, right - left + 1).Address, row, fields, warnings);
         }));
@@ -74,7 +78,7 @@ public sealed partial class ExcelHost
     private SectionInsertResult InsertCore(Interop.Workbook workbook, Interop.Worksheet sheet, PendingInsert pending)
     {
         var registration = books[pending.WorkbookId];
-        if (registration.Faulted || workbook.ReadOnly || SnapshotIdentity.Hash(ExcelReadback.Capture(workbook)) != SnapshotIdentity.Hash(pending.Before))
+        if (registration.Faulted || sheet.ProtectContents || SnapshotIdentity.Hash(ExcelReadback.Capture(workbook)) != SnapshotIdentity.Hash(pending.Before))
             throw new ExcelInsertRejectedException("The workbook changed after preview. Request a new preview.");
         registration.Backup ??= backups.Create(workbook.FullName);
         var mutationStarted = false;
@@ -84,9 +88,11 @@ public sealed partial class ExcelHost
             {
                 if (SnapshotIdentity.Hash(ExcelReadback.Capture(workbook)) != SnapshotIdentity.Hash(pending.Before))
                     throw new ExcelInsertRejectedException("The workbook changed after preview. Request a new preview.");
+                ValidateTarget(sheet, new(pending.InsertNew ? pending.Row - 1 : pending.Row, pending.Left, 1, pending.Right - pending.Left + 1),
+                    pending.Section.InsertMode == "tableRow" ? pending.Section.TableName : null, pending.InsertNew ? pending.Row - 1 : pending.Row);
                 mutationStarted = true;
-                InsertRow(sheet, pending);
-                foreach (var group in Groups(pending.Section.FormulaColumns.Select(A1Formula.ColumnNumber)))
+                if (pending.InsertNew) InsertRow(sheet, pending);
+                foreach (var group in Groups(pending.InsertNew ? pending.Section.FormulaColumns.Select(A1Formula.ColumnNumber) : []))
                 {
                     Interop.Range? fill = null;
                     try { fill = ExcelReadback.Range(sheet, new(pending.Row - 1, group.Left, 2, group.Right - group.Left + 1)); fill.FillDown(); }

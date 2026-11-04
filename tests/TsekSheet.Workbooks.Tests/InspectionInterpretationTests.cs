@@ -93,15 +93,18 @@ public sealed partial class WorkbookInspectionTests
     public void InvalidRowLocationsRejectTheView(string rows)
     { using var session = new WorkbookInspection().Open(Package(cells: rows)); Assert.ThrowsExactly<WorkbookException>(() => session.ReadViewport(session.Info.Worksheets[0].Id, 1, 1, 1, 1)); }
     [TestMethod]
-    public void WriterExclusionCacheEvictionAndReopenBindToSourceIdentity()
+    public void InspectionSnapshotAllowsWritersAndReopenBindsToTheNewSourceIdentity()
     {
-        var path = Package(cells: Rows(200)); var first = new WorkbookInspection().Open(path); var id = first.Info.Worksheets[0].Id; var hash = first.Info.SourceSha256;
-        Assert.ThrowsExactly<IOException>(() => { using var writer = new FileStream(path, FileMode.Open, FileAccess.Write, FileShare.ReadWrite); });
+        var path = Package(cells: Rows(200)); using var first = new WorkbookInspection().Open(path); var id = first.Info.Worksheets[0].Id; var hash = first.Info.SourceSha256;
+        using (var writer = new FileStream(path, FileMode.Open, FileAccess.Write, FileShare.None)) Assert.IsTrue(writer.CanWrite);
         var old = first.ReadViewport(id, 1, 1, 20, 6); first.ReadViewport(id, 21, 1, 20, 6); Assert.AreSame(old, first.ReadViewport(id, 1, 1, 20, 6));
         for (var i = 1; i <= 9; i++) first.ReadViewport(id, i * 20 + 1, 1, 20, 6);
-        Assert.AreNotSame(old, first.ReadViewport(id, 1, 1, 20, 6)); first.Dispose();
-        Assert.ThrowsExactly<ObjectDisposedException>(() => first.ReadViewport(id, 1, 1, 20, 6));
+        Assert.AreNotSame(old, first.ReadViewport(id, 1, 1, 20, 6));
         using (var zip = ZipFile.Open(path, ZipArchiveMode.Update)) { using var w = new StreamWriter(zip.CreateEntry("unrelated.xml").Open()); w.Write("<data/>"); }
+        Assert.AreEqual(hash, first.Info.SourceSha256);
+        CollectionAssert.AreEqual(old.Cells.Select(c => c.Value).ToArray(), first.ReadViewport(id, 1, 1, 20, 6).Cells.Select(c => c.Value).ToArray());
+        first.Dispose();
+        Assert.ThrowsExactly<ObjectDisposedException>(() => first.ReadViewport(id, 1, 1, 20, 6));
         using var reopened = new WorkbookInspection().Open(path); Assert.AreNotEqual(hash, reopened.Info.SourceSha256); Assert.ThrowsExactly<WorkbookException>(() => reopened.ReadViewport(id, 1, 1, 20, 6));
     }
     [TestMethod]

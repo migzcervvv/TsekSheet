@@ -20,7 +20,7 @@ describe('verified Excel insertion',()=>{
     fireEvent.click(screen.getByRole('button',{name:'Preview Excel insert'}));
     await screen.findByText('=literal');
     expect(screen.getByText(/Formula left unchanged/)).toBeTruthy();
-    expect(request).toHaveBeenCalledWith('excel.previewInsert',{expected:version,workbookId:'a'.repeat(32),sectionId:'columns'});
+    expect(request).toHaveBeenCalledWith('excel.previewInsert',{expected:version,workbookId:'a'.repeat(32),sectionId:'columns',sheet:'Columns'});
     fireEvent.click(screen.getByRole('button',{name:'Insert verified row'}));
     await screen.findByLabelText('Inserted Excel rows');
     expect(request).toHaveBeenCalledWith('excel.insert',{expected:version,previewToken:'b'.repeat(32)});
@@ -36,5 +36,15 @@ describe('verified Excel insertion',()=>{
     fireEvent.click(screen.getByRole('button',{name:'Preview Excel insert'}));await screen.findByLabelText('Excel insertion preview');
     rerender(<ExcelInsertion bridge={bridge} review={review} dirty={true} disabled={false}/>);
     await waitFor(()=>expect(screen.queryByLabelText('Excel insertion preview')).toBeNull());
+  });
+  it('requires an explicit sheet choice when several profile-matching sheets exist',async()=>{
+    const request=vi.fn((command:string)=>({promise:Promise.resolve(command==='excel.listWorkbooks'?{workbooks:[{id:'a'.repeat(32),name:'Replica.xlsx',sheets:['Person 1','Person 2']}],sections:[{id:'expenses',label:'Expenses',sheetName:''},{id:'credits',label:'Credits',sheetName:''}],changes:[]}:{token:'b'.repeat(32),workbookId:'a'.repeat(32),sectionId:'credits',sheet:'Person 2',range:'B35:AF35',insertRow:35,values:[],manualReview:[]})}));
+    render(<ExcelInsertion bridge={{request} as unknown as BridgeClient} review={review} dirty={false} disabled={false}/>);
+    fireEvent.click(screen.getByRole('button',{name:'Open workbook in Excel'}));await screen.findByRole('option',{name:'Replica.xlsx'});
+    expect((screen.getByRole('button',{name:'Preview Excel insert'}) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.change(screen.getByLabelText('Excel sheet'),{target:{value:'Person 2'}});
+    fireEvent.change(screen.getByLabelText('Excel section'),{target:{value:'credits'}});
+    fireEvent.click(screen.getByRole('button',{name:'Preview Excel insert'}));
+    await waitFor(()=>expect(request).toHaveBeenCalledWith('excel.previewInsert',{expected:version,workbookId:'a'.repeat(32),sectionId:'credits',sheet:'Person 2'}));
   });
 });

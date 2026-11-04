@@ -9,6 +9,8 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\Fixtures\LiquidationProfile.cs" Link="Fixtures\LiquidationProfile.cs" />
+    <Compile Include="..\Fixtures\LiquidationFixture.cs" Link="Fixtures\LiquidationFixture.cs" />
     <Content Include="..\TsekSheet.Workbooks.Tests\ReferenceCorpus\VerifiedFormatting\noop-height-twentyone.input.xlsx" Link="Fixtures\review21.xlsx" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\TsekSheet.Workbooks.Tests\ReferenceCorpus\VerifiedFormatting\noop-height-twentytwo.input.xlsx" Link="Fixtures\review22.xlsx" CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="..\Fixtures\PayablesFixture.cs" Link="Fixtures\PayablesFixture.cs" />
@@ -26,4 +28,5 @@
     <ItemGroup><RenderAsset Include="..\..\src\TsekSheet.Desktop\bin\$(Configuration)\net10.0-windows\renderer\**\*" /></ItemGroup>
     <Copy SourceFiles="@(RenderAsset)" DestinationFiles="@(RenderAsset->'$(TargetDir)renderer\%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>
+  <Import Project="..\..\src\TsekSheet.Excel\InteropReferences.props" />
 </Project>

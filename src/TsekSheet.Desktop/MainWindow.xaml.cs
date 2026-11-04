@@ -25,10 +25,12 @@ public partial class MainWindow : Window
     private bool dialogOpen;
     private readonly Func<CancellationToken, Task<string?>>? documentSelector;
     private TsekSheet.Excel.ExcelHost? excelHost;
+    private readonly IReadOnlyList<TsekSheet.Application.Workflows.WorkflowProfile>? workflowProfiles;
 
     public MainWindow() : this(null, null, null) { }
 
-    internal MainWindow(string? assetDirectory, string? profileDirectory, string? browserExecutableFolder, Func<CancellationToken, Task<string?>>? workbookSelector = null, Func<bool>? confirmDiscard = null, Func<CancellationToken, Task<string?>>? saveSelector = null, Func<CancellationToken, Task<string?>>? sectionProfileSelector = null, Func<CancellationToken, Task<string?>>? documentSelector = null)
+    internal MainWindow(string? assetDirectory, string? profileDirectory, string? browserExecutableFolder, Func<CancellationToken, Task<string?>>? workbookSelector = null, Func<bool>? confirmDiscard = null, Func<CancellationToken, Task<string?>>? saveSelector = null, Func<CancellationToken, Task<string?>>? sectionProfileSelector = null, Func<CancellationToken, Task<string?>>? documentSelector = null,
+        IReadOnlyList<TsekSheet.Application.Workflows.WorkflowProfile>? workflowProfiles = null, TsekSheet.Excel.ExcelHost? ownedExcelHost = null)
     {
         assets = assetDirectory ?? Path.Combine(AppContext.BaseDirectory, "frontend");
         profile = profileDirectory ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TsekSheet", "WebView2");
@@ -38,6 +40,8 @@ public partial class MainWindow : Window
         this.saveSelector = saveSelector;
         this.sectionProfileSelector = sectionProfileSelector;
         this.documentSelector = documentSelector;
+        this.workflowProfiles = workflowProfiles;
+        excelHost = ownedExcelHost;
         InitializeComponent();
         Loaded += async (_, _) => await InitializeAsync();
         Closing += (_, e) =>
@@ -117,8 +121,9 @@ public partial class MainWindow : Window
         session?.Dispose();
         selectedPath = null;
         excelHost ??= new TsekSheet.Excel.ExcelHost();
+        var profiles = workflowProfiles ?? TsekSheet.Application.Workflows.WorkflowProfiles.All;
         session = new BridgeSession(Send, SelectFileAsync, workbooks: new WorkbookWorkspace(workbookEngine, SelectWorkbookAsync, SelectSaveDestinationAsync, SelectSectionProfileAsync), selectDocument: SelectDocumentAsync, renderer: new TsekSheet.Application.Documents.LocalDocumentRenderer(Path.Combine(AppContext.BaseDirectory,"renderer","TsekSheet.Renderer.exe")),
-            excel: new TsekSheet.Application.Excel.ExcelReceiptInsertion(excelHost, excelHost), selectExcelWorkbook: SelectExcelWorkbookAsync);
+            excel: new TsekSheet.Application.Excel.ExcelReceiptInsertion(excelHost, excelHost, id => profiles.Single(p => p.Id == id)), selectExcelWorkbook: SelectExcelWorkbookAsync, profiles: profiles);
     }
 
     internal static void ValidateAssets(string directory)

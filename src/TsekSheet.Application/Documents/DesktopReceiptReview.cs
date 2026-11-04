@@ -9,8 +9,9 @@ public sealed record ReceiptState(ReceiptSource? Source, ReviewVersion? Version,
     string Status, IReadOnlyList<ReceiptField> Fields);
 
 // One page-owned manual review. Client values never supply source/verification authority.
-public sealed class DesktopReceiptReview : IDisposable
+public sealed class DesktopReceiptReview(Func<string, WorkflowProfile>? profiles = null) : IDisposable
 {
+    internal WorkflowProfile Profile(string id) => (profiles ?? WorkflowProfiles.Get)(id);
     private readonly object gate = new();
     private readonly LocalDocumentSources sources = new();
     private ReceiptSource? source;
@@ -68,7 +69,7 @@ public sealed class DesktopReceiptReview : IDisposable
             if (review != null) throw new FieldReviewException("REVIEW_ALREADY_STARTED", "Close the receipt before changing its profile or page association.");
             if (source == null) throw new FieldReviewException("SOURCE_REQUIRED", "Select a local receipt first.");
             sources.IssueEvidence(source.Document.Version, pageNumber, token);
-            review = new(sources, WorkflowProfiles.Get(profileId), [], token);
+            review = new(sources, Profile(profileId), [], token);
             page = pageNumber;
             return State;
         }

@@ -24,7 +24,7 @@ internal static class WorkflowValueValidation
             if (field.Required && value.Length == 0) throw WorkflowProfiles.Error("INVALID_RECORD", $"Field '{field.Header}' is required.");
             decimal? number = null;
             DateOnly? date = null;
-            if (value.Length > 0 && field.Kind == "decimal")
+            if (value.Length > 0 && field.Kind is "decimal" or "money")
             {
                 if (!decimal.TryParse(value, NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var parsed)
                     || parsed < 0 || parsed > 1000000000000m || (decimal.GetBits(parsed)[3] >> 16 & 0xFF) > 4)
@@ -40,7 +40,7 @@ internal static class WorkflowValueValidation
             }
             values[field.Key] = new(value, number, date);
         }
-        if (!identifierFields.Any(k => values[k].Text.Length > 0)) throw WorkflowProfiles.Error("INVALID_RECORD", "At least one configured record identifier is required.");
+        if (identifierFields.Count > 0 && !identifierFields.Any(k => values[k].Text.Length > 0)) throw WorkflowProfiles.Error("INVALID_RECORD", "At least one configured record identifier is required.");
         return values;
     }
 }
