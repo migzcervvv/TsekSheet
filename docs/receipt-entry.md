@@ -25,9 +25,13 @@ automatic advance omits skipped and inserted receipts. Inserted receipts are rea
 Review highlighted changes and save explicitly in Excel (including Excel's Save As).
 
 Missing/invalid fields, ambiguous subtotal formulas, changed sources or targets and
-duplicates block Add Row. Duplicate detection covers equal source hashes in the queue,
-the profile's identifiers (the first required text field for layout profiles), and
-equal invoice references with equal or missing vendor identity in the selected section.
+duplicate submissions block Add Row. Equal source hashes are rejected in the queue.
+Layout profiles, including exti-liquidation, do not declare a value-based duplicate
+policy: item numbers and vendor/invoice values may repeat. Required fields and column
+order never imply uniqueness. A profile explicitly declaring `entity-and-any-identifier`
+rejects a matching configured identifier only within the same configured entity.
+Successful or uncertain source/page submissions remain blocked even after restarting
+the review or changing its profile; a known rejection before writing permits a fresh preview.
 After a rejected or uncertain write, inspect Excel and use **Refresh queue** before
 requesting another preview. A receipt with an uncertain submitted outcome cannot be
 submitted again. The existing backup, formula protection and Excel preservation checks
@@ -90,3 +94,57 @@ Seconds; each stage has 20 samples.
 | post-insertion navigation | 0.000 | 0.054 | 0.001 | 0.021 |
 
 All stages: **0.411 s scripted input + 40.928 s application = 41.339 s**. Per-receipt elapsed median **2.011 s**; slowest **2.852 s**.
+
+## T2e-FIX preview diagnostics
+
+The merged T2e code inferred uniqueness from the first required text field and from
+vendor/invoice values despite layout profiles declaring no duplicate policy. It also
+read the sheet a second time for that inferred check, after the mandatory Excel
+preservation snapshot and layout validation had already run. The fix follows the
+existing explicit duplicate policy and skips the additional read/scan when none is
+configured. It does not cache, omit or weaken any preservation or prewrite checks.
+
+`ExcelReceiptInsertion.PreviewTiming` and `ExcelHost.PreviewTiming` are optional local
+callbacks reporting stage names and elapsed milliseconds, never file paths or receipt
+contents. Nothing is logged automatically. To collect the 20-receipt measurements:
+
+```powershell
+$env:TSEK_PREVIEW_TIMING_OUTPUT = Join-Path (Get-Location) 'artifacts/preview-timing.json'
+dotnet test tests/TsekSheet.Excel.Tests -c Release --no-build --no-restore --filter FullyQualifiedName~OneDestinationSupportsTwentyConfirmedReceiptsAndPreservesAccountsFormulasAndNeighbors
+```
+
+The pre-fix measurement used merged main `7a62205` with instrumentation only. Both
+versions use the same Excel-authored replica, 20 receipt values/account destinations,
+and repeated inserts. Application total includes source checks, mapping, workbook
+identity, adapter preview and duplicate policy work. Adapter capture/layout timings
+are nested within adapter preview; they must not be added again to the total.
+The expensive regression was the extra readback, not layout resolution. No layout
+optimization or mutation change was warranted. These are application processing
+measurements; they do not measure human entry speed.
+
+Before: 20 previews on 2026-11-04; fixed: 20 previews in the final full run on
+2026-11-05. Milliseconds; nested stages are not additive.
+
+| Stage | Before median | Before slowest | Fixed median | Fixed slowest |
+| --- | ---: | ---: | ---: | ---: |
+| Queue wait | 0.002 | 0.100 | 0.002 | 0.004 |
+| Source validation | 1.272 | 5.109 | 1.203 | 3.656 |
+| Mapping and submission guards | 0.097 | 3.251 | 0.095 | 0.157 |
+| Workbook identity | 14.867 | 23.828 | 14.111 | 19.497 |
+| Excel adapter preview (includes next two rows) | 558.175 | 635.476 | 499.548 | 751.588 |
+| Mandatory preservation capture | 540.081 | 609.837 | 482.890 | 733.194 |
+| Adapter layout resolution | 0.396 | 2.168 | 0.357 | 0.737 |
+| Additional duplicate UsedRange call | 13.316 | 19.246 | not run | not run |
+| Additional duplicate readback | 274.920 | 328.777 | not run | not run |
+| Additional duplicate layout resolution | 0.023 | 0.063 | not run | not run |
+| Inferred duplicate scan | 0.975 | 1.358 | not run | not run |
+| Total draft preview | 860.683 | 962.720 | 515.078 | 778.987 |
+
+Across 20 previews, total processing was **17.256 s before** and
+**10.847 s fixed**. Median preview time changed from
+**0.861 s to 0.515 s**. The extra readback/scan is
+not run; the mandatory capture and layout validation still run for every preview.
+
+Verification note: the first full Excel run reported a table preservation mismatch.
+The isolated three-mode rerun and final full run passed; the cause was not reproduced.
+Preservation checks remain unchanged, with failure-only diagnostics added to the test.

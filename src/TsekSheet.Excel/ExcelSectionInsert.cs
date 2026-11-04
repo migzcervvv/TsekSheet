@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using TsekSheet.Application.Excel;
 using Interop = Microsoft.Office.Interop.Excel;
+using System.Diagnostics;
 
 namespace TsekSheet.Excel;
 
@@ -10,6 +11,7 @@ public sealed partial class ExcelHost
         PreservationSnapshot Before, int Row, int Left, int Right, string?[] Subtotals, string?[] Rewritten,
         FormulaReview[] Warnings, long AddedValidation, bool InsertNew);
     private readonly Dictionary<string, PendingInsert> insertPlans = [];
+    public Action<PreviewStageTiming>? PreviewTiming { get; set; }
 
     public Task<SectionInsertPreview> PreviewInsertAsync(string workbookId, ExcelSectionDefinition section, IReadOnlyList<InsertValue> values) =>
         queue.InvokeAsync(() => WithSheet(workbookId, section.SheetName, (workbook, sheet) =>
@@ -32,9 +34,12 @@ public sealed partial class ExcelHost
                 if (adjusted < (date1904 ? 0d : 1d)) throw new ExcelInsertRejectedException("A verified date precedes this workbook's supported date system.");
                 return field with { Value = adjusted };
             }).ToArray();
+            var watch = Stopwatch.StartNew();
             var before = ExcelReadback.Capture(workbook);
+            PreviewTiming?.Invoke(new("excel.preservationCapture", watch.Elapsed.TotalMilliseconds)); watch.Restart();
             var snapshot = before.Sheets.Single(s => s.Name == sheet.Name);
             var boundary = ExcelLayoutMatching.Resolve(snapshot.Data, section);
+            PreviewTiming?.Invoke(new("excel.layout", watch.Elapsed.TotalMilliseconds));
             var inputColumns = (section.InputColumns ?? section.ColumnMap.Values.ToArray()).Select(A1Formula.ColumnNumber).ToArray();
             var blank = section.FillBlankRowsFirst ? Enumerable.Range(boundary.First, boundary.Subtotal - boundary.First)
                 .FirstOrDefault(r => inputColumns.All(c => Formula(snapshot.Data, r, c) is null && Cell(snapshot.Data, r, c) is null or "")) : 0;

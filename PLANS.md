@@ -220,6 +220,10 @@ Status: DONE (T2 verification checkpoint satisfied; in-memory fast receipt loop 
   unexecuted tests reported; timing report compares old/new overhead. Automated tests
   use synthetic fixtures; real-workbook acceptance is a separate manual step.
 
+### T2e-FIX - Post-merge duplicate handling and preview performance
+
+Status: DONE (respect explicit duplicate policy; preserve source-hash/restart-safe submission guards; instrument and remove redundant preview readback; median 0.861 -> 0.515 s on 20 synthetic previews; final Application 645/0/0, Workbooks 457/0/0, Desktop 26/0/0, Frontend 90/0/0, Excel 24/0/0 passed/failed/skipped; two full Release Excel runs executed, with an initial table-preservation mismatch not reproduced by the isolated three-mode rerun or final full run; checks unchanged, owner review of this risk remains)
+
 ### T3 - OCR bake-off (can run in parallel with T1/T2)
 
 Status: TODO (needs the document set in `fixtures/redacted/docs/`)
