@@ -4,6 +4,8 @@
 
 # TsekSheet
 
+**README** · [Changelog](CHANGELOG.md)
+
 **Turn scanned documents into verified Excel rows, offline.**
 
 TsekSheet is a Windows desktop app for people who process stacks of receipts, invoices and
