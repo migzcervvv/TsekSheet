@@ -96,7 +96,7 @@ Status: DONE (PR #3, 2026-11-03)
 
 ### T2 - Insert verified record into a section (vertical slice)
 
-Status: REOPENED (legacy admission gated Excel path; real layout needs blank-row fill, account-driven column, sheet matching; PR #4 is already merged and GitHub cannot convert it to draft)
+Status: REOPENED (legacy admission gated Excel path; real layout needs blank-row fill, account-driven column, sheet matching — fix complete and replica acceptance a-e verified; two consecutive final Release Excel suites 21/0/0 each, Application 632/0/0, Desktop 25/0/0, Frontend 85/0/0, Workbooks 457/0/0 passed/failed/skipped; D11: 66 owned exits, none alive at 120 s, 66 start guards with zero previous-owned violations; EXCEL.EXE counts before/after: 0/0 and 0/0; production cleanup unchanged; PR #4 already merged, so draft conversion is unavailable; not run: no redacted fixtures)
 
 - Prerequisites from T1 review:
   - D11 supersedes the T1/T2 ten- and thirty-second exit criteria: latency is logged,
