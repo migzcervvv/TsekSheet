@@ -2,6 +2,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TsekSheet.Application.Documents;
 using TsekSheet.Application.Excel;
 using TsekSheet.TestFixtures;
+using System.Text.Json;
 
 namespace TsekSheet.Excel.Tests;
 
@@ -28,6 +29,9 @@ public sealed class ReceiptLoopTests
         var profile = LiquidationProfile.Create();
         var insertion = new ExcelReceiptInsertion(host, host, _ => profile);
         var book = (await insertion.ListAsync(path, profile.Id)).Single();
+        var timing = new List<object>(); var measuredReceipt = 0;
+        void Observe(PreviewStageTiming stage) { if (measuredReceipt < 20) timing.Add(new { receipt = measuredReceipt, stage.Stage, stage.Milliseconds }); }
+        insertion.PreviewTiming = Observe; host.PreviewTiming = Observe;
         using var queue = new ReceiptQueue(_ => profile);
         var sources = Enumerable.Range(0, 20).Select(i => Path.Combine(Path.GetDirectoryName(path)!, $"loop-{i}.pdf")).ToArray();
         for (var i = 0; i < sources.Length; i++) File.WriteAllText(sources[i], "%PDF-1.7\n" + new string('x', 100) + i);
@@ -36,6 +40,7 @@ public sealed class ReceiptLoopTests
         double total = 275;
         for (var i = 0; i < 20; i++)
         {
+            measuredReceipt = i;
             var state = queue.Active.Start(profile.Id, 1, default);
             var account = LiquidationProfile.Columns[i % 19];
             var values = profile.Fields.ToDictionary(f => f.Key, f => f.Key switch
@@ -80,12 +85,36 @@ public sealed class ReceiptLoopTests
             var credit = ExcelLayoutMatching.Marker(data, new("C", "TOTAL credit", 1));
             Assert.AreEqual(5d, ExcelLayoutMatching.Value(data, credit, 17));
         }
-        // A new review/source cannot duplicate an existing record identifier.
-        using var duplicate = new DesktopReceiptReview(_ => profile); duplicate.Register(sources[0], default);
-        var d = duplicate.Start(profile.Id, 1, default);
-        d = duplicate.Prepare(d.Version!, profile.Fields.ToDictionary(f => f.Key, f => f.Key switch { "itemNo" => "FAST-0", "particulars" => "Duplicate", "account" => "J", "amount" => "1", _ => "" }), default);
-        var error = await Assert.ThrowsExactlyAsync<TsekSheet.Application.Verification.FieldReviewException>(() => insertion.PreviewAsync(duplicate, d.Version!, book.Id, "expenses", default, "Person 1", draft: true));
-        Assert.AreEqual("DUPLICATE_RECORD", error.Code);
+        measuredReceipt = 20; host.PreviewTiming = null;
+        if (Environment.GetEnvironmentVariable("TSEK_PREVIEW_TIMING_OUTPUT") is { } timingPath)
+            File.WriteAllText(timingPath, JsonSerializer.Serialize(timing, new JsonSerializerOptions { WriteIndented = true }));
+        var sourceError = Assert.ThrowsExactly<TsekSheet.Application.Verification.FieldReviewException>(() => queue.Add([sources[0]], default));
+        Assert.AreEqual("DUPLICATE_RECEIPT", sourceError.Code);
+        var error = await Assert.ThrowsExactlyAsync<TsekSheet.Application.Verification.FieldReviewException>(() => insertion.PreviewAsync(queue.Active, queue.Active.State.Version!, book.Id, "expenses", default, "Person 1", draft: true));
+        Assert.AreEqual("ALREADY_INSERTED", error.Code);
+    }
+
+    [TestMethod]
+    public async Task RepeatedItemAndVendorInvoiceValuesAreNotUniqueInTheLiquidationProfile()
+    {
+        var host = await ExcelTestScope.SharedHostAsync(); var path = await LiquidationFixture.CreateAsync(host);
+        await using var scope = new ExcelTestScope();
+        var book = await host.OpenAsync(path); var profile = LiquidationProfile.Create();
+        var insertion = new ExcelReceiptInsertion(host, host, _ => profile);
+        for (var i = 0; i < 3; i++)
+        {
+            using var receipt = new DesktopReceiptReview(_ => profile);
+            var source = Path.Combine(Path.GetDirectoryName(path)!, $"repeated-{i}.pdf"); File.WriteAllText(source, "%PDF-1.7\n" + new string('x', 100) + i);
+            receipt.Register(source, default); var state = receipt.Start(profile.Id, 1, default);
+            state = receipt.Prepare(state.Version!, profile.Fields.ToDictionary(f => f.Key, f => f.Key switch
+            { "itemNo" => "F-4", "particulars" => "Repeated line", "vendor" => "Shared vendor", "invoice" => "INV-1", "account" => "J", "amount" => "10", _ => "" }), default);
+            var preview = await insertion.PreviewAsync(receipt, state.Version!, book.Id, "expenses", default, "Person 1", draft: true);
+            Assert.AreEqual(29 + i, preview.InsertRow);
+            await insertion.InsertAsync(receipt, state.Version!, preview.Token, default, confirm: true);
+            var data = await host.ReadAsync(book.Id, "Person 1", new(29 + i, 2, 1, 9));
+            Assert.AreEqual("F-4", data.Values[0, 0]); Assert.AreEqual("Shared vendor", data.Values[0, 2]);
+            Assert.AreEqual("INV-1", data.Values[0, 5]); Assert.AreEqual(10d, data.Values[0, 8]);
+        }
     }
 
     [TestMethod]

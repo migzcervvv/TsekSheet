@@ -13,6 +13,9 @@ public sealed record SectionInsertPreview(string Token, string WorkbookId, strin
 public sealed record SectionInsertResult(string WorkbookId, string SectionId, string Sheet, string Range,
     IReadOnlyList<FormulaReview> ManualReview, HighlightReceipt Highlight);
 
+// Optional local diagnostic observation; contains no workbook or receipt contents.
+public sealed record PreviewStageTiming(string Stage, double Milliseconds);
+
 public interface ISectionWriter
 {
     Task<SectionInsertPreview> PreviewInsertAsync(string workbookId, ExcelSectionDefinition section, IReadOnlyList<InsertValue> values);

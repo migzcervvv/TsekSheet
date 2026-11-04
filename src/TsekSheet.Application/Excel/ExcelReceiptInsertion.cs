@@ -1,6 +1,7 @@
 using TsekSheet.Application.Documents;
 using TsekSheet.Application.Verification;
 using TsekSheet.Application.Workflows;
+using System.Diagnostics;
 
 namespace TsekSheet.Application.Excel;
 
@@ -13,9 +14,12 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
     private WorkflowProfile Profile(string id) => (profiles ?? WorkflowProfiles.Get)(id);
     private readonly Dictionary<string, (ReviewVersion Version, SectionInsertPreview Preview, string Workbook, bool Draft)> previews = [];
     private readonly HashSet<Guid> inserted = [];
+    private readonly HashSet<(string Hash, int Page)> submittedSources = [];
     private readonly SemaphoreSlim commands = new(1, 1);
     private readonly List<ExcelInsertDisplay> changes = [];
     public IReadOnlyList<ExcelInsertDisplay> Changes { get { lock (changes) return changes.ToArray(); } }
+    public Action<PreviewStageTiming>? PreviewTiming { get; set; }
+    private void Measure(string stage, Stopwatch watch) => PreviewTiming?.Invoke(new(stage, watch.Elapsed.TotalMilliseconds));
 
     public async Task<IReadOnlyList<ExcelWorkbookChoice>> ListAsync(string? path = null, string? profileId = null)
     {
@@ -52,13 +56,18 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
 
     public async Task<SectionInsertPreview> PreviewAsync(DesktopReceiptReview receipt, ReviewVersion version, string workbookId, string sectionId, CancellationToken token, string? sheetName = null, bool draft = false)
     {
+        var total = Stopwatch.StartNew();
         await commands.WaitAsync(token);
         try
         {
+            Measure("application.queue", total);
+            var sourceWatch = Stopwatch.StartNew();
             return await (draft ? receipt.WithDraftExcelAsync(version, Build, token) : receipt.WithVerifiedExcelAsync(version, Build, token));
             async Task<SectionInsertPreview> Build(TypedReviewRecord record)
             {
-                if (inserted.Contains(version.ReviewId)) throw new FieldReviewException("ALREADY_INSERTED", "This receipt was already inserted or submitted. Review the highlighted row in Excel.");
+                Measure("application.source", sourceWatch);
+                var watch = Stopwatch.StartNew();
+                if (inserted.Contains(version.ReviewId) || SourceKeys(record).Any(submittedSources.Contains)) throw new FieldReviewException("ALREADY_INSERTED", "This receipt source was already inserted or submitted. Review the highlighted row in Excel.");
                 var profile = Profile(version.ProfileId);
                 if (WorkflowProfiles.Hash(profile) != version.ProfileHash) throw new FieldReviewException("STALE_PROFILE", "The local profile changed. Start a new review.");
                 var section = profile.Layout is { } layout
@@ -80,8 +89,11 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
                         "date" => field.DateValue is DateOnly date ? MapDate(date) : null,
                         _ => field.LiteralText.Length == 0 ? null : field.LiteralText
                     }, field.LiteralText, field.Kind == "date")).ToArray();
+                Measure("application.mapping", watch); watch.Restart();
                 var book = (await host.ListWorkbooksAsync()).SingleOrDefault(w => w.Id == workbookId) ?? throw new InvalidOperationException("Choose an open Excel workbook.");
+                Measure("application.identity", watch); watch.Restart();
                 var preview = await writer.PreviewInsertAsync(workbookId, section, values);
+                Measure("application.excelPreview", watch);
                 if (draft)
                 {
                     if (preview.ManualReview.Count > 0) throw new FieldReviewException("AMBIGUOUS_TOTAL", "A subtotal formula needs manual review in Excel before Add Row is available.");
@@ -92,7 +104,7 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
                 return preview;
             }
         }
-        finally { commands.Release(); }
+        finally { commands.Release(); Measure("application.total", total); }
     }
 
     internal static double MapNumber(decimal value)
@@ -117,15 +129,19 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
             if (!previews.Remove(previewToken, out var plan) || plan.Version != version) throw new FieldReviewException("STALE_INSERT_PREVIEW", "Request a fresh preview for the current receipt.");
             if (plan.Draft && !confirm) throw new FieldReviewException("CONFIRMATION_REQUIRED", "Explicitly confirm the draft values and destination with Add Row.");
             if (confirm) version = receipt.ConfirmAll(version, token).Version!;
-            return await receipt.WithVerifiedExcelAsync(version, async _ =>
+            return await receipt.WithVerifiedExcelAsync(version, async record =>
             {
+                var sources = SourceKeys(record);
+                if (sources.Any(submittedSources.Contains)) throw new FieldReviewException("ALREADY_INSERTED", "This receipt source was already submitted. Review Excel before retrying.");
                 if (!inserted.Add(version.ReviewId)) throw new FieldReviewException("ALREADY_INSERTED", "This receipt was already submitted. Review Excel before retrying.");
+                submittedSources.UnionWith(sources);
                 // Once submitted, a failed/unknown outcome cannot be retried as another revision.
                 SectionInsertResult result;
                 try { result = await writer.InsertAsync(previewToken); }
                 catch (ExcelInsertRejectedException error)
                 {
                     inserted.Remove(version.ReviewId);
+                    foreach (var source in sources) submittedSources.Remove(source);
                     throw new FieldReviewException("STALE_INSERT_PREVIEW", error.Message);
                 }
                 var display = new ExcelInsertDisplay(plan.Workbook, result.Sheet, result.Range, result.ManualReview);
@@ -138,13 +154,28 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
 
     private async Task RejectDuplicateAsync(string workbookId, ExcelSectionDefinition section, WorkflowProfile profile, TypedReviewRecord record)
     {
+        // Required fields and column order do not establish uniqueness. Layout profiles
+        // do not declare a value-based duplicate policy; hashes/submission guards remain.
+        if (profile.DuplicatePolicy != "entity-and-any-identifier")
+        {
+            PreviewTiming?.Invoke(new("duplicate.notConfigured", 0));
+            return;
+        }
+        var watch = Stopwatch.StartNew();
         var reader = host as IWorkbookReader ?? throw new InvalidOperationException("Excel readback is unavailable.");
-        var data = await reader.ReadAsync(workbookId, section.SheetName, await reader.UsedRangeAsync(workbookId, section.SheetName));
+        var range = await reader.UsedRangeAsync(workbookId, section.SheetName);
+        Measure("duplicate.usedRange", watch); watch.Restart();
+        var data = await reader.ReadAsync(workbookId, section.SheetName, range);
+        Measure("duplicate.readback", watch); watch.Restart();
         var boundary = ExcelLayoutMatching.Resolve(data, section);
-        var identifiers = profile.IdentifierFields.Count > 0 ? profile.IdentifierFields
-            : profile.Fields.Where(f => f.Required && f.Kind == "text").Take(1).Select(f => f.Key).ToArray();
+        Measure("duplicate.layout", watch); watch.Restart();
+        var identifiers = profile.IdentifierFields;
+        var entityColumn = A1Formula.ColumnNumber(section.ColumnMap[profile.EntityField]);
+        var entity = WorkflowProfiles.Entity(record.Fields.Single(f => f.Key == profile.EntityField).LiteralText, profile);
         for (var row = boundary.First; row < boundary.Subtotal; row++)
         {
+            var existingEntity = Convert.ToString(ExcelLayoutMatching.Value(data, row, entityColumn), System.Globalization.CultureInfo.InvariantCulture) ?? "";
+            if (WorkflowProfiles.Entity(existingEntity, profile) != entity) continue;
             foreach (var key in identifiers)
             {
                 var value = record.Fields.Single(f => f.Key == key).LiteralText.Trim();
@@ -153,23 +184,10 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
                 if (StringComparer.OrdinalIgnoreCase.Equals(value, existing))
                     throw new FieldReviewException("DUPLICATE_RECORD", $"Duplicate {profile.Fields.Single(f => f.Key == key).Header} at row {row}. Review the existing Excel row.");
             }
-            // Layout profiles expose invoice/vendor fields without legacy IdentifierFields.
-            // Missing vendor identity cannot safely distinguish two equal invoice references.
-            if (profile.Layout is not null && Match("invoice", out var invoice) && invoice)
-            {
-                var hasVendor = Match("vendor", out var sameVendor);
-                if (!hasVendor || sameVendor)
-                    throw new FieldReviewException("DUPLICATE_RECORD", $"Potential duplicate invoice at row {row}. Review the existing vendor and invoice in Excel.");
-            }
-            bool Match(string key, out bool same)
-            {
-                same = false;
-                var value = record.Fields.SingleOrDefault(f => f.Key == key)?.LiteralText.Trim();
-                if (string.IsNullOrEmpty(value) || !section.ColumnMap.TryGetValue(key, out var col)) return false;
-                var existing = Convert.ToString(ExcelLayoutMatching.Value(data, row, A1Formula.ColumnNumber(col)), System.Globalization.CultureInfo.InvariantCulture)?.Trim();
-                if (string.IsNullOrEmpty(existing)) return false;
-                same = StringComparer.OrdinalIgnoreCase.Equals(value, existing); return true;
-            }
         }
+        Measure("duplicate.scan", watch);
     }
+
+    private static (string Hash, int Page)[] SourceKeys(TypedReviewRecord record) => record.Fields
+        .Where(f => f.Source is not null).Select(f => (f.Source!.DocumentSha256, f.Source.PageNumber)).Distinct().ToArray();
 }

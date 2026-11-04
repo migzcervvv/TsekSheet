@@ -32,7 +32,13 @@ public sealed class SectionInsertTests
             var values = Values(profile, section, i);
             var plan = await host.PreviewInsertAsync(book.Id, section, values);
             Assert.AreEqual(5 + i, plan.InsertRow);
-            var result = await host.InsertAsync(plan.Token);
+            SectionInsertResult result;
+            try { result = await host.InsertAsync(plan.Token); }
+            catch (PreservationException error)
+            {
+                Console.Error.WriteLine($"Section {id}, iteration {i}: {string.Join("; ", error.Differences)}");
+                throw;
+            }
             var row = await host.ReadAsync(book.Id, section.SheetName, new(5 + i, 1, 1, 7));
             Assert.AreEqual("=literal entry", row.Values[0, 0]); Assert.IsNull(row.Formulas[0, 0]);
             Assert.AreEqual(100d + i, row.Values[0, 4]);
