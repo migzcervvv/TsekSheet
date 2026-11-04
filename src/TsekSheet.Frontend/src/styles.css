@@ -299,3 +299,15 @@ button.primary:hover:not(:disabled) { background:var(--accent); color:var(--acce
 .rendered-source { display:block; width:100%; height:auto; margin:12px 0; background:#fff; border:1px solid var(--border); }
 .receipt-layout:has(.source-preview[data-expanded=true]) { grid-template-columns:minmax(0,1fr); }
 .source-preview[data-expanded=true] .rendered-source { width:auto; max-width:100%; }
+
+.excel-insertion { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+.excel-insertion h3 { margin: 0 0 6px; }
+.excel-insertion .excel-destination { align-items: end; margin: 16px 0; flex-wrap: wrap; }
+.excel-insertion label { display: grid; gap: 6px; flex: 1 1 220px; min-width: 0; }
+.excel-insertion select { width: 100%; max-width: 100%; margin-left: 0; }
+.excel-insertion table { width: 100%; }
+.excel-insertion th:nth-child(2), .excel-insertion td:nth-child(2) { min-width: 64px; white-space: nowrap; }
+.excel-insertion td[data-numeric=true] { text-align: right; font-variant-numeric: tabular-nums; }
+.excel-insertion td:last-child { overflow-wrap: anywhere; }
+.excel-insertion ul { padding-left: 20px; }
+@media(max-width:600px) { .excel-insertion .actions { align-items: stretch; } .excel-insertion button { white-space: normal; } }

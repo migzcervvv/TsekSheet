@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net10.0-windows7.0": {
+      "ExcelDna.Interop": {
+        "type": "Direct",
+        "requested": "[16.0.0, )",
+        "resolved": "16.0.0",
+        "contentHash": "xJoz0zmnEfJd5hKkC0rzmtpQeyjC0mMEQQdpICrGnIB/zYN8e270S5yLxdtbPpTYeEGk7RUQNfjA4FjG9xlRNA=="
+      },
+      "Microsoft.Office.Interop.Excel": {
+        "type": "Direct",
+        "requested": "[16.0.18925.20022, )",
+        "resolved": "16.0.18925.20022",
+        "contentHash": "Wlhtqu3QfLnDRHc77bJewv5k27VASgcINA3eDAljfZQX9iTuM+12Mt7EJYZpxn+2gBw9dlK7q6riUxuXd4cviw=="
+      }
+    },
+    "net10.0-windows7.0/win-x64": {}
+  }
+}

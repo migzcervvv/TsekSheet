@@ -6,6 +6,7 @@ public static class PreservationCheck
         string targetSheet, CellRange target, object?[,] intended)
     {
         var errors = new List<string>();
+        if (before.Date1904 != after.Date1904) errors.Add("Workbook date system changed.");
         if (!before.Names.SequenceEqual(after.Names)) errors.Add("Defined names changed.");
         if (!before.Sheets.Select(s => s.Name).SequenceEqual(after.Sheets.Select(s => s.Name)))
             errors.Add("Worksheet identities changed.");

@@ -88,5 +88,70 @@
   "insertionPolicy": "disabled",
   "stylePolicy": "explicit-template-required",
   "requireReview": true,
-  "requireDuplicateReview": true
+  "requireDuplicateReview": true,
+  "excelSections": [
+    {
+      "id": "columns",
+      "label": "Columns section",
+      "sheetName": "Columns",
+      "headerRow": 2,
+      "columnMap": {
+        "partner": "A",
+        "description": "B",
+        "run": "C",
+        "sample": "D",
+        "measurement": "E",
+        "day": "F"
+      },
+      "formulaColumns": [
+        "G"
+      ],
+      "subtotalColumn": "A",
+      "subtotalMarker": "Subtotal",
+      "insertMode": "columnsOnly",
+      "tableName": null
+    },
+    {
+      "id": "stacked",
+      "label": "Stacked section",
+      "sheetName": "Stacked",
+      "headerRow": 2,
+      "columnMap": {
+        "partner": "A",
+        "description": "B",
+        "run": "C",
+        "sample": "D",
+        "measurement": "E",
+        "day": "F"
+      },
+      "formulaColumns": [
+        "G"
+      ],
+      "subtotalColumn": "A",
+      "subtotalMarker": "Subtotal",
+      "insertMode": "entireRow",
+      "tableName": null
+    },
+    {
+      "id": "table",
+      "label": "Table section",
+      "sheetName": "Table",
+      "headerRow": 2,
+      "columnMap": {
+        "partner": "A",
+        "description": "B",
+        "run": "C",
+        "sample": "D",
+        "measurement": "E",
+        "day": "F"
+      },
+      "formulaColumns": [
+        "G"
+      ],
+      "subtotalColumn": "A",
+      "subtotalMarker": "Subtotal",
+      "insertMode": "tableRow",
+      "tableName": "Records"
+    }
+  ]
 }

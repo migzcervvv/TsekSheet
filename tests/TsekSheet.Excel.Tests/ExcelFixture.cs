@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Reflection;
 using TsekSheet.Application.Excel;
 using Interop = Microsoft.Office.Interop.Excel;
 
@@ -7,7 +8,9 @@ namespace TsekSheet.Excel.Tests;
 
 internal sealed record ExcelFixture(string Root, string Path)
 {
-    internal static async Task<ExcelFixture> CreateAsync()
+    internal static int MeasurementCycle { get; set; }
+
+    internal static async Task<ExcelFixture> CreateAsync(bool sections = false, bool unsupportedSubtotal = false, bool date1904 = false)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null && !File.Exists(System.IO.Path.Combine(directory.FullName, "GOALS.md"))) directory = directory.Parent;
@@ -15,32 +18,31 @@ internal sealed record ExcelFixture(string Root, string Path)
         var root = System.IO.Path.Combine(directory.FullName, "fixtures", "excel", "t1-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         var path = System.IO.Path.Combine(root, "fixture.xlsx");
-        await using var queue = new StaCommandQueue();
-        await queue.InvokeAsync(() => { Author(path); return true; });
+        var host = await ExcelTestScope.SharedHostAsync();
+        // Test-only fixture authoring borrows the adapter's root on its existing STA.
+        // No COM reference crosses the command boundary; the host owns root release.
+        var queue = (StaCommandQueue)typeof(ExcelHost).GetField("queue", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(host)!;
+        await queue.InvokeAsync(() => Author(host, path, sections, unsupportedSubtotal, date1904));
         return new(root, path);
     }
 
-    private static void Author(string path)
+    private static int Author(ExcelHost host, string path, bool sections, bool unsupportedSubtotal, bool date1904)
     {
-        var previous = new HashSet<int>();
-        foreach (var p in Process.GetProcessesByName("EXCEL")) using (p) previous.Add(p.Id);
-        Interop.Application? app = null;
+        var app = (Interop.Application)typeof(ExcelHost).GetField("application", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(host)!;
         Interop.Workbooks? books = null;
         Interop.Workbook? book = null;
         Interop.Sheets? sheets = null;
         Interop.Worksheet? sheet = null, other = null;
-        var owned = false;
+        var ownedProcess = 0;
         try
         {
-            app = new Interop.Application();
-            GetWindowThreadProcessId((nint)app.Hwnd, out var pid);
-            if (previous.Contains((int)pid) || pid == 0) throw new InvalidOperationException("Fixture Excel is not isolated.");
-            owned = true;
-            app.Visible = true;
-            app.UserControl = true;
+            var nativeThread = GetWindowThreadProcessId((nint)app.Hwnd, out var pid);
+            ownedProcess = (int)pid;
+            Console.Error.WriteLine($"Fixture authoring on shared owned PID={pid}, native thread={nativeThread}, managed thread={Environment.CurrentManagedThreadId}, apartment={Thread.CurrentThread.GetApartmentState()}.");
             app.AutomationSecurity = Microsoft.Office.Core.MsoAutomationSecurity.msoAutomationSecurityForceDisable;
             books = app.Workbooks;
             book = books.Add(Interop.XlWBATemplate.xlWBATWorksheet);
+            book.Date1904 = date1904;
             sheets = book.Worksheets;
             sheet = (Interop.Worksheet)(object)sheets[1];
             sheet.Name = "Entry";
@@ -79,19 +81,90 @@ internal sealed record ExcelFixture(string Root, string Path)
                 try { app.Calculation = calculation; }
                 finally { try { app.EnableEvents = events; } finally { app.ScreenUpdating = screen; } }
             }
+            if (sections) AddSectionSheets(app, book);
+            if (unsupportedSubtotal)
+            {
+                Interop.Worksheet? columns = null;
+                try { columns = (Interop.Worksheet)(object)sheets["Columns"]; Put(columns, new(5, 7, 1, 1), range => range.Formula2 = new object[,] { { "=SUM(Records[Derived])" } }); }
+                finally { ComLifetime.Release(columns); }
+            }
             book.SaveAs(path, Interop.XlFileFormat.xlOpenXMLWorkbook);
+            return (int)pid;
         }
         finally
         {
             ComLifetime.Release(other); ComLifetime.Release(sheet); ComLifetime.Release(sheets);
-            try { if (book is not null) book.Close(SaveChanges: false); }
+            try
+            {
+                if (book is not null)
+                {
+                    book.Close(SaveChanges: false);
+                    Console.Error.WriteLine($"{DateTime.UtcNow:O} fixture PID={ownedProcess}: Close SaveChanges=false returned");
+                }
+            }
             finally
             {
                 ComLifetime.Release(book);
-                try { if (owned && books is not null && books.Count == 0) app!.Quit(); }
-                finally { ComLifetime.Release(books); ComLifetime.Release(app); }
+                ComLifetime.Release(books);
             }
         }
+    }
+
+    private static void AddSectionSheets(Interop.Application app, Interop.Workbook book)
+    {
+        Interop.Sheets? sheets = null;
+        try
+        {
+            sheets = book.Worksheets;
+            foreach (var name in new[] { "Columns", "Stacked", "Table" })
+            {
+                Interop.Worksheet? sheet = null;
+                try
+                {
+                    sheet = (Interop.Worksheet)(object)sheets.Add(); sheet.Name = name;
+                    var screen = app.ScreenUpdating; var events = app.EnableEvents; var calculation = app.Calculation;
+                    try
+                    {
+                        app.ScreenUpdating = false; app.EnableEvents = false; app.Calculation = Interop.XlCalculation.xlCalculationManual;
+                        var data = new object?[8, 12];
+                        data[0, 0] = "Synthetic receipt destination";
+                        string[] headers = ["Vendor name", "Particulars", "RFP number", "Invoice number", "Amount", "Record date", "Derived"];
+                        for (var c = 0; c < headers.Length; c++) data[1, c] = headers[c];
+                        for (var r = 2; r <= 3; r++) { data[r, 0] = "Synthetic vendor"; data[r, 1] = "Template"; data[r, 2] = "RFP-" + r; data[r, 4] = r * 10d; }
+                        if (name != "Table") data[4, 0] = "Subtotal";
+                        if (name == "Stacked") { data[6, 0] = "Other section"; data[7, 0] = "Neighbour"; data[7, 4] = 77d; }
+                        else { data[1, 9] = "Neighbour"; data[2, 9] = "Keep"; data[2, 10] = 77d; data[3, 9] = "Other total"; }
+                        Put(sheet, new(1, 1, 8, 12), range => range.Value2 = data);
+                        Put(sheet, new(3, 7, 2, 1), range => range.Formula2 = new object[,] { { "=E3*2" }, { "=E4*2" } });
+                        Put(sheet, new(3, 5, 2, 1), range => range.NumberFormat = "0.00");
+                        Put(sheet, new(3, 6, 2, 1), range => range.NumberFormat = "yyyy-mm-dd");
+                        if (name != "Stacked") Put(sheet, new(4, 11, 1, 1), range => range.Formula2 = new object[,] { { "=SUM(K3:K3)" } });
+                        if (name == "Table")
+                        {
+                            Interop.ListObjects? tables = null; Interop.Range? source = null; Interop.ListObject? table = null;
+                            try
+                            {
+                                tables = sheet.ListObjects; source = sheet.Range["A2:G4"];
+                                table = tables.Add(Interop.XlListObjectSourceType.xlSrcRange, source, XlListObjectHasHeaders: Interop.XlYesNoGuess.xlYes);
+                                table.Name = "Records"; table.ShowTotals = true;
+                                Put(sheet, new(5, 1, 1, 1), range => range.Value2 = new object[,] { { "Subtotal" } });
+                            }
+                            finally { ComLifetime.Release(table); ComLifetime.Release(source); ComLifetime.Release(tables); }
+                        }
+                        Put(sheet, new(5, 5, 1, 1), range => range.Formula2 = new object[,] { { "=SUM(E3:E4)" } });
+                        Put(sheet, new(5, 3, 1, 1), range => range.Formula2 = new object[,] { { "=SUM(E3:E4)+SUM(E3:E3)+E4" } });
+                        Put(sheet, new(5, 7, 1, 1), range => range.Formula2 = new object[,] { { "=SUM(G3:G4)" } });
+                    }
+                    finally
+                    {
+                        try { app.Calculation = calculation; }
+                        finally { try { app.EnableEvents = events; } finally { app.ScreenUpdating = screen; } }
+                    }
+                }
+                finally { ComLifetime.Release(sheet); }
+            }
+        }
+        finally { ComLifetime.Release(sheets); }
     }
 
     private static void Put(Interop.Worksheet sheet, CellRange bounds, Action<Interop.Range> write)

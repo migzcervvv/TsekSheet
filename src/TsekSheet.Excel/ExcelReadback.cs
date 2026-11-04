@@ -139,7 +139,7 @@ internal static class ExcelReadback
                 try { name = names.Item(i); nameData.Add(new(name.Name, (string)(object)name.RefersTo)); }
                 finally { ComLifetime.Release(name); }
             }
-            return new(sheetData, nameData.OrderBy(n => n.Name, StringComparer.Ordinal).ToArray());
+            return new(sheetData, nameData.OrderBy(n => n.Name, StringComparer.Ordinal).ToArray(), workbook.Date1904);
         }
         finally { ComLifetime.Release(names); ComLifetime.Release(sheets); }
     }

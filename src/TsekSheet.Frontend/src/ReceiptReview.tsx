@@ -1,4 +1,5 @@
 import SourcePreview from './SourcePreview';
+import ExcelInsertion from './ExcelInsertion';
 import { EmptyState, StatusBadge, Notice } from './ui/Workspace';
 import type { Activity } from './ui/Workspace';
 import { useEffect, useRef, useState } from 'react';
@@ -72,7 +73,7 @@ export default function ReceiptReview({ bridge, destination, disabled, rendering
       <button disabled={busy || disabled} onClick={() => void run(() => bridge.request('receipt.state', {}).promise)}>Refresh receipt state</button>
     </div>
     {guided && <nav className="receipt-steps" aria-label="Receipt workflow">{['Source','Fields','Destination','Review'].map((label,index)=><button aria-label={label} key={label} data-step={index} aria-current={step===index?'step':undefined} disabled={busy || (index>0 && !state?.version)} onClick={()=>setStep(index)}><span>{index+1}</span>{label}</button>)}</nav>}
-    <Notice kind="unavailable" title={renderingAvailable?"Offline OCR is unavailable":"Offline OCR and source rendering are unavailable"}><details><summary>Manual review only</summary>Inspect the original in a local viewer. Values are manually entered, never OCR-verified. Closing discards this in-memory review. Receipt insertion and export remain unavailable.</details></Notice>
+    <Notice kind="unavailable" title={renderingAvailable?"Offline OCR is unavailable":"Offline OCR and source rendering are unavailable"}><details><summary>Manual review only</summary>Inspect the original in a local viewer. Values are manually entered, never OCR-verified. Closing discards this in-memory review.</details></Notice>
     {error && <Notice kind="error" title="Review action failed">{error} Refresh receipt state before continuing.</Notice>}
     {state?.status === 'Invalidated' && <Notice kind="error" title="Source changed or became unavailable">Close the receipt and select it again.</Notice>}
     {!state?.source && <EmptyState title={view==='placement'?'No receipt ready for mapping':'Start with a receipt'}>{view==='placement'?'Register a source and verify its manually entered fields in Receipts.':'Select a local PDF, PNG or JPEG. No values are extracted automatically.'}</EmptyState>}
@@ -98,10 +99,10 @@ export default function ReceiptReview({ bridge, destination, disabled, rendering
           </div>;
         })}</div>
         {view==='receipt' && onNavigate && <div className="actions workflow-next"><button onClick={()=>onNavigate('worksheets')}>Choose destination workbook</button><button className="primary" onClick={()=>setStep(3)}>Review placement</button></div>}
-        {guided && step===2 && <Notice kind={destination?'information':'unavailable'} title={destination?'Choose a destination in the active workbook':'Validated destination unavailable'}>{destination?'Use the workbook, worksheet and working-copy selectors below. Selection changes invalidate prior proposals.':'This workbook is not open for validated placement. Inspection-only sessions cannot plan insertion.'}</Notice>}
+        {guided && step===2 && <Notice kind="information" title="Choose a workbook in Excel">Open a workbook below and choose its profile section. The preview shows the verified row before insertion.</Notice>}
         {guided && step<3 && state.version && <div className="workflow-next actions"><button disabled={step===0} onClick={()=>setStep(n=>Math.max(0,n-1))}>Previous step</button><button className="primary" onClick={()=>setStep(n=>Math.min(3,n+1))}>Continue to {['Source','Fields','Destination','Review'][step+1]}</button></div>}
         {guided && step===3 && dirty && <Notice kind="warning" title="Unsaved field edits">Save changes and explicitly verify corrected values before requesting a new proposal.</Notice>}
-        <div className="receipt-placement" hidden={view==='receipt' || (guided && step!==3)}><h3>Worksheet mapping and placement</h3>
+        <div className="receipt-placement" hidden={view==='receipt' || guided}><h3>Worksheet mapping and placement</h3>
           <p>{destination ? 'Destination: selected worksheet and active original or working copy in the workbook viewer.' : 'Open a validated workbook and select a worksheet to preview mapping. Read-only package inspection cannot plan placement.'}</p>
           {sections.length > 0 && <label>Destination section<select aria-label="Receipt destination section" disabled={blocked} value={section} onChange={e => { setSection(e.target.value); setPreview(null); }}><option value="">Resolve from verified entity</option>{sections.map(s => <option key={s.id} value={s.id}>{s.label} · rows {s.firstDataRow}–{s.subtotalRow - 1}</option>)}</select></label>}
           <label><input type="checkbox" checked={newEntity} disabled={blocked} onChange={e => { setNewEntity(e.target.checked); setPreview(null); }}/> Confirm a new entity when no exact match exists</label>
@@ -115,5 +116,6 @@ export default function ReceiptReview({ bridge, destination, disabled, rendering
         </div>
       </>}
     </div></div></>}
+    {(!guided||step>=2)&&<ExcelInsertion bridge={bridge} review={state} dirty={dirty} disabled={blocked}/>}
   </section>;
 }

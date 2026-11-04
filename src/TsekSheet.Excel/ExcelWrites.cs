@@ -79,7 +79,7 @@ public sealed partial class ExcelHost
         return result;
     }
 
-    private static void ValidateTarget(Interop.Worksheet sheet, CellRange bounds)
+    private static void ValidateTarget(Interop.Worksheet sheet, CellRange bounds, string? addedTable = null, int? addedRow = null)
     {
         Interop.Range? range = null;
         Interop.ListObjects? tables = null;
@@ -102,7 +102,10 @@ public sealed partial class ExcelHost
                     var t = ExcelReadback.Bounds(tableRange);
                     if (bounds.Row < (long)t.Row + t.Rows && t.Row < (long)bounds.Row + bounds.Rows &&
                         bounds.Column < (long)t.Column + t.Columns && t.Column < (long)bounds.Column + bounds.Columns)
-                        throw new InvalidOperationException("Use a plain range for bulk writes. Table insertion belongs to the section writer.");
+                    {
+                        if (table.Name == addedTable && bounds.Rows == 1 && bounds.Row == addedRow) continue;
+                        throw new InvalidOperationException("Table writes must target the data row created by the section inserter.");
+                    }
                 }
                 finally { ComLifetime.Release(tableRange); ComLifetime.Release(table); }
             }
@@ -116,11 +119,13 @@ public sealed partial class ExcelHost
         var screen = app.ScreenUpdating;
         var events = app.EnableEvents;
         var calculation = app.Calculation;
+        var interactive = app.Interactive;
         try
         {
             app.ScreenUpdating = false;
             app.EnableEvents = false;
             app.Calculation = Interop.XlCalculation.xlCalculationManual;
+            app.Interactive = false;
             return operation();
         }
         finally
@@ -129,7 +134,7 @@ public sealed partial class ExcelHost
             finally
             {
                 try { app.EnableEvents = events; }
-                finally { app.ScreenUpdating = screen; }
+                finally { try { app.ScreenUpdating = screen; } finally { app.Interactive = interactive; } }
             }
         }
     }

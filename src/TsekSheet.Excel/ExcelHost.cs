@@ -5,15 +5,17 @@ using Interop = Microsoft.Office.Interop.Excel;
 
 namespace TsekSheet.Excel;
 
-public sealed partial class ExcelHost : IExcelHost, IWorkbookReader, IWorkbookWriter
+public sealed partial class ExcelHost : IExcelHost, IWorkbookReader, IWorkbookWriter, ISectionWriter
 {
     private readonly StaCommandQueue queue = new();
     private readonly WorkbookBackupService backups;
     private readonly Dictionary<string, Book> books = [];
     private Interop.Application? application;
     private ExcelHostInfo? info;
+    internal DateTime? QuitReturnedUtc { get; private set; }
     private Task? disposal;
     private readonly object disposalGate = new();
+    internal Action<string>? LifecycleLog { get; set; }
 
     private sealed class Book(string id, string path, nint identity, bool opened) : IDisposable
     {
@@ -65,6 +67,7 @@ public sealed partial class ExcelHost : IExcelHost, IWorkbookReader, IWorkbookWr
             if (!books[workbookId].Opened) throw new InvalidOperationException("This workbook was opened by the user and must be closed in Excel.");
             if (!discardChanges && !workbook.Saved) throw new InvalidOperationException("Save the workbook in Excel or explicitly discard its changes.");
             workbook.Close(SaveChanges: false);
+            LifecycleLog?.Invoke($"{DateTime.UtcNow:O} PID={info?.ProcessId}: Close SaveChanges=false returned: {workbookId}");
             books[workbookId].Dispose();
             books.Remove(workbookId);
             foreach (var key in highlights.Where(h => h.Value.Receipt.WorkbookId == workbookId).Select(h => h.Key).ToArray()) highlights.Remove(key);
@@ -103,6 +106,11 @@ public sealed partial class ExcelHost : IExcelHost, IWorkbookReader, IWorkbookWr
             // msoAutomationSecurityForceDisable; numeric value avoids a second Office PIA dependency.
             created.AutomationSecurity = (Microsoft.Office.Core.MsoAutomationSecurity)3;
             info = new((int)pid, created.Version);
+            if (LifecycleLog is { } log)
+            {
+                using var process = Process.GetProcessById((int)pid);
+                log($"{DateTime.UtcNow:O} owned PID={pid}, start={process.StartTime.ToUniversalTime():O}");
+            }
             application = created;
             created = null; // Root RCW is retained only for this STA session; released in ShutdownCore.
             return info;
@@ -231,10 +239,21 @@ public sealed partial class ExcelHost : IExcelHost, IWorkbookReader, IWorkbookWr
             finally { ComLifetime.Release(sheet); ComLifetime.Release(sheets); }
         });
 
-    private static void QuitIfEmpty(Interop.Application app)
+    private void QuitIfEmpty(Interop.Application app)
     {
         Interop.Workbooks? collection = null;
-        try { collection = app.Workbooks; if (collection.Count == 0) app.Quit(); }
+        try
+        {
+            collection = app.Workbooks;
+            var count = collection.Count;
+            if (count == 0)
+            {
+                app.Quit();
+                QuitReturnedUtc = DateTime.UtcNow;
+                LifecycleLog?.Invoke($"{DateTime.UtcNow:O} PID={info?.ProcessId}: Quit returned: workbooks=0");
+            }
+            else LifecycleLog?.Invoke($"{DateTime.UtcNow:O} PID={info?.ProcessId}: Quit withheld: workbooks={count}");
+        }
         finally { ComLifetime.Release(collection); }
     }
 
@@ -251,7 +270,12 @@ public sealed partial class ExcelHost : IExcelHost, IWorkbookReader, IWorkbookWr
             if (root is not null) QuitIfEmpty(root);
             return true;
         }
-        finally { ComLifetime.Release(root); info = null; }
+        finally
+        {
+            var remaining = ComLifetime.Release(root);
+            LifecycleLog?.Invoke($"{DateTime.UtcNow:O} PID={info?.ProcessId}: root RCW released, remaining={remaining}");
+            info = null;
+        }
     }
 
     public ValueTask DisposeAsync()
@@ -259,7 +283,12 @@ public sealed partial class ExcelHost : IExcelHost, IWorkbookReader, IWorkbookWr
         lock (disposalGate) return new(disposal ??= DisposeCoreAsync());
     }
 
-    private Task DisposeCoreAsync() => queue.CompleteAsync(() => { ShutdownCore(); });
+    private async Task DisposeCoreAsync()
+    {
+        var pid = info?.ProcessId;
+        await queue.CompleteAsync(() => { ShutdownCore(); }).ConfigureAwait(false);
+        LifecycleLog?.Invoke($"{DateTime.UtcNow:O} PID={pid}: STA exited");
+    }
 
     [DllImport("user32.dll")]
     private static extern uint GetWindowThreadProcessId(nint window, out uint processId);

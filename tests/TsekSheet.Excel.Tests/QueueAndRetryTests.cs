@@ -49,6 +49,8 @@ public sealed class QueueAndRetryTests
         Assert.AreEqual(1, await first);
         Assert.AreEqual(2, await second);
         await queue.DisposeAsync();
+        var worker = (Thread)typeof(StaCommandQueue).GetField("thread", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(queue)!;
+        Assert.IsFalse(worker.IsAlive, "Disposal must await actual STA apartment termination.");
         await queue.DisposeAsync();
         await Assert.ThrowsExactlyAsync<ObjectDisposedException>(() => queue.InvokeAsync(() => 3));
     }

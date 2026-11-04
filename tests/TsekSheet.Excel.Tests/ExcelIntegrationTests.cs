@@ -28,7 +28,7 @@ public sealed class ExcelIntegrationTests
     {
         var fixture = await ExcelFixture.CreateAsync();
         var original = Hash(fixture.Path);
-        await using var host = new ExcelHost();
+        await using var scope = new ExcelTestScope(); var host = scope.Host;
         var book = await host.OpenAsync(fixture.Path);
         try
         {
@@ -73,7 +73,7 @@ public sealed class ExcelIntegrationTests
     public async Task FormulaTargetsAreRejectedAndLeadingEqualsIsStoredAsLiteralText()
     {
         var fixture = await ExcelFixture.CreateAsync();
-        await using var host = new ExcelHost();
+        await using var scope = new ExcelTestScope(); var host = scope.Host;
         var book = await host.OpenAsync(fixture.Path);
         try
         {
@@ -89,38 +89,48 @@ public sealed class ExcelIntegrationTests
     }
 
     [TestMethod]
-    public async Task TwentyConsecutiveLifecyclesReleaseTheirOwnedExcelProcess()
+    public async Task ThirtyConsecutiveLifecyclesReleaseTheirOwnedExcelProcess()
     {
         var fixture = await ExcelFixture.CreateAsync();
-        for (var i = 0; i < 20; i++)
+        await ExcelTestScope.RetireSharedHostAsync();
+        Assert.IsTrue(await OwnedExcelProcesses.WaitForPendingExitsAsync(), "A previous owned instance is alive 120 seconds after Quit.");
+        try
         {
-            var host = new ExcelHost();
-            var info = await host.StartAsync();
-            try
+            for (var i = 0; i < 30; i++)
             {
-                var book = await host.OpenAsync(fixture.Path);
-                try { await host.WriteAsync(book.Id, "Entry", new(3, 2, 10, 1), TenValues()); }
-                finally { await host.CloseAsync(book.Id, discardChanges: true); }
+                ExcelFixture.MeasurementCycle = i + 1;
+                await using var scope = new ExcelTestScope(ownsHost: true); var host = scope.Host;
+                var info = await host.StartAsync();
+                try
+                {
+                    var book = await host.OpenAsync(fixture.Path);
+                    try { await host.WriteAsync(book.Id, "Entry", new(3, 2, 10, 1), TenValues()); }
+                    finally { await host.CloseAsync(book.Id, discardChanges: true); }
+                }
+                finally
+                {
+                    await scope.DisposeAsync();
+                }
+                Assert.IsTrue(await OwnedExcelProcesses.WaitForExitAsync(info.ProcessId), $"Owned Excel PID={info.ProcessId} is alive 120 seconds after Quit.");
             }
-            finally { await host.DisposeAsync(); }
-            await AssertExited(info.ProcessId);
         }
+        finally { ExcelFixture.MeasurementCycle = 0; }
     }
 
     [TestMethod]
     public async Task ExistingUserExcelAndItsOpenWorkbookRemainUntouched()
     {
         var fixture = await ExcelFixture.CreateAsync();
+        var ownFixture = await ExcelFixture.CreateAsync();
         // This independent host supplies the pre-existing instance; the adapter under test
         // must neither attach to it nor close its open synthetic workbook.
-        await using var user = new ExcelHost();
+        await using var userScope = new ExcelTestScope(); var user = userScope.Host;
         var userBook = await user.OpenAsync(fixture.Path);
         var userInfo = await user.StartAsync();
         var before = await user.CaptureAsync(userBook.Id);
         try
         {
-            var ownFixture = await ExcelFixture.CreateAsync();
-            var host = new ExcelHost();
+            await using var scope = new ExcelTestScope(ownsHost: true); var host = scope.Host;
             var ownInfo = await host.StartAsync();
             Assert.AreNotEqual(userInfo.ProcessId, ownInfo.ProcessId);
             try
@@ -130,8 +140,7 @@ public sealed class ExcelIntegrationTests
                 try { await host.WriteAsync(book.Id, "Entry", new(3, 2, 10, 1), TenValues()); }
                 finally { await host.CloseAsync(book.Id, discardChanges: true); }
             }
-            finally { await host.DisposeAsync(); }
-            await AssertExited(ownInfo.ProcessId);
+            finally { await scope.DisposeAsync(); }
             using var process = Process.GetProcessById(userInfo.ProcessId);
             Assert.IsFalse(process.HasExited);
             Assert.AreEqual(userBook.Id, (await user.ListWorkbooksAsync()).Single().Id);
@@ -156,15 +165,4 @@ public sealed class ExcelIntegrationTests
         return Convert.ToHexString(SHA256.HashData(input));
     }
 
-    private static async Task AssertExited(int pid)
-    {
-        try
-        {
-            using var process = Process.GetProcessById(pid);
-            using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-            await process.WaitForExitAsync(deadline.Token);
-        }
-        catch (ArgumentException) { /* Process already exited. */ }
-        catch (OperationCanceledException) { Assert.Fail($"TsekSheet-owned EXCEL.EXE {pid} remains after 10 seconds."); }
-    }
 }

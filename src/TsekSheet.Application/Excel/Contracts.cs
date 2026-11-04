@@ -38,7 +38,7 @@ public sealed record NamedReference(string Name, string RefersTo);
 public sealed record TableReference(string Name, string Address);
 public sealed record SheetSnapshot(string Name, RangeData Data, IReadOnlyList<string> MergedAreas,
     IReadOnlyList<TableReference> Tables, long ValidationCells, int ValidationAreas, int ConditionalFormats);
-public sealed record PreservationSnapshot(IReadOnlyList<SheetSnapshot> Sheets, IReadOnlyList<NamedReference> Names);
+public sealed record PreservationSnapshot(IReadOnlyList<SheetSnapshot> Sheets, IReadOnlyList<NamedReference> Names, bool Date1904 = false);
 public sealed record BackupReceipt(string Path, string Sha256);
 public sealed record FillStyle(double Color, int ColorIndex, int Pattern, double PatternColor,
     int? Theme, int? PatternTheme, double Tint, double PatternTint);

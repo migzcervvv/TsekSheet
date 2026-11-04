@@ -4,6 +4,7 @@ using TsekSheet.Application.Workbooks;
 using TsekSheet.Application.Workflows;
 using TsekSheet.Application.Documents;
 using TsekSheet.Application.Verification;
+using TsekSheet.Application.Excel;
 
 namespace TsekSheet.Application.Foundation;
 
@@ -35,6 +36,8 @@ public sealed class BridgeSession : IDisposable
     private readonly Func<CancellationToken, Task<string?>>? selectDocument;
     private readonly DesktopReceiptReview receipts = new();
     private readonly ILocalDocumentRenderer? renderer;
+    private readonly ExcelReceiptInsertion? excel;
+    private readonly Func<CancellationToken, Task<string?>>? selectExcelWorkbook;
     private CancellationTokenSource? renderOperation;
     private TaskCompletionSource? renderFinished;
     public bool HasPendingWorkbookChanges => workbooks?.HasPendingChanges == true;
@@ -42,7 +45,8 @@ public sealed class BridgeSession : IDisposable
 
     public BridgeSession(Action<string> send, Func<CancellationToken, Task<FileSelection>> selectFile,
         Func<int, CancellationToken, Task>? delay = null, WorkbookWorkspace? workbooks = null,
-        Func<CancellationToken, Task<string?>>? selectDocument = null, ILocalDocumentRenderer? renderer = null)
+        Func<CancellationToken, Task<string?>>? selectDocument = null, ILocalDocumentRenderer? renderer = null,
+        ExcelReceiptInsertion? excel = null, Func<CancellationToken, Task<string?>>? selectExcelWorkbook = null)
     {
         this.send = send;
         this.selectFile = selectFile;
@@ -50,6 +54,8 @@ public sealed class BridgeSession : IDisposable
         this.workbooks = workbooks;
         this.selectDocument = selectDocument;
         this.renderer = renderer;
+        this.excel = excel;
+        this.selectExcelWorkbook = selectExcelWorkbook;
     }
 
     private void Emit(object message)
@@ -98,9 +104,44 @@ public sealed class BridgeSession : IDisposable
                 Success(id!, new { selectedVersion = 1, applicationName = new ApplicationMetadataService().ApplicationName, version = "0.1.0", capabilities = new { sourceRendering = renderer != null, receipts = selectDocument != null, diagnostics = true, fileSelection = true, workbooks = workbooks != null, templates = false, ocr = false } });
                 return;
             }
-            if (command is not ("receipt.render" or "receipt.cancelRender" or "receipt.select" or "receipt.state" or "receipt.start" or "receipt.correct" or "receipt.verify" or "receipt.retract" or "receipt.close" or "receipt.preview" or "sectionReview.start" or "sectionReview.decide" or "sectionReview.retract" or "sectionReview.cancel" or "foundation.getInfo" or "foundation.selectFile" or "diagnostics.run" or "diagnostics.cancel" or "workbook.open" or "workbook.inspect" or "workbook.readViewport" or "workbook.close" or "workbook.discard" or "workbook.createCopy" or "workbook.editCopy" or "workbook.saveAsNew" or "workbook.previewMerge" or "workbook.merge" or "workflow.profiles" or "workbook.planRecords" or "workbook.generateCandidate" or "workbook.approveCandidate" or "workbook.cancelCandidate"))
+            if (command is not ("excel.listWorkbooks" or "excel.previewInsert" or "excel.insert" or "receipt.render" or "receipt.cancelRender" or "receipt.select" or "receipt.state" or "receipt.start" or "receipt.correct" or "receipt.verify" or "receipt.retract" or "receipt.close" or "receipt.preview" or "sectionReview.start" or "sectionReview.decide" or "sectionReview.retract" or "sectionReview.cancel" or "foundation.getInfo" or "foundation.selectFile" or "diagnostics.run" or "diagnostics.cancel" or "workbook.open" or "workbook.inspect" or "workbook.readViewport" or "workbook.close" or "workbook.discard" or "workbook.createCopy" or "workbook.editCopy" or "workbook.saveAsNew" or "workbook.previewMerge" or "workbook.merge" or "workflow.profiles" or "workbook.planRecords" or "workbook.generateCandidate" or "workbook.approveCandidate" or "workbook.cancelCandidate"))
             { Error(id!, "UNSUPPORTED_COMMAND", "Command is unavailable."); return; }
             if (!ready) { Error(id!, "NOT_READY", "Handshake is required."); return; }
+            if (command!.StartsWith("excel.", StringComparison.Ordinal))
+            {
+                if (excel is null) { Error(id!, "UNSUPPORTED_COMMAND", "Excel insertion is unavailable in this host."); return; }
+                if (command == "excel.listWorkbooks")
+                {
+                    if (!HasOnly(payload, "open")) throw new JsonException();
+                    string? path = null;
+                    if (payload.GetProperty("open").GetBoolean())
+                    {
+                        if (selectExcelWorkbook is null) throw new InvalidOperationException();
+                        lock (gate) { if (selecting) throw new InvalidOperationException(); selecting = true; }
+                        try { path = await selectExcelWorkbook(lifetime.Token); }
+                        finally { lock (gate) selecting = false; }
+                    }
+                    var profile = receipts.State.Version?.ProfileId;
+                    Success(id!, new { workbooks = await excel.ListAsync(path), sections = profile is null ? [] : ExcelReceiptInsertion.Sections(profile),
+                        changes = excel.Changes.Select(c => new { c.Workbook, c.Sheet, c.Range, manualReview = c.ManualReview.Select(w => new { w.Cell, w.Reason }) }) });
+                    return;
+                }
+                if (!HasOnly(payload, command == "excel.previewInsert" ? ["expected", "workbookId", "sectionId"] : ["expected", "previewToken"])
+                    || !HasOnly(payload.GetProperty("expected"), "reviewId", "revision", "profileId", "profileHash")) throw new JsonException();
+                var expected = JsonSerializer.Deserialize<ReviewVersion>(payload.GetProperty("expected"), JsonOptions)!;
+                if (command == "excel.previewInsert")
+                {
+                    var preview = await excel.PreviewAsync(receipts, expected, payload.GetProperty("workbookId").GetString()!, payload.GetProperty("sectionId").GetString()!, lifetime.Token);
+                    Success(id!, new { preview.Token, preview.WorkbookId, preview.SectionId, preview.Sheet, preview.Range, preview.InsertRow, preview.Values,
+                        manualReview = preview.ManualReview.Select(w => new { w.Cell, w.Reason }) });
+                }
+                else
+                {
+                    var result = await excel.InsertAsync(receipts, expected, payload.GetProperty("previewToken").GetString()!, lifetime.Token);
+                    Success(id!, new { result.Workbook, result.Sheet, result.Range, manualReview = result.ManualReview.Select(w => new { w.Cell, w.Reason }) });
+                }
+                return;
+            }
             if (command!.StartsWith("receipt.", StringComparison.Ordinal))
             {
                 if (selectDocument == null) { Error(id!, "UNSUPPORTED_COMMAND", "Native receipt selection is unavailable."); return; }
@@ -332,6 +373,9 @@ public sealed class BridgeSession : IDisposable
                     break;
             }
         }
+        catch (ExcelInsertRejectedException ex) { if (ValidId(id)) Error(id!, "EXCEL_INSERT_REJECTED", ex.Message); }
+        catch (ExcelBusyException ex) { if (ValidId(id)) Error(id!, "EXCEL_BUSY", ex.Message); }
+        catch (PreservationException ex) { if (ValidId(id)) Error(id!, "EXCEL_PRESERVATION_FAILED", ex.Message); }
         catch (FieldReviewException ex) { if (ValidId(id)) Error(id!, ex.Code, ex.Message); }
         catch (DocumentSourceException ex) { if (ValidId(id)) Error(id!, ex.Code, ex.Message); }
         catch (WorkbookException ex) { if (ValidId(id)) Error(id!, ex.Code, ex.Message, ex.Details); }

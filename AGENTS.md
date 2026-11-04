@@ -8,11 +8,13 @@ Read GOALS.md (what and why) and PLANS.md (current ticket queue) before any work
 
 - Work only on the ticket you are given. The ticket text is the plan. Do not write a separate
   plan document unless the ticket says so.
-- One ticket = one branch `t/<ticket-id>-<slug>` = one or more small commits = one PR.
+- One ticket = one branch `t/<ticket-id>-<slug>` from main = one or more small
+  commits = one PR targeting main.
 - Commit at least once per ticket. Never end a session with uncommitted work.
 - Do not start the next ticket on your own. Stop after the report.
 - If the ticket is ambiguous, pick the simplest interpretation that meets its acceptance
   criteria and state the assumption in the report.
+- docs/planner/ is planner-only material. Do not read or follow it.
 
 ## 2. When to stop and when not to
 
@@ -89,7 +91,8 @@ blocking gate requires the planner's sign-off in the ticket.
   not mention.
 - Unit tests must run without Excel. Excel-dependent tests use `[TestCategory("Excel")]` and
   are excluded from CI.
-- Run the affected test projects before committing. Report exact pass/fail/skip counts.
+- Run the affected test projects before committing. Report exact pass/fail/skip counts from
+  the final run only; mention sandbox/environment reruns in one line under Risks.
   Report any failing or skipped test; never hide or delete one to get green.
 
 ## 7. Documentation budget

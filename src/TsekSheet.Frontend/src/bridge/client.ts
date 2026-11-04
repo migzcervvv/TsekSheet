@@ -1,4 +1,6 @@
 import { validReceiptState, validReceiptPreview, validSourceRender } from './receipts';
+import { validExcelCatalog, validExcelChange, validExcelPreview } from './excel';
+import type { ExcelCatalog, ExcelChange, ExcelPreview, ExcelPreviewRequest } from './excel';
 import type { ReceiptState, ReceiptPreview, ReceiptDestination, ReviewVersion, SourceRender } from './receipts';
 export interface Transport {
   postMessage(message: unknown): void;
@@ -30,6 +32,9 @@ export interface MergePreview { destinationName: string; pendingCells: number; c
 import {validSectionReview} from './sectionReview';
 import type {ReviewSnapshot, ReviewBinding, ReviewDecision} from './sectionReview';
 interface Results {
+  'excel.listWorkbooks': ExcelCatalog;
+  'excel.previewInsert': ExcelPreview;
+  'excel.insert': ExcelChange;
   'receipt.render': SourceRender;
   'receipt.cancelRender': {status:'requested'};
   'receipt.select': ReceiptState;
@@ -66,6 +71,9 @@ interface Results {
   'workbook.merge': { workbook: Workbook; appliedCells: number };
 }
 interface Payloads {
+  'excel.listWorkbooks': {open:boolean};
+  'excel.previewInsert': ExcelPreviewRequest;
+  'excel.insert': {expected:ReviewVersion;previewToken:string};
   'receipt.render': {source:NonNullable<ReceiptState['source']>['document']['version'];pageNumber:number};
   'receipt.cancelRender': Record<string,never>;
   'receipt.select': Record<string, never>;
@@ -150,6 +158,9 @@ function validViewport(v: ObjectValue): boolean {
 function validResult(command: Command, r: unknown): boolean {
   if (!object(r)) return false;
   switch (command) {
+    case 'excel.listWorkbooks': return validExcelCatalog(r);
+    case 'excel.previewInsert': return validExcelPreview(r);
+    case 'excel.insert': return validExcelChange(r);
     case 'receipt.render': return validSourceRender(r);
     case 'receipt.cancelRender': return r.status==='requested';
     case 'receipt.select': case 'receipt.state': case 'receipt.close': case 'receipt.start': case 'receipt.correct': case 'receipt.verify': case 'receipt.retract': return validReceiptState(r);
