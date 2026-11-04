@@ -117,7 +117,8 @@ public sealed class WorkflowWorkbookTests
     {
         using var fixture=new PayablesFixture(); var hash=Hash(fixture.Path); var messages=new List<JsonElement>();
         using var workspace=new WorkbookWorkspace(new WorkbookEngine(),_=>Task.FromResult<string?>(fixture.Path));
-        using var bridge=new BridgeSession(s=>messages.Add(JsonDocument.Parse(s).RootElement.Clone()),_=>Task.FromResult(new FileSelection("cancelled")),workbooks:workspace);
+        using var bridge=new BridgeSession(s=>messages.Add(JsonDocument.Parse(s).RootElement.Clone()),_=>Task.FromResult(new FileSelection("cancelled")),workbooks:workspace,
+            profiles:WorkflowProfiles.BuiltInProfiles);
         var count=0; async Task<JsonElement> Send(string command,object payload)
         {await bridge.HandleAsync(BridgePolicy.Origin,JsonSerializer.Serialize(new{protocolVersion=1,requestId="workflow-"+count++,command,payload}));return messages[^1];}
         await Send("foundation.handshake",new{supportedVersions=new[]{1}});
