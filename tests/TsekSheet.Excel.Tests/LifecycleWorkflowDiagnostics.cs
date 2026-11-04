@@ -60,11 +60,12 @@ public sealed class LifecycleWorkflowDiagnostics
             trial.Windows.Add(ExitObservation.WindowState(process, "host cleanup entry"));
             owned.Add(pid, trial);
         }
-        internal void HostDisposed(int pid)
+        internal void HostDisposed(int pid, DateTime? quitUtc)
         {
             if (!owned.TryGetValue(pid, out var trial)) return;
-            trial.QuitReturnedUtc = DateTime.UtcNow;
-            trial.QuitStatus = "Host.DisposeAsync returned; empty-instance Quit inferred from adapter, not directly instrumented";
+            trial.QuitReturnedUtc = quitUtc ?? throw new InvalidOperationException("Owned host did not Quit.");
+            trial.QuitStatus = "Quit returned with zero workbooks; exact adapter timestamp";
+            trial.TimingAnchor = "Quit return, including subsequent GC and STA termination";
             trial.Events.Add($"{DateTime.UtcNow:O} Host disposal returned without COM exception");
         }
         internal void OwnerThreadStopped(int pid, object owner)
@@ -78,10 +79,9 @@ public sealed class LifecycleWorkflowDiagnostics
             trial.Apartment = "Dedicated STA configured by StaCommandQueue; managed thread identity observed after disposal";
             trial.Events.Add($"{DateTime.UtcNow:O} owning STA observed: managed thread={thread.ManagedThreadId}, alive={thread.IsAlive}");
         }
-        internal async Task ObserveAsync(int pid)
+        internal async Task ObserveAsync(int pid, Process process)
         {
             if (!owned.TryGetValue(pid, out var trial)) throw new InvalidOperationException("No diagnostic ownership record.");
-            using var process = Process.GetProcessById(pid);
             if (process.StartTime.ToUniversalTime() != trial.StartUtc) throw new InvalidOperationException("Owned PID identity changed.");
             trial.Events.Add($"{DateTime.UtcNow:O} original exit check entered; original COM helper methods have returned");
             await ExitObservation.ObserveAsync(trial, process, output,

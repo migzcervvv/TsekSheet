@@ -94,7 +94,7 @@ Status: DONE (PR #3, 2026-11-03)
 
 ### T2 - Insert verified record into a section (vertical slice)
 
-Status: IMPLEMENTED, VERIFICATION INCOMPLETE (Draft PR #4; isolated /x comparison stopped on an unexplained pre-acquisition identity rejection at attempt 21: COM 3/7/0 and /x 8/3/0 passed/failed/skipped, including the rejected /x launch; 20 complete lifecycles, nine shutdown delays of 60.099–60.159 s, concurrent synthetic session preserved, final Excel count zero; thirty runs per approach not achieved, neither approach qualified, production unchanged; earlier evidence retained, two clean full suites not achieved, no redacted fixtures)
+Status: IMPLEMENTED, VERIFICATION INCOMPLETE (Draft PR #4; 2026-11-04 cleanup audit: STA termination race and exit observer corrected; final Release Excel 14/3/0 passed/failed/skipped; two consecutive full suites failed, immediate Excel before/after counts 0/1 and 0/0; post-Quit delay persists despite Close(false), zero workbooks, root RCW release to zero and STA exit; not run: no redacted fixtures)
 
 - Prerequisites from T1 review:
   - Allow writes into ListObject data rows created by `ListRows.Add` (T1 rejects table targets).

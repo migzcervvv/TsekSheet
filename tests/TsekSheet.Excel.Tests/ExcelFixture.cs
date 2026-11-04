@@ -2,11 +2,23 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using TsekSheet.Application.Excel;
 using Interop = Microsoft.Office.Interop.Excel;
+using ExcelLifecycle.Diagnostics;
 
 namespace TsekSheet.Excel.Tests;
 
 internal sealed record ExcelFixture(string Root, string Path)
 {
+    private static readonly Dictionary<int, Process> ownedProcesses = [];
+    private static readonly Dictionary<int, DateTime> quitTimes = [];
+
+    internal static void TrackProcess(int pid)
+    {
+        var process = Process.GetProcessById(pid);
+        _ = process.SafeHandle;
+        ownedProcesses.Add(pid, process);
+        Console.Error.WriteLine($"{DateTime.UtcNow:O} owned PID={pid}, start={process.StartTime.ToUniversalTime():O}");
+    }
+
     internal static async Task<ExcelFixture> CreateAsync(bool sections = false, bool unsupportedSubtotal = false, bool date1904 = false)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
@@ -18,6 +30,7 @@ internal sealed record ExcelFixture(string Root, string Path)
         await using var queue = new StaCommandQueue();
         var pid = await queue.InvokeAsync(() => Author(path, sections, unsupportedSubtotal, date1904));
         await queue.DisposeAsync();
+        Console.Error.WriteLine($"{DateTime.UtcNow:O} fixture PID={pid}: STA exited");
         LifecycleWorkflowDiagnostics.Current?.OwnerThreadStopped(pid, queue);
         await WaitForExitAsync(pid);
         return new(root, path);
@@ -41,6 +54,7 @@ internal sealed record ExcelFixture(string Root, string Path)
             if (previous.Contains((int)pid) || pid == 0) throw new InvalidOperationException("Fixture Excel is not isolated.");
             owned = true;
             ownedProcess = (int)pid;
+            TrackProcess((int)pid);
             Console.Error.WriteLine($"Fixture Excel owned: PID={pid}, native thread={nativeThread}, managed thread={Environment.CurrentManagedThreadId}, apartment={Thread.CurrentThread.GetApartmentState()}.");
             app.Visible = true;
             app.UserControl = true;
@@ -105,7 +119,7 @@ internal sealed record ExcelFixture(string Root, string Path)
                 if (book is not null)
                 {
                     book.Close(SaveChanges: false);
-                    Console.Error.WriteLine("Fixture workbook closed without saving changes.");
+                    Console.Error.WriteLine($"{DateTime.UtcNow:O} fixture PID={ownedProcess}: Close SaveChanges=false returned");
                 }
             }
             finally
@@ -116,25 +130,32 @@ internal sealed record ExcelFixture(string Root, string Path)
                     if (owned && books is not null && books.Count == 0)
                     {
                         app!.Quit();
+                        quitTimes.Add(ownedProcess, DateTime.UtcNow);
                         LifecycleWorkflowDiagnostics.Current?.FixtureQuit(ownedProcess);
-                        Console.Error.WriteLine("Fixture Quit returned with zero open workbooks.");
+                        Console.Error.WriteLine($"{DateTime.UtcNow:O} fixture PID={ownedProcess}: Quit returned with zero open workbooks");
                     }
                 }
-                finally { ComLifetime.Release(books); ComLifetime.Release(app); }
+                finally
+                {
+                    ComLifetime.Release(books);
+                    var remaining = ComLifetime.Release(app);
+                    Console.Error.WriteLine($"{DateTime.UtcNow:O} fixture PID={ownedProcess}: root RCW released, remaining={remaining}");
+                }
             }
         }
     }
 
-    internal static async Task WaitForExitAsync(int pid)
+    internal static async Task WaitForExitAsync(int pid, DateTime? quitUtc = null)
     {
-        if (LifecycleWorkflowDiagnostics.Current is { } diagnostics)
-        {
-            await diagnostics.ObserveAsync(pid);
-            return;
-        }
         try
         {
-            using var process = Process.GetProcessById(pid);
+            using var process = ownedProcesses.Remove(pid, out var tracked) ? tracked : Process.GetProcessById(pid);
+            if (quitTimes.Remove(pid, out var fixtureQuit)) quitUtc = fixtureQuit;
+            if (LifecycleWorkflowDiagnostics.Current is { } diagnostics)
+            {
+                await diagnostics.ObserveAsync(pid, process);
+                return;
+            }
             string identity;
             try { identity = $"PID={pid}, started UTC={process.StartTime.ToUniversalTime():O}"; }
             catch (InvalidOperationException) when (process.HasExited)
@@ -144,13 +165,16 @@ internal sealed record ExcelFixture(string Root, string Path)
             }
             var elapsed = Stopwatch.StartNew();
             Console.Error.WriteLine($"Waiting for test-owned Excel exit: {identity}.");
-            using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-            try { await process.WaitForExitAsync(deadline.Token); }
-            catch (OperationCanceledException)
+            var deadline = (quitUtc ?? DateTime.UtcNow).AddSeconds(10);
+            var remaining = (int)Math.Clamp(Math.Ceiling((deadline - DateTime.UtcNow).TotalMilliseconds), 0, 10_000);
+            if (!await Task.Run(() => ExitObservation.WaitForExit(process, remaining)))
             {
                 throw new InvalidOperationException($"Test-owned EXCEL.EXE remains after ten seconds: {identity}; elapsed={elapsed.Elapsed}; HasExited={process.HasExited}.");
             }
-            Console.Error.WriteLine($"Test-owned Excel exited: {identity}; elapsed={elapsed.Elapsed}.");
+            var exit = ExitObservation.ExitUtc(process);
+            Console.Error.WriteLine($"Test-owned Excel exited: {identity}; exit UTC={exit:O}; elapsed={elapsed.Elapsed}.");
+            if (exit < process.StartTime.ToUniversalTime() || exit > deadline)
+                throw new InvalidOperationException($"Owned Excel PID={pid} has an invalid or late OS exit timestamp: {exit:O}.");
         }
         catch (ArgumentException) { Console.Error.WriteLine($"Test-owned Excel PID={pid} already exited before the exit check."); }
     }

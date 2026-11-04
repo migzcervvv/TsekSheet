@@ -94,16 +94,20 @@ internal sealed class StaCommandQueue : IAsyncDisposable
                 dispatcher!.BeginInvoke((Action)DrainOne);
             }
         }
-        await stopped.Task.ConfigureAwait(false);
+        try { await stopped.Task.ConfigureAwait(false); }
+        finally
+        {
+            // The completion source can signal before the CLR tears down the STA,
+            // including when cleanup fails. Await actual apartment termination.
+            thread.Join();
+        }
     }
 }
 
 internal static class ComLifetime
 {
-    public static void Release(object? value)
-    {
-        if (value is not null && Marshal.IsComObject(value)) Marshal.ReleaseComObject(value);
-    }
+    public static int Release(object? value) =>
+        value is not null && Marshal.IsComObject(value) ? Marshal.ReleaseComObject(value) : 0;
 
     public static void Collect()
     {

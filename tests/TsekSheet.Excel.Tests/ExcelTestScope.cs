@@ -4,13 +4,14 @@ namespace TsekSheet.Excel.Tests;
 // Only this test's own host is used; no ROT attachment, GUI action, process kill or user file.
 internal sealed class ExcelTestScope : IAsyncDisposable
 {
-    internal ExcelHost Host { get; } = new();
+    internal ExcelHost Host { get; } = new() { LifecycleLog = Console.Error.WriteLine };
     private bool disposed;
     public async ValueTask DisposeAsync()
     {
         if (disposed) return;
         disposed = true;
         var process = (await Host.StartAsync()).ProcessId;
+        ExcelFixture.TrackProcess(process);
         LifecycleWorkflowDiagnostics.Current?.HostCleanup(process);
         Console.Error.WriteLine($"Host cleanup started: owned Excel PID={process}.");
         try
@@ -31,10 +32,10 @@ internal sealed class ExcelTestScope : IAsyncDisposable
         finally
         {
             await Host.DisposeAsync();
-            LifecycleWorkflowDiagnostics.Current?.HostDisposed(process);
+            LifecycleWorkflowDiagnostics.Current?.HostDisposed(process, Host.QuitReturnedUtc);
             LifecycleWorkflowDiagnostics.Current?.OwnerThreadStopped(process, Host);
             Console.Error.WriteLine($"Host disposal returned: owned Excel PID={process}; checking process exit.");
-            await ExcelFixture.WaitForExitAsync(process);
+            await ExcelFixture.WaitForExitAsync(process, Host.QuitReturnedUtc);
         }
     }
 }
