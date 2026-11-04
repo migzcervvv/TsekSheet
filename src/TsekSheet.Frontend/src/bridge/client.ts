@@ -1,7 +1,7 @@
-import { validReceiptState, validReceiptPreview, validSourceRender } from './receipts';
+import { validReceiptState, validReceiptPreview, validSourceRender, validReceiptQueue } from './receipts';
 import { validExcelCatalog, validExcelChange, validExcelPreview } from './excel';
 import type { ExcelCatalog, ExcelChange, ExcelPreview, ExcelPreviewRequest } from './excel';
-import type { ReceiptState, ReceiptPreview, ReceiptDestination, ReviewVersion, SourceRender } from './receipts';
+import type { ReceiptState, ReceiptPreview, ReceiptDestination, ReviewVersion, SourceRender, ReceiptQueueState } from './receipts';
 export interface Transport {
   postMessage(message: unknown): void;
   addEventListener(type: 'message', handler: (event: { data: unknown }) => void): void;
@@ -32,6 +32,13 @@ export interface MergePreview { destinationName: string; pendingCells: number; c
 import {validSectionReview} from './sectionReview';
 import type {ReviewSnapshot, ReviewBinding, ReviewDecision} from './sectionReview';
 interface Results {
+  'receipt.queue': ReceiptQueueState;
+  'receipt.enqueue': ReceiptQueueState;
+  'receipt.navigate': ReceiptQueueState;
+  'receipt.prepare': ReceiptState;
+  'receipt.changeProfile': ReceiptState;
+  'excel.previewDraft': ExcelPreview;
+  'excel.addRow': {change:ExcelChange;queue:ReceiptQueueState};
   'excel.listWorkbooks': ExcelCatalog;
   'excel.previewInsert': ExcelPreview;
   'excel.insert': ExcelChange;
@@ -71,6 +78,13 @@ interface Results {
   'workbook.merge': { workbook: Workbook; appliedCells: number };
 }
 interface Payloads {
+  'receipt.queue': Record<string,never>;
+  'receipt.enqueue': Record<string,never>;
+  'receipt.navigate': {expectedId:string;targetId:string;skip:boolean};
+  'receipt.prepare': {expected:ReviewVersion;values:Record<string,string>};
+  'receipt.changeProfile': {expected:ReviewVersion;profileId:string;values:Record<string,string>};
+  'excel.previewDraft': ExcelPreviewRequest;
+  'excel.addRow': {expected:ReviewVersion;previewToken:string;queueId:string};
   'excel.listWorkbooks': {open:boolean};
   'excel.previewInsert': ExcelPreviewRequest;
   'excel.insert': {expected:ReviewVersion;previewToken:string};
@@ -158,6 +172,10 @@ function validViewport(v: ObjectValue): boolean {
 function validResult(command: Command, r: unknown): boolean {
   if (!object(r)) return false;
   switch (command) {
+    case 'receipt.queue': case 'receipt.enqueue': case 'receipt.navigate': return validReceiptQueue(r);
+    case 'receipt.prepare': case 'receipt.changeProfile': return validReceiptState(r);
+    case 'excel.previewDraft': return validExcelPreview(r);
+    case 'excel.addRow': return validExcelChange(r.change)&&validReceiptQueue(r.queue);
     case 'excel.listWorkbooks': return validExcelCatalog(r);
     case 'excel.previewInsert': return validExcelPreview(r);
     case 'excel.insert': return validExcelChange(r);

@@ -2,6 +2,7 @@
 
 [README](README.md) · **Changelog**
 
+- 2026-11-04 — T2e: Add a session-only receipt queue with retained explicit destinations/accounts, draft row previews, one Add Row verification confirmation, automatic advance and skip/review; reject duplicates/stale targets and preserve existing Excel write safeguards; measure the old/new 20-receipt workflows.
 - 2026-11-04 — Documentation: Add README/Changelog navigation and summarize the supplied pre-reset development history.
 - 2026-11-04 — T2 integration: Verify the reopened fixes already merged by PR #5; isolate the synthetic legacy bridge regression from locally installed profiles before starting T2e.
 - 2026-11-04 — T2: Insert verified receipt rows through Excel independently of legacy admission; load local profiles with matching sheets, marker sections, blank-row fill and account-selected amounts as entered (D12), retain formulas/totals, backups/highlights/readback and D10/D11 safeguards; inspection snapshots release original file locks; production cleanup unchanged.

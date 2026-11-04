@@ -70,6 +70,36 @@ public sealed class SourceLinkedFieldReview : IDisposable
     public TypedReviewRecord Project(ReviewVersion expected, CancellationToken token = default) =>
         Execute(expected, staged => staged.Project(expected), token);
 
+    internal RecordReviewSnapshot CorrectAll(ReviewVersion expected, WorkflowProfile profile,
+        IReadOnlyDictionary<string, string> values, RegisteredSourcePage source, CancellationToken token) => Execute(expected, staged =>
+    {
+        if (values.Count != profile.Fields.Count) throw Error("INVALID_REVIEW_INPUT", "Supply every configured field exactly once.");
+        WorkflowValueValidation.Validate(profile.Fields, profile.IdentifierFields, values);
+        var evidence = Evidence(source, token);
+        foreach (var field in staged.Snapshot.Fields)
+            if (field.Value != values[field.Key])
+                staged.Correct(staged.Snapshot.Fields.Single(f => f.Key == field.Key).Binding, values[field.Key], evidence);
+        return staged.Snapshot;
+    }, token);
+
+    internal RecordReviewSnapshot ConfirmAll(ReviewVersion expected, CancellationToken token) => Execute(expected, staged =>
+    {
+        foreach (var field in staged.Snapshot.Fields)
+            if (field.Status != FieldReviewStatus.Verified && field.Source != null)
+                staged.Verify(staged.Snapshot.Fields.Single(f => f.Key == field.Key).Binding);
+        staged.Project(staged.Snapshot.Version);
+        return staged.Snapshot;
+    }, token);
+
+    // Draft projection validates values but grants no write authority or verification.
+    internal TypedReviewRecord ProjectDraft(ReviewVersion expected, WorkflowProfile profile, CancellationToken token) => Execute(expected, staged =>
+    {
+        var snapshot = staged.Snapshot;
+        var values = WorkflowValueValidation.Validate(profile.Fields, profile.IdentifierFields, snapshot.Fields.ToDictionary(f => f.Key, f => f.Value));
+        return new TypedReviewRecord(expected, snapshot.Fields.Select(f => new TypedReviewField(f.Key,
+            profile.Fields.Single(p => p.Key == f.Key).Kind, f.Value, values[f.Key].Text, values[f.Key].Number, values[f.Key].Date, f.Source, f.ValueRevision)));
+    }, token);
+
     /// <summary>
     /// Observes verified fields against one explicit worksheet. Source checks
     /// bracket analysis/projection; the last destination check follows source

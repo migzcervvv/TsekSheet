@@ -6,6 +6,12 @@ export interface ReceiptState {
   source: { displayName: string; document: { version: { documentId: string; revision: number; sha256: string }; kind: number; byteLength: number; status: number } } | null;
   version: ReviewVersion | null; pageNumber: number; status: 'NotStarted' | 'Active' | 'Invalidated'; fields: ReceiptField[];
 }
+export interface ReceiptQueueState { activeId:string|null; items:{id:string;displayName:string;status:'Pending'|'Skipped'|'Inserted'}[]; receipt:ReceiptState }
+export function validReceiptQueue(v:unknown):boolean {
+  return obj(v) && (v.activeId===null || typeof v.activeId==='string'&&/^[a-f0-9]{32}$/i.test(v.activeId))
+    && Array.isArray(v.items) && v.items.length<=100 && v.items.every(e=>obj(e)&&typeof e.id==='string'&&/^[a-f0-9]{32}$/i.test(e.id)&&str(e.displayName)&&!/[\\/]/.test(e.displayName)&&['Pending','Skipped','Inserted'].includes(String(e.status)))
+    && new Set(v.items.map(e=>e.id)).size===v.items.length && (v.items.length===0?v.activeId===null:v.items.some(e=>e.id===v.activeId)) && validReceiptState(v.receipt);
+}
 export interface ReceiptDestination { sessionId: string; worksheetId: string; revision: number; sourceSha256: string; profileId: string; profileHash: string }
 export interface ReceiptPreview { canApply: false; proposal: WorkflowPlan; mapping: { canApply: false; worksheetName: string; destination: ReceiptDestination; review: ReviewVersion;
   sections: { id: string; label: string; headingRow: number; firstDataRow: number; subtotalRow: number }[];

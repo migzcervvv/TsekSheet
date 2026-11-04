@@ -9,7 +9,7 @@ public sealed record ReceiptState(ReceiptSource? Source, ReviewVersion? Version,
     string Status, IReadOnlyList<ReceiptField> Fields);
 
 // One page-owned manual review. Client values never supply source/verification authority.
-public sealed class DesktopReceiptReview(Func<string, WorkflowProfile>? profiles = null) : IDisposable
+public sealed partial class DesktopReceiptReview(Func<string, WorkflowProfile>? profiles = null) : IDisposable
 {
     internal WorkflowProfile Profile(string id) => (profiles ?? WorkflowProfiles.Get)(id);
     private readonly object gate = new();
