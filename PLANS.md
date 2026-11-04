@@ -96,7 +96,7 @@ Status: DONE (PR #3, 2026-11-03)
 
 ### T2 - Insert verified record into a section (vertical slice)
 
-Status: REOPENED (legacy admission gated Excel path; real layout needs blank-row fill, account-driven column, sheet matching — fix complete and replica acceptance a-e verified; two consecutive final Release Excel suites 21/0/0 each, Application 632/0/0, Desktop 25/0/0, Frontend 85/0/0, Workbooks 457/0/0 passed/failed/skipped; D11: 66 owned exits, none alive at 120 s, 66 start guards with zero previous-owned violations; EXCEL.EXE counts before/after: 0/0 and 0/0; production cleanup unchanged; PR #4 already merged, so draft conversion is unavailable; not run: no redacted fixtures)
+Status: PROVISIONALLY ACCEPTED (synthetic; reopened T2 fixes merged via PR #5 at 41922aa; Phase 0 follow-up isolates the legacy bridge test from local profiles; final Release regressions: Excel 21/0/0, Application 632/0/0, Desktop 25/0/0, Workbooks 457/0/0, Frontend 85/0/0 passed/failed/skipped; EXCEL.EXE 0 before/0 after, 33 exits observed with none alive at 120 s; follow-up merge and resulting-main verification precede T2e; real-workbook validation remains manual)
 
 - Prerequisites from T1 review:
   - D11 supersedes the T1/T2 ten- and thirty-second exit criteria: latency is logged,
@@ -183,6 +183,42 @@ Status: TODO (after T2 accepted)
 
 - Typing/OCR of vendor name or TIN offers matches from the profile's vendorMaster sheet
   and fills name/TIN/address as unverified proposals.
+
+### T2e - Fast Receipt Entry Loop
+
+Status: WAITING (Phase 0 integration follow-up must merge; resulting main must be verified before implementation)
+
+- Phase 0: PR #4 merged at 502de1c; PR #5 already integrated all five reopened T2
+  commits through e4a4f96 into main at 41922aa. Their source trees are identical;
+  no reopened commits need cherry-picking. Audit the changes and run regressions.
+  A follow-up integration PR isolates a legacy synthetic bridge test from local
+  profile configuration. Do not start T2e until that PR merges and main is verified.
+- Branch from updated main: `t/T2e-fast-receipt-loop`. Use exti-liquidation as the
+  reference; keep visible, changeable workbook identity/profile/sheet/section/account
+  context across a multi-file PDF/image receipt queue with Next/Previous/Skip/Review.
+- Keep document preview, fields, mapped row preview and Add Row connected. New receipts
+  inherit the active context; successful insertion notifies and advances to the next
+  pending receipt. Skipped receipts remain reviewable. Destination changes must not
+  silently redirect pending data.
+- Manual edits remain draft and OCR proposals unverified until explicit confirmation.
+  Permit one explicit Add Row confirmation after valid required values and destination
+  review. Block ambiguous totals, duplicates, stale targets and missing information
+  with specific reasons. Preserve mandatory verification and formula protections.
+- Preserve Expenses/Credits markers, N/O/AF formulas, account amount destinations,
+  blank-row-first placement and insertion above subtotal. D12: no VAT conversion.
+  Preserve VENDOR; no automatic save/vendor-master writes, unverified Undo, cloud,
+  retained original uploads, OCR changes, persistence, legacy cleanup or mutation
+  algorithm changes. Revalidate identity/placement immediately before each write.
+- Before behavior changes, measure the executable old workflow. Compare 20 synthetic
+  receipts before/after: workbook opening, context selection, receipt navigation,
+  field entry/verification, preview, Excel insertion and post-insertion navigation.
+  Report per-stage elapsed times, median and slowest; separate user-input time from
+  application processing. No arbitrary one-second threshold.
+- Acceptance: one destination setup supports 20 correct sequential inserts/accounts;
+  automatic advance and skip/review work; destination changes are explicit; formulas,
+  totals and neighbors remain correct; full affected tests pass with failures and
+  unexecuted tests reported; timing report compares old/new overhead. Automated tests
+  use synthetic fixtures; real-workbook acceptance is a separate manual step.
 
 ### T3 - OCR bake-off (can run in parallel with T1/T2)
 
