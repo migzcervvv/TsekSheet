@@ -65,32 +65,37 @@ public sealed class LiquidationInsertTests
         Assert.AreEqual("=SUM(AF4:AF31)", final.Formulas[0, 22]);
     }
 
-    [TestMethod]
-    public async Task VerifiedAccountChoiceMapsTheUnconvertedAmountThroughTheApplication()
+    [TestMethod, DataRow(false), DataRow(true)]
+    public async Task VerifiedAccountChoiceMapsTheUnconvertedAmountThroughTheApplication(bool readOnly)
     {
         var host = await ExcelTestScope.SharedHostAsync();
         var path = await LiquidationFixture.CreateAsync(host);
         await using var scope = new ExcelTestScope();
-        var profile = LiquidationProfile.Create();
-        using var receipt = new DesktopReceiptReview(_ => profile);
-        var source = Path.Combine(Path.GetDirectoryName(path)!, "receipt.pdf");
-        File.WriteAllText(source, "%PDF-1.7\n" + new string('x', 100));
-        receipt.Register(source, default);
-        var state = receipt.Start(profile.Id, 1, default);
-        foreach (var field in new[] { ("itemNo", "NEW-29"), ("particulars", "Verified expense"), ("account", "Q"), ("amount", "123.50") })
+        if (readOnly) File.SetAttributes(path, File.GetAttributes(path) | FileAttributes.ReadOnly);
+        try
         {
-            state = receipt.Change("correct", state.Version!, field.Item1, 0, field.Item2, default);
-            state = receipt.Change("verify", state.Version!, field.Item1, 1, null, default);
+            var profile = LiquidationProfile.Create();
+            using var receipt = new DesktopReceiptReview(_ => profile);
+            var source = Path.Combine(Path.GetDirectoryName(path)!, "receipt.pdf");
+            File.WriteAllText(source, "%PDF-1.7\n" + new string('x', 100));
+            receipt.Register(source, default);
+            var state = receipt.Start(profile.Id, 1, default);
+            foreach (var field in new[] { ("itemNo", "NEW-29"), ("particulars", "Verified expense"), ("account", "Q"), ("amount", "123.50") })
+            {
+                state = receipt.Change("correct", state.Version!, field.Item1, 0, field.Item2, default);
+                state = receipt.Change("verify", state.Version!, field.Item1, 1, null, default);
+            }
+            var insertion = new ExcelReceiptInsertion(host, host, _ => profile);
+            var book = (await insertion.ListAsync(path, profile.Id)).Single();
+            var preview = await insertion.PreviewAsync(receipt, state.Version!, book.Id, "expenses", default, "Person 1");
+            Assert.AreEqual(17, preview.Values.Single(v => v.Key == "amount").Column);
+            Assert.AreEqual(123.50, preview.Values.Single(v => v.Key == "amount").Value);
+            Assert.AreEqual("123.50", preview.Values.Single(v => v.Key == "amount").DisplayValue);
+            await insertion.InsertAsync(receipt, state.Version!, preview.Token, default);
+            var data = await host.ReadAsync(book.Id, "Person 1", new(29, 10, 1, 23));
+            Assert.IsNull(data.Values[0, 0]); Assert.AreEqual(123.50, data.Values[0, 7]);
         }
-        var insertion = new ExcelReceiptInsertion(host, host, _ => profile);
-        var book = (await insertion.ListAsync(path, profile.Id)).Single();
-        var preview = await insertion.PreviewAsync(receipt, state.Version!, book.Id, "expenses", default, "Person 1");
-        Assert.AreEqual(17, preview.Values.Single(v => v.Key == "amount").Column);
-        Assert.AreEqual(123.50, preview.Values.Single(v => v.Key == "amount").Value);
-        Assert.AreEqual("123.50", preview.Values.Single(v => v.Key == "amount").DisplayValue);
-        await insertion.InsertAsync(receipt, state.Version!, preview.Token, default);
-        var data = await host.ReadAsync(book.Id, "Person 1", new(29, 10, 1, 23));
-        Assert.IsNull(data.Values[0, 0]); Assert.AreEqual(123.50, data.Values[0, 7]);
+        finally { await scope.DisposeAsync(); if (readOnly) File.SetAttributes(path, FileAttributes.Normal); }
     }
 
     [TestMethod]

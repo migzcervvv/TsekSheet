@@ -15,7 +15,6 @@ public sealed partial class ExcelHost
         queue.InvokeAsync(() => WithSheet(workbookId, section.SheetName, (workbook, sheet) =>
         {
             if (books[workbookId].Faulted) throw new ExcelInsertRejectedException("This workbook needs manual review after a readback failure.");
-            if (workbook.ReadOnly) throw new ExcelInsertRejectedException("Excel opened this workbook read-only. Close the file in its other application and reopen it in Excel.");
             if (sheet.ProtectContents) throw new ExcelInsertRejectedException("The target worksheet is protected. Unprotect it in Excel before inserting.");
             var fields = values.ToArray();
             var columns = section.ColumnMap.Values.Concat(section.InputColumns ?? []).Concat(section.FormulaColumns).Append(section.SubtotalColumn).Select(A1Formula.ColumnNumber).ToArray();
@@ -79,7 +78,7 @@ public sealed partial class ExcelHost
     private SectionInsertResult InsertCore(Interop.Workbook workbook, Interop.Worksheet sheet, PendingInsert pending)
     {
         var registration = books[pending.WorkbookId];
-        if (registration.Faulted || workbook.ReadOnly || sheet.ProtectContents || SnapshotIdentity.Hash(ExcelReadback.Capture(workbook)) != SnapshotIdentity.Hash(pending.Before))
+        if (registration.Faulted || sheet.ProtectContents || SnapshotIdentity.Hash(ExcelReadback.Capture(workbook)) != SnapshotIdentity.Hash(pending.Before))
             throw new ExcelInsertRejectedException("The workbook changed after preview. Request a new preview.");
         registration.Backup ??= backups.Create(workbook.FullName);
         var mutationStarted = false;
