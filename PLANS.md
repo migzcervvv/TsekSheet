@@ -186,7 +186,7 @@ Status: TODO (after T2 accepted)
 
 ### T2e - Fast Receipt Entry Loop
 
-Status: WAITING (Phase 0 integration follow-up must merge; resulting main must be verified before implementation)
+Status: AUTHORIZED NEXT (PR #6 merged; main 6ce2493 verified in Release: Excel 21/0/0, Application 632/0/0, Desktop 25/0/0, Workbooks 457/0/0, Frontend 85/0/0 passed/failed/skipped; local exti-liquidation profile present; build 0 warnings/errors; implementation and timing baseline not started; see docs/T2-verification-handoff.md)
 
 - Phase 0: PR #4 merged at 502de1c; PR #5 already integrated all five reopened T2
   commits through e4a4f96 into main at 41922aa. Their source trees are identical;
