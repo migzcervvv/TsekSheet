@@ -33,6 +33,7 @@ structural lifecycle/oracle, Save As of edited copies) and the Excel-native pres
 | D8  | Agents work ticket by ticket, branch + PR per ticket, report per AGENTS.md section 8.                                                                                                                                                                           |
 | D9  | `main` is the trunk. Every ticket branches from `main` and its PR targets `main`.                                                                                                                                                                               |
 | D10 | Keep `Microsoft.Office.Interop.Excel` as a build-time-only package (`PrivateAssets=all`, `EmbedInteropTypes=true`). No Microsoft binary is redistributed. Record in `docs/architecture/decisions/ADR-excel-interop.md`; the license scan allowlists it by name. |
+| D11 | Excel exit latency is diagnostic, not acceptance. No owned EXCEL.EXE may remain alive 120 s after Quit, and no host start may find a previous owned instance alive. Only the dedicated lifecycle test waits for exit; other Excel tests rely on the start guard. Log latency without asserting it. The observed median 2.9 s and 2/30 exits near 60.2 s are attributed by the planner to an Office-internal 60 s wait, with no leak evidence. Production cleanup remains unchanged. |
 
 ## Milestones
 
@@ -94,15 +95,13 @@ Status: DONE (PR #3, 2026-11-03)
 
 ### T2 - Insert verified record into a section (vertical slice)
 
-Status: IMPLEMENTED, VERIFICATION INCOMPLETE (Draft PR #4; revised 30-second criterion: 30 lifecycles completed, 28 within deadline, Quit-to-exit min/median/p95/max 2.458/2.928/60.220/60.426 s, nearest-rank p95; zero previous-owned instances at checked starts; final Release Excel 15/2/0 passed/failed/skipped, both full suites failed with before/after counts 0/0 and 0/0 after natural-exit observation; native fallback captured an Office UI wait, requested Sysinternals capture unavailable without Windows elevation/working UI runtime; production cleanup unchanged; not run: no redacted fixtures)
+Status: READY FOR REVIEW (PR #4; D11; two consecutive Release Excel suites 17/0/0 each, Application 629/0/0, Desktop 24/0/0, Frontend 83/0/0 passed/failed/skipped; 66 owned exits within 120 s and zero previous-owned start violations across the final Excel runs; only the dedicated lifecycle test waits for exit, latency is logged without performance assertions, production cleanup unchanged; not run: no redacted fixtures)
 
 - Prerequisites from T1 review:
-  - Planner revision (2026-11-04), superseding the T1/T2 ten-second exit criterion:
-    no owned EXCEL.EXE may be alive 30 s after Quit, and no host start may find a previous
-    owned instance alive. Measure 30 lifecycles and report Quit-to-exit latency
-    min/median/p95/max; capture the slowest lingering process with Sysinternals Process
-    Explorer (threads and loaded DLLs) or ProcMon. Inventory HKCU/HKLM Excel COM add-ins
-    and LoadBehavior first. Cleanup code changes require evidence of a leak.
+  - D11 supersedes the T1/T2 ten- and thirty-second exit criteria: latency is logged,
+    not asserted. Only the dedicated lifecycle test waits, with a 120 s deadline from
+    Quit. Functional tests do not block on exit and rely on the start guard; no host
+    start may find a previous owned instance alive. Production cleanup stays unchanged.
   - Allow writes into ListObject data rows created by `ListRows.Add` (T1 rejects table targets).
     Keep rejecting merged, array and spill targets.
   - Excel tests must clean up in code only. No GUI/computer-use or manual cleanup. Report the
@@ -136,6 +135,9 @@ Status: IMPLEMENTED, VERIFICATION INCOMPLETE (Draft PR #4; revised 30-second cri
   5. Same checks pass on the redacted real workbooks in `fixtures/redacted/` (local run, report
      results; skipped in CI). If the folder is empty, report "not run: no redacted fixtures"
      and continue; this criterion is then re-run by the owner.
+  6. D11: no owned EXCEL.EXE alive 120 s after Quit; no host start finds a previous owned
+     instance alive. Only the dedicated lifecycle test waits for exit. Quit-to-exit
+     latency is diagnostic data, not an assertion or acceptance threshold.
 
 ### T2b - Remove the superseded write path
 

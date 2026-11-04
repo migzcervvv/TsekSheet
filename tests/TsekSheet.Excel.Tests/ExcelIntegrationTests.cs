@@ -91,21 +91,16 @@ public sealed class ExcelIntegrationTests
     [TestMethod]
     public async Task ThirtyConsecutiveLifecyclesReleaseTheirOwnedExcelProcess()
     {
-        var failures = new List<string>();
-        ExcelFixture fixture;
-        try { fixture = await ExcelFixture.CreateAsync(); }
-        catch (ExcelExitDeadlineException error) when (error.Evidence.ExitUtc is not null && error.Fixture is not null)
-        {
-            fixture = error.Fixture;
-            failures.Add("Fixture: " + error.Message);
-        }
+        var fixture = await ExcelFixture.CreateAsync();
+        await ExcelTestScope.RetireSharedHostAsync();
+        Assert.IsTrue(await OwnedExcelProcesses.WaitForPendingExitsAsync(), "A previous owned instance is alive 120 seconds after Quit.");
         try
         {
             for (var i = 0; i < 30; i++)
             {
                 ExcelFixture.MeasurementCycle = i + 1;
-                await using var scope = new ExcelTestScope(); var host = scope.Host;
-                await host.StartAsync();
+                await using var scope = new ExcelTestScope(ownsHost: true); var host = scope.Host;
+                var info = await host.StartAsync();
                 try
                 {
                     var book = await host.OpenAsync(fixture.Path);
@@ -114,20 +109,19 @@ public sealed class ExcelIntegrationTests
                 }
                 finally
                 {
-                    try { await scope.DisposeAsync(); }
-                    catch (ExcelExitDeadlineException error) when (error.Evidence.ExitUtc is not null)
-                    { failures.Add($"Cycle {i + 1}: {error.Message}"); }
+                    await scope.DisposeAsync();
                 }
+                Assert.IsTrue(await OwnedExcelProcesses.WaitForExitAsync(info.ProcessId), $"Owned Excel PID={info.ProcessId} is alive 120 seconds after Quit.");
             }
         }
         finally { ExcelFixture.MeasurementCycle = 0; }
-        Assert.IsEmpty(failures, string.Join(Environment.NewLine, failures));
     }
 
     [TestMethod]
     public async Task ExistingUserExcelAndItsOpenWorkbookRemainUntouched()
     {
         var fixture = await ExcelFixture.CreateAsync();
+        var ownFixture = await ExcelFixture.CreateAsync();
         // This independent host supplies the pre-existing instance; the adapter under test
         // must neither attach to it nor close its open synthetic workbook.
         await using var userScope = new ExcelTestScope(); var user = userScope.Host;
@@ -136,8 +130,7 @@ public sealed class ExcelIntegrationTests
         var before = await user.CaptureAsync(userBook.Id);
         try
         {
-            var ownFixture = await ExcelFixture.CreateAsync();
-            await using var scope = new ExcelTestScope(); var host = scope.Host;
+            await using var scope = new ExcelTestScope(ownsHost: true); var host = scope.Host;
             var ownInfo = await host.StartAsync();
             Assert.AreNotEqual(userInfo.ProcessId, ownInfo.ProcessId);
             try
@@ -148,7 +141,6 @@ public sealed class ExcelIntegrationTests
                 finally { await host.CloseAsync(book.Id, discardChanges: true); }
             }
             finally { await scope.DisposeAsync(); }
-            await AssertExited(ownInfo.ProcessId);
             using var process = Process.GetProcessById(userInfo.ProcessId);
             Assert.IsFalse(process.HasExited);
             Assert.AreEqual(userBook.Id, (await user.ListWorkbooksAsync()).Single().Id);
@@ -173,15 +165,4 @@ public sealed class ExcelIntegrationTests
         return Convert.ToHexString(SHA256.HashData(input));
     }
 
-    private static async Task AssertExited(int pid)
-    {
-        try
-        {
-            using var process = Process.GetProcessById(pid);
-            using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-            await process.WaitForExitAsync(deadline.Token);
-        }
-        catch (ArgumentException) { /* Process already exited. */ }
-        catch (OperationCanceledException) { Assert.Fail($"TsekSheet-owned EXCEL.EXE {pid} remains after 30 seconds."); }
-    }
 }
