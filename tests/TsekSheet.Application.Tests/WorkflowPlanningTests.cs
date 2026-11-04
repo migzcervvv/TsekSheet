@@ -36,8 +36,8 @@ public sealed class WorkflowPlanningTests
     [TestMethod]
     public void ProfilesAreVersionedStrictAndReusableBeyondPayables()
     {
-        Assert.AreEqual(2, WorkflowProfiles.All.Count);
-        foreach (var p in WorkflowProfiles.All)
+        Assert.AreEqual(2, WorkflowProfiles.BuiltInProfiles.Count);
+        foreach (var p in WorkflowProfiles.BuiltInProfiles)
         {
             var data = Capture(p); var analysis = WorksheetSectionAnalyzer.Analyze(data.Info, data.Sheet, p, data.Cells);
             var values = new Dictionary<string,string> { [p.EntityField] = "New Organization", [p.IdentifierFields[0]] = "TEST-1",

@@ -10,14 +10,16 @@ namespace TsekSheet.Application.Workflows;
 public sealed record WorkflowField(string Key, string Header, string Kind, bool Required, int MaxLength);
 public sealed record WorkflowSectionRule(string Id, string Label, string Heading, string Subtotal);
 public sealed record WorkflowAlias(string Alias, string Canonical);
-public sealed record WorkflowProfileSummary(string Id, int Revision, string DisplayName, string ProfileHash, IReadOnlyList<WorkflowField> Fields);
+public sealed record WorkflowProfileSummary(string Id, int Revision, string DisplayName, string ProfileHash, IReadOnlyList<WorkflowField> Fields,
+    IReadOnlyList<ProfileAccount>? Accounts = null);
 public sealed record WorkflowProfile(int SchemaVersion, string Id, int Revision, string DisplayName,
     string WorksheetRule, int MaxRows, int MaxColumns, string EntityField, IReadOnlyList<string> IdentifierFields,
     IReadOnlyList<string> ContextFields, IReadOnlyList<WorkflowField> Fields, IReadOnlyList<WorkflowSectionRule> Sections,
     IReadOnlyList<WorkflowAlias> Aliases, bool FoldCase, bool CollapseWhitespace, string FallbackSectionId,
     string ExistingDestination, string MissingDestination, string DuplicatePolicy, string InsertionPolicy,
     string StylePolicy, bool RequireReview, bool RequireDuplicateReview,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyList<TsekSheet.Application.Excel.ExcelSectionDefinition>? ExcelSections = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyList<TsekSheet.Application.Excel.ExcelSectionDefinition>? ExcelSections = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ExcelLayoutProfile? Layout = null);
 
 public static class WorkflowProfiles
 {
@@ -26,8 +28,23 @@ public static class WorkflowProfiles
     private static readonly Lazy<IReadOnlyList<WorkflowProfile>> BuiltIns = new(() => Array.AsReadOnly(
         typeof(WorkflowProfiles).Assembly.GetManifestResourceNames().Where(n => n.EndsWith(".workflow.json", StringComparison.Ordinal)).Order()
         .Select(n => { using var stream = typeof(WorkflowProfiles).Assembly.GetManifestResourceStream(n)!; using var reader = new StreamReader(stream); return Parse(reader.ReadToEnd()); }).ToArray()));
-    public static IReadOnlyList<WorkflowProfile> All => BuiltIns.Value;
-    public static IReadOnlyList<WorkflowProfileSummary> Catalog => Array.AsReadOnly(All.Select(p => new WorkflowProfileSummary(p.Id, p.Revision, p.DisplayName, Hash(p), p.Fields)).ToArray());
+    public static string LocalDirectory => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TsekSheet", "profiles");
+    public static IReadOnlyList<WorkflowProfile> BuiltInProfiles => BuiltIns.Value;
+    public static IReadOnlyList<WorkflowProfile> All => LoadDirectory(LocalDirectory);
+    public static IReadOnlyList<WorkflowProfile> LoadDirectory(string directory)
+    {
+        var profiles = BuiltIns.Value.Concat(Directory.Exists(directory)
+            ? Directory.EnumerateFiles(directory, "*.json", SearchOption.TopDirectoryOnly).Order(StringComparer.Ordinal).Select(path =>
+            {
+                if (new FileInfo(path).Length > 65536) throw Error("INVALID_PROFILE", "A local profile exceeds 64 KB.");
+                return Parse(File.ReadAllText(path));
+            }) : []).ToArray();
+        if (profiles.Select(p => p.Id).Distinct().Count() != profiles.Length) throw Error("INVALID_PROFILE", "Local profile IDs must be unique, including built-in profiles.");
+        if (profiles.Length > 16) throw Error("INVALID_PROFILE", "Install at most 16 workflow profiles, including built-ins.");
+        return profiles;
+    }
+    public static WorkflowProfileSummary Summary(WorkflowProfile p) => new(p.Id, p.Revision, p.DisplayName, Hash(p), p.Fields, p.Layout?.Accounts);
+    public static IReadOnlyList<WorkflowProfileSummary> Catalog => All.Select(Summary).ToArray();
     internal static WorkflowPlanRequest ParseRequest(string json)
     {
         using var document = JsonDocument.Parse(json, new JsonDocumentOptions { MaxDepth = 8 });
@@ -35,7 +52,7 @@ public static class WorkflowProfiles
         catch (WorkbookException) { throw Error("INVALID_REQUEST", "Duplicate planning request members are forbidden."); }
         return JsonSerializer.Deserialize<WorkflowPlanRequest>(json, Json) ?? throw Error("INVALID_REQUEST", "Planning request is empty.");
     }
-    public static WorkflowProfile Get(string id) => All.SingleOrDefault(p => p.Id == id) ?? throw Error("UNKNOWN_PROFILE", "Choose an approved built-in workflow profile.");
+    public static WorkflowProfile Get(string id) => All.SingleOrDefault(p => p.Id == id) ?? throw Error("UNKNOWN_PROFILE", "Choose an installed workflow profile.");
     public static string Hash(WorkflowProfile profile) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(profile, Json))));
     public static string Normalize(string value, WorkflowProfile profile)
     {
@@ -56,6 +73,8 @@ public static class WorkflowProfiles
         {
             using var doc = JsonDocument.Parse(json, new JsonDocumentOptions { MaxDepth = 12 });
             CheckDuplicates(doc.RootElement);
+            if (doc.RootElement.TryGetProperty("sheetMatch", out _))
+                return (JsonSerializer.Deserialize<ExcelLayoutProfile>(json, Json) ?? throw Error("INVALID_PROFILE", "Profile is empty.")).ToWorkflow();
             var p = JsonSerializer.Deserialize<WorkflowProfile>(json, Json) ?? throw Error("INVALID_PROFILE", "Profile is empty.");
             Validate(p);
             return p with { Fields = Array.AsReadOnly(p.Fields.ToArray()), Sections = Array.AsReadOnly(p.Sections.ToArray()),
@@ -74,6 +93,7 @@ public static class WorkflowProfiles
     }
     public static void Validate(WorkflowProfile p)
     {
+        if (p?.Layout is not null) { ExcelLayoutProfile.Validate(p); return; }
         bool Label(string? s) => !string.IsNullOrWhiteSpace(s) && s.Length <= 128 && !s.Any(char.IsControl);
         bool Id(string? s) => s is { Length: > 0 and <= 48 } && s.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_');
         void Check(bool condition) { if (!condition) throw Error("INVALID_PROFILE", "Profile configuration is invalid or outside the supported schema/policies."); }
