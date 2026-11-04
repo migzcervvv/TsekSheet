@@ -6,16 +6,17 @@ import { validReceiptState, validReceiptPreview, type ReceiptState } from './bri
 
 const clients: BridgeClient[] = [];
 afterEach(() => { cleanup(); clients.forEach(c => c.dispose()); clients.length = 0; });
-function setup() {
+function setup(accountProfile = false) {
   const listeners = new Set<(e: {data: unknown}) => void>();
   let state: ReceiptState = { source: null, version: null, pageNumber: 1, status: 'NotStarted', fields: [] };
   let fail = false;
   const sent: {command:string; payload:any}[] = [];
   const profile = {id:'synthetic-payables',revision:1,displayName:'Synthetic Payables',profileHash:'B'.repeat(64),fields:[
     {key:'vendor',header:'Vendor name',kind:'text',required:true,maxLength:128},
-    {key:'amount',header:'Amount',kind:'decimal',required:true,maxLength:32},
+    {key:'amount',header:'Amount',kind:accountProfile?'money':'decimal',required:true,maxLength:32},
     {key:'invoice',header:'Invoice number',kind:'text',required:false,maxLength:64},
-  ]};
+  ], accounts: accountProfile ? [{code:'FAKE-1',label:'Travel',column:'J',vatable:true},{code:'FAKE-1',label:'Travel',column:'Q',vatable:false}] : null};
+  if(accountProfile)profile.fields.push({key:'account',header:'Account',kind:'accountChoice',required:true,maxLength:256});
   const transport: Transport = {
     addEventListener: (_, f) => {listeners.add(f);}, removeEventListener: (_, f) => {listeners.delete(f);},
     postMessage: message => { const m = message as {command:string;payload:any;requestId:string}; sent.push(m);
@@ -62,6 +63,19 @@ test('manual edits require separate save and verification; correction and retrac
   const retract=await screen.findByRole('button',{name:'Retract Vendor name'});fireEvent.click(retract);
   await waitFor(()=>expect(screen.queryByText('Human-verified manual entry')).toBeNull());
   expect(f.sent.find(s=>s.command==='receipt.correct')?.payload.value).toBe('=literal text');
+});
+
+test('account dropdown distinguishes repeated codes and selection remains an unverified draft',async()=>{
+  const f=setup(true);render(<ReceiptReview {...f.props}/>);await start();
+  const account=screen.getByRole('combobox',{name:'Receipt account'});
+  expect(screen.getByRole('option',{name:'FAKE-1 · Travel · J'})).toBeTruthy();
+  expect(screen.getByRole('option',{name:'FAKE-1 · Travel · Q'})).toBeTruthy();
+  fireEvent.change(account,{target:{value:'Q'}});
+  expect((screen.getByRole('button',{name:'Verify Account'}) as HTMLButtonElement).disabled).toBe(true);
+  fireEvent.click(screen.getByRole('button',{name:'Save Account'}));
+  await waitFor(()=>expect((screen.getByRole('button',{name:'Verify Account'}) as HTMLButtonElement).disabled).toBe(false));
+  expect(f.sent.find(s=>s.command==='receipt.correct')?.payload).toMatchObject({key:'account',value:'Q'});
+  expect(f.sent.filter(s=>s.command==='receipt.verify')).toHaveLength(0);
 });
 test('host failure blocks verification until an authoritative state refresh',async()=>{
   const f=setup();render(<ReceiptReview {...f.props}/>);await start();f.fail();

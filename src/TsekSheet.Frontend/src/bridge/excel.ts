@@ -5,7 +5,7 @@ export interface FormulaWarning { cell:string; reason:string }
 export interface ExcelChange { workbook:string; sheet:string; range:string; manualReview:FormulaWarning[] }
 export interface ExcelCatalog { workbooks:ExcelWorkbook[]; sections:ExcelSection[]; changes:ExcelChange[] }
 export interface ExcelPreview { token:string; workbookId:string; sectionId:string; sheet:string; range:string; insertRow:number; values:{key:string;header:string;column:number;value:string|number|boolean|null;displayValue?:string|null}[]; manualReview:FormulaWarning[] }
-export type ExcelPreviewRequest = { expected:ReviewVersion; workbookId:string; sectionId:string };
+export type ExcelPreviewRequest = { expected:ReviewVersion; workbookId:string; sectionId:string; sheet?:string };
 const object = (v:unknown): v is Record<string,unknown> => !!v && typeof v==='object' && !Array.isArray(v);
 const text = (v:unknown):v is string => typeof v==='string' && v.length<=1024;
 const id = (v:unknown) => typeof v==='string' && /^[a-f0-9]{32}$/i.test(v);

@@ -24,9 +24,9 @@ test('header keeps its text fallback when the local logo cannot load', () => {
   expect(screen.getByText('TsekSheet')).toBeDefined();
 });
 
-test('workbook destinations require a project; settings and appearance stay available', () => {
+test('receipt and Excel entry stay available without a legacy workbook project', () => {
  const {container}=render(<App/>);
- expect((screen.getByRole('button',{name:'Receipts'}) as HTMLButtonElement).disabled).toBe(true);
+ expect((screen.getByRole('button',{name:'Receipts'}) as HTMLButtonElement).disabled).toBe(false);
  expect(screen.queryByRole('button',{name:'Placement'})).toBeNull();
  fireEvent.click(screen.getByRole('button',{name:'Settings'}));
  expect(screen.getByRole('heading',{level:1}).textContent).toBe('Settings');

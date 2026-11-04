@@ -34,6 +34,7 @@ structural lifecycle/oracle, Save As of edited copies) and the Excel-native pres
 | D9  | `main` is the trunk. Every ticket branches from `main` and its PR targets `main`.                                                                                                                                                                               |
 | D10 | Keep `Microsoft.Office.Interop.Excel` as a build-time-only package (`PrivateAssets=all`, `EmbedInteropTypes=true`). No Microsoft binary is redistributed. Record in `docs/architecture/decisions/ADR-excel-interop.md`; the license scan allowlists it by name. |
 | D11 | Excel exit latency is diagnostic, not acceptance. No owned EXCEL.EXE may remain alive 120 s after Quit, and no host start may find a previous owned instance alive. Only the dedicated lifecycle test waits for exit; other Excel tests rely on the start guard. Log latency without asserting it. The observed median 2.9 s and 2/30 exits near 60.2 s are attributed by the planner to an Office-internal 60 s wait, with no leak evidence. Production cleanup remains unchanged. |
+| D12 | Amounts are written as entered; VAT conversion requires owner decision. |
 
 ## Milestones
 
@@ -95,7 +96,7 @@ Status: DONE (PR #3, 2026-11-03)
 
 ### T2 - Insert verified record into a section (vertical slice)
 
-Status: READY FOR REVIEW (PR #4; D11; two consecutive Release Excel suites 17/0/0 each, Application 629/0/0, Desktop 24/0/0, Frontend 83/0/0 passed/failed/skipped; 66 owned exits within 120 s and zero previous-owned start violations across the final Excel runs; only the dedicated lifecycle test waits for exit, latency is logged without performance assertions, production cleanup unchanged; not run: no redacted fixtures)
+Status: REOPENED (legacy admission gated Excel path; real layout needs blank-row fill, account-driven column, sheet matching; PR #4 is already merged and GitHub cannot convert it to draft)
 
 - Prerequisites from T1 review:
   - D11 supersedes the T1/T2 ten- and thirty-second exit criteria: latency is logged,
@@ -107,25 +108,41 @@ Status: READY FOR REVIEW (PR #4; D11; two consecutive Release Excel suites 17/0/
   - Excel tests must clean up in code only. No GUI/computer-use or manual cleanup. Report the
     EXCEL.EXE count before and after two consecutive full Excel-suite runs.
   - Write the ADR for D10.
-- Section definition in the workflow profile: sheet name, header row anchor, column map
+- Section definition in the workflow profile: sheetMatch header anchors (fixed sheet names
+  remain supported for built-ins), marker-based data/subtotal boundaries, column map
   (field -> column letter), formula columns, subtotal row marker, insert mode
   `tableRow | entireRow | columnsOnly`.
   - `tableRow`: section is a ListObject -> `ListRows.Add`; Excel extends formulas and totals.
   - `entireRow`: stacked sections, nothing beside the section.
   - `columnsOnly`: side-by-side sections; shift only the section's columns
     (`Range.Insert(xlShiftDown, xlFormatFromLeftOrAbove)`).
-- Insert position: directly above the subtotal row. **Known Excel behavior:** inserting
+- Insert position: first blank data row when fillBlankRowsFirst is enabled, otherwise
+  directly above the subtotal row. Ignore formula columns when evaluating blankRowRule.
+  **Known Excel behavior:** inserting
   directly above a total row does NOT extend `SUM(B3:B4)`. After inserting, for formula cells in
   that section's subtotal row only, extend A1 range references whose end row equals the old last
   data row to the new last data row. Use a real reference parser limited to A1 ranges on the
   same sheet; if a formula cannot be parsed, do not change it and report the cell as needing
   manual review (do not guess).
 - Formula columns in new rows: fill from the row above via Excel (FillDown / AutoFill).
+  Reused blank rows retain their existing formulas without FillDown or input writes.
 - Bridge: `excel.listWorkbooks`, `excel.previewInsert`, `excel.insert`. UI: from a verified
-  receipt, pick workbook + section, see the preview row, click Insert; inserted rows are
+  receipt, pick workbook + matching sheet + section, see the preview row, click Insert; inserted rows are
   highlighted in Excel and listed in the app. Unverified fields cannot be inserted.
 - Backup before the first insert; preservation check after every insert (expected change set =
   inserted rows + shifted region + subtotal formulas).
+- Reopened scope: Excel opening/insertion uses IExcelHost independently of legacy package
+  admission. Package features never gate insertion. Reject protected target sheets,
+  merged/array/spill targets, or unmatched profile layouts. Load local JSON profiles from
+  %LOCALAPPDATA%/TsekSheet/profiles; support header anchors, marker-based sections,
+  account-driven amount columns, formula/protected rows and blank-row-first placement.
+  Let the user choose matching sheet and section at insert time. D12 applies.
+- Replica acceptance (Excel-authored fake data, two matching sheets plus VENDOR, PageSetup):
+  Expenses fills rows 29 then 30, then inserts above TOTAL; totals include all three,
+  N/O/AF fill and grand total recalculates. Only the selected account receives the amount.
+  Credits/grand-total structure, VENDOR and the other matching sheet are preserved.
+  A hosted desktop test opens/inserts despite printer settings. Existing criteria 1-4
+  remain; full Release Excel suite passes twice plus Application/Desktop/Frontend.
 - Acceptance (Excel tests on Excel-authored fixtures with stacked sections, side-by-side
   sections and a ListObject section):
   1. Subtotals include the new rows; formula columns filled; values correct.
@@ -150,6 +167,22 @@ approveCandidate/cancelCandidate/saveAsNew`) and tests that only cover them. Kee
 - Move the evaluation-only projects `tests/WorkbookLibrary.Evaluation`,
   `tests/WindowsFileCommit.Evaluation` and `tests/WindowsFileCommit.NativeEvaluation` to
   `experiments/archive/` (removes the ImageSharp advisories from the active build).
+- Remove all .NET 8 targets, files and references (net8 TargetFrameworks, retained
+  pre-migration comparison/rollback files, net8 mentions in docs/README). .NET 10 only.
+
+### T2c - Verify all
+
+Status: TODO (after T2 accepted)
+
+- One button plus Ctrl+Enter verifies every non-empty field after a confirmation listing
+  them; blocked if a required field is empty.
+
+### T2d - Vendor lookup
+
+Status: TODO (after T2 accepted)
+
+- Typing/OCR of vendor name or TIN offers matches from the profile's vendorMaster sheet
+  and fills name/TIN/address as unverified proposals.
 
 ### T3 - OCR bake-off (can run in parallel with T1/T2)
 

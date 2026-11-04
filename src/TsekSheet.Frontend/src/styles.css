@@ -172,7 +172,7 @@ select:focus-visible, .cell-window:focus-visible { outline: 3px solid var(--focu
 .receipt-field { grid-template-columns:minmax(0,1fr) auto; gap:8px 12px; padding:12px 0; }
 .receipt-field label { grid-column:1 / -1; font-size:13px; font-weight:500; }
 .receipt-field label span { display:inline; margin-left:8px; font-size:11px; }
-.receipt-field input { grid-column:1 / -1; width:100%; min-height:36px; }
+.receipt-field input, .receipt-field select { grid-column:1 / -1; width:100%; min-height:36px; }
 .receipt-field .actions { grid-column:2; grid-row:3; gap:4px; }
 .receipt-field .actions button { font-size:11px; padding:4px 8px; min-height:28px; }
 .receipt-status { grid-column:1; font-size:11px; }

@@ -96,7 +96,7 @@ export default function App() {
           <section className="panel" aria-labelledby="selection-title"><div className="panel-heading"><h2 id="selection-title">Native file selection</h2><span>Diagnostic only</span></div><p>The selected file is not opened, read, or edited.</p><div className="selection" aria-live="polite">{file}</div><button disabled={!connected||selecting} onClick={()=>void select()}>{selecting?'Dialog open…':'Choose a file'}</button></section>
         </details></div>
       </main>
-      <footer><span>Original files remain unchanged until an authorized save</span><span>Receipt insertion unavailable</span></footer>
+      <footer><span>Original files remain unchanged until an authorized save</span><span>Save Excel changes in Excel</span></footer>
     </div>
   </div>;
 }

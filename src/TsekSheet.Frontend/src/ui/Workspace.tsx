@@ -8,7 +8,7 @@ export function Navigation({ activity, onSelect, active = true }: { activity: Ac
     {id:'worksheets',label:'Worksheets',detail:'Explore & inspect'},
     {id:'settings',label:'Settings',detail:'Appearance & troubleshooting'},
   ];
-  return <nav aria-label="Workspace navigation">{items.map(item => <button disabled={!active && item.id!=='settings' && item.id!=='worksheets'} aria-label={item.label} aria-description={item.detail} data-activity={item.id} key={item.id} aria-current={activity === item.id ? 'page' : undefined} onClick={() => onSelect(item.id)}><span>{item.label}</span><small>{item.detail}</small></button>)}</nav>;
+  return <nav aria-label="Workspace navigation">{items.map(item => <button disabled={!active && item.id!=='settings' && item.id!=='worksheets' && item.id!=='receipts'} aria-label={item.label} aria-description={item.detail} data-activity={item.id} key={item.id} aria-current={activity === item.id ? 'page' : undefined} onClick={() => onSelect(item.id)}><span>{item.label}</span><small>{item.detail}</small></button>)}</nav>;
 }
 export function StatusBadge({ children, tone = 'neutral' }: { children: ReactNode; tone?: 'neutral' | 'success' | 'warning' | 'error' | 'unavailable' }) {
   return <span className={`status-badge ${tone}`}>{children}</span>;

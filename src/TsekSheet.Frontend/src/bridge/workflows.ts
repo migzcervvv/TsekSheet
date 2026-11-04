@@ -1,5 +1,6 @@
-export interface ProfileField { key: string; header: string; kind: 'text' | 'decimal' | 'date'; required: boolean; maxLength: number }
-export interface WorkflowProfile { id: string; revision: number; displayName: string; profileHash: string; fields: ProfileField[] }
+export interface ProfileField { key: string; header: string; kind: 'text' | 'decimal' | 'money' | 'date' | 'accountChoice'; required: boolean; maxLength: number }
+export interface ProfileAccount { code:string; label:string; column:string; vatable:boolean }
+export interface WorkflowProfile { id: string; revision: number; displayName: string; profileHash: string; fields: ProfileField[]; accounts?:ProfileAccount[]|null }
 export interface WorkflowRecord { id: string; values: Record<string, string>; selectedSectionId: string | null; selectedVendor: string | null; confirmNewVendor: boolean }
 export interface WorkflowRequest { sessionId: string; worksheetId: string; expectedRevision: number; profileId: string; profileHash: string; records: WorkflowRecord[] }
 export interface RecordProposal {
@@ -41,7 +42,8 @@ export function validProfiles(v: unknown): boolean {
     && v.profiles.every(p => obj(p) && text(p.id,48) && num(p.revision) && p.revision > 0 && text(p.displayName,128) && hash(p.profileHash)
       && Array.isArray(p.fields) && p.fields.length >= 3 && p.fields.length <= 16
       && new Set(p.fields.map(f => obj(f) ? f.key : null)).size === p.fields.length
-      && p.fields.every(f => obj(f) && text(f.key,48) && text(f.header,128) && ['text','decimal','date'].includes(String(f.kind)) && typeof f.required === 'boolean' && num(f.maxLength,256) && f.maxLength > 0));
+      && p.fields.every(f => obj(f) && text(f.key,48) && text(f.header,128) && ['text','decimal','money','date','accountChoice'].includes(String(f.kind)) && typeof f.required === 'boolean' && num(f.maxLength,256) && f.maxLength > 0)
+      && (p.accounts==null || Array.isArray(p.accounts) && p.accounts.length<=64 && new Set(p.accounts.map(a=>obj(a)?a.column:null)).size===p.accounts.length && p.accounts.every(a=>obj(a)&&text(a.code,128)&&text(a.label,128)&&typeof a.column==='string'&&/^[A-Z]{1,3}$/.test(a.column)&&typeof a.vatable==='boolean')));
 }
 export function validWorkflowPlan(v: unknown): boolean {
   if (!obj(v) || !guid(v.sessionId) || !guid(v.worksheetId) || !num(v.revision) || !hash(v.sourceSha256) || !text(v.profileId,48) || !hash(v.profileHash)
