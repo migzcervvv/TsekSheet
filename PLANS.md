@@ -260,7 +260,7 @@ the unchanged Excel-test CS0815 recorded under Risks.)
 
 ### T3b - Real-document OCR evaluation
 
-Status: IN PROGRESS (local packet truth, metrics-only output; no product UI changes or engine decision).
+Status: IN REVIEW (20 local packets / 141 pages; both engines x three profiles, 846 observations, zero runtime errors; model-free OcrEval 35/0/0 passed/failed/skipped; metrics-only output audited, owner TIN local-only; low extraction accuracy and unverified cardinal corrections documented; no engine decision or T4).
 
 - Extend the harness for BOM/RFC4180 packet truth: page classification/selection,
   cardinal orientation, own-TIN exclusion, labelled amounts, digits-only invoice comparison
