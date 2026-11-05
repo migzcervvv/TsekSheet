@@ -7,6 +7,7 @@ namespace TsekSheet.Excel.Tests;
 [TestClass, TestCategory("Excel"), DoNotParallelize]
 public sealed class SectionInsertTests
 {
+    public TestContext TestContext { get; set; } = null!;
     [TestInitialize]
     public void ReleaseOnly()
     {
@@ -32,11 +33,18 @@ public sealed class SectionInsertTests
             var values = Values(profile, section, i);
             var plan = await host.PreviewInsertAsync(book.Id, section, values);
             Assert.AreEqual(5 + i, plan.InsertRow);
+            // Managed preview DTOs only; do not add a COM read or alter the write path.
+            var diagnostics = id == "table" ? TablePreservationDiagnostics.Remember(host, plan.Token) : null;
             SectionInsertResult result;
             try { result = await host.InsertAsync(plan.Token); }
             catch (PreservationException error)
             {
                 Console.Error.WriteLine($"Section {id}, iteration {i}: {string.Join("; ", error.Differences)}");
+                if (diagnostics is not null)
+                {
+                    try { await diagnostics.WriteAsync(host, plan, i, error.Differences, TestContext); }
+                    catch (Exception diagnosticError) { Console.Error.WriteLine($"Failure attachment unavailable: {diagnosticError}"); }
+                }
                 throw;
             }
             var row = await host.ReadAsync(book.Id, section.SheetName, new(5 + i, 1, 1, 7));
