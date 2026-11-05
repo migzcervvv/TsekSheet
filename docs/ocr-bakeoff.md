@@ -25,7 +25,9 @@ Machine (WMI): Intel(R) Core(TM) i3-14100; 15.7 GiB; Microsoft Windows 10 Pro 10
 
 Synthetic-only evidence. Redacted-document evaluation remains T3b; T4 integration has not started. Failed rows remain in all denominators. Paddle word boxes are CTC-aligned estimates in preprocessed coordinates. Models and binaries are local, hash-checked and never committed.
 
-## Real documents
+## Real documents — T3b (superseded)
+
+**Superseded by T3b-FIX: incorrect source-page denominators, digits-only identifiers, whole-line amounts and incomplete timing. Do not interpret engine quality from these tables.**
 
 No engine decision. Private packet data stays in memory; results contain metrics only. Tesseract PSM6 selected from T3a field accuracy. Handwritten annotations are separated, not recognized by a handwriting model.
 

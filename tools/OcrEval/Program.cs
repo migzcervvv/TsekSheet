@@ -6,7 +6,7 @@ try
     var options = new Dictionary<string, string>(StringComparer.Ordinal);
     for (var i = 0; i < args.Length; i += 2)
     {
-        if (i + 1 == args.Length || !new[] { "--generate", "--input", "--config", "--output", "--report" }.Contains(args[i]) || !options.TryAdd(args[i], args[i + 1]))
+        if (i + 1 == args.Length || !new[] { "--generate", "--input", "--config", "--output", "--report", "--inspect" }.Contains(args[i]) || !options.TryAdd(args[i], args[i + 1]))
             throw new ArgumentException("Use --generate N [--input new-folder], or --input folder --config local.json [--output new-run-folder] [--report summary.md].");
     }
     if (options.TryGetValue("--generate", out var count))
@@ -19,6 +19,7 @@ try
     Console.CancelKeyPress += (_, e) => { e.Cancel = true; cancelled.Cancel(); };
     var output = options.GetValueOrDefault("--output", Path.Combine("artifacts", "ocr-eval", DateTime.UtcNow.ToString("yyyyMMddTHHmmssfffZ") + "-" + Guid.NewGuid().ToString("N")[..8]));
     var report = options.GetValueOrDefault("--report", Path.Combine("docs", "ocr-bakeoff.md"));
+    if (options.TryGetValue("--inspect", out var selected)) return await PrivateInspection.Run(input, config, output, selected, cancelled.Token);
     var header = Csv.Read(Path.Combine(input, "truth.csv"))[0];
     return header.Contains("page") ? await RealEvaluation.Run(input, config, output, report, cancelled.Token)
         : await Evaluation.Run(input, config, output, report, cancelled.Token);
