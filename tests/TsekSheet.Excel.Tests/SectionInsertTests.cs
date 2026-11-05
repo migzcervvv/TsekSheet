@@ -1,6 +1,9 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Reflection;
+using System.Text.Json;
 using TsekSheet.Application.Excel;
 using TsekSheet.Application.Workflows;
+using Interop = Microsoft.Office.Interop.Excel;
 
 namespace TsekSheet.Excel.Tests;
 
@@ -66,6 +69,66 @@ public sealed class SectionInsertTests
         var neighbourAfter = await host.ReadAsync(book.Id, section.SheetName, id == "stacked" ? new(12, 1, 2, 7) : new(2, 10, 3, 2));
         CollectionAssert.AreEqual(neighbour.Values, neighbourAfter.Values);
         CollectionAssert.AreEqual(neighbour.Formulas, neighbourAfter.Formulas);
+    }
+
+    [TestMethod]
+    public async Task DeliberateTableRangeDifferenceWritesFailureSnapshotWithExpectedAndActual()
+    {
+        var fixture = await ExcelFixture.CreateAsync(sections: true);
+        await using var scope = new ExcelTestScope(); var host = scope.Host;
+        var book = await host.OpenAsync(fixture.Path);
+        var profile = WorkflowProfiles.Get("synthetic-payables");
+        var section = profile.ExcelSections!.Single(s => s.Id == "table");
+        var plan = await host.PreviewInsertAsync(book.Id, section, Values(profile, section, 0));
+        var diagnostics = TablePreservationDiagnostics.Remember(host, plan.Token);
+        Assert.IsNotNull(diagnostics);
+        await host.InsertAsync(plan.Token);
+        var before = await host.CaptureAsync(book.Id);
+
+        // Deliberate corruption of a disposable synthetic fixture, on the host's STA.
+        var queue = (StaCommandQueue)typeof(ExcelHost).GetField("queue", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(host)!;
+        await queue.InvokeAsync(() => EnlargeFixtureTable(host, fixture.Path));
+        GC.Collect(); GC.WaitForPendingFinalizers();
+        GC.Collect(); GC.WaitForPendingFinalizers();
+        var after = await host.CaptureAsync(book.Id);
+        // No intended changes: the synthetic resize must be detected independently
+        // of any input/formula cells allowed during a normal insertion.
+        var differences = PreservationCheck.Compare(before, after, string.Empty, new(1, 1, 1, 1), new object?[1, 1]);
+        CollectionAssert.Contains(differences.ToArray(), "Table: worksheet structures changed.");
+
+        var path = await diagnostics.WriteAsync(host, plan, 0, differences, TestContext);
+        Assert.IsTrue(File.Exists(path), "Failure snapshot must be retained and attached.");
+        using var snapshot = JsonDocument.Parse(File.ReadAllText(path));
+        var difference = snapshot.RootElement.GetProperty("TableRangeDifferences").EnumerateArray().Single();
+        Assert.AreEqual("Table", difference.GetProperty("Worksheet").GetString());
+        Assert.AreEqual("A2:G6", difference.GetProperty("Range").GetString());
+        Assert.AreEqual("ListObject[Records].Range", difference.GetProperty("Property").GetString());
+        Assert.AreEqual("A2:G6", difference.GetProperty("Expected").GetString());
+        Assert.AreEqual("A2:G7", difference.GetProperty("Actual").GetString());
+        CollectionAssert.Contains(snapshot.RootElement.GetProperty("Differences").EnumerateArray().Select(d => d.GetString()).ToArray(),
+            "Table: worksheet structures changed.");
+    }
+
+    private static int EnlargeFixtureTable(ExcelHost host, string path)
+    {
+        var application = (Interop.Application)typeof(ExcelHost).GetField("application", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(host)!;
+        Interop.Workbooks? books = null; Interop.Workbook? book = null; Interop.Sheets? sheets = null;
+        Interop.Worksheet? sheet = null; Interop.ListObjects? tables = null; Interop.ListObject? table = null; Interop.Range? range = null;
+        try
+        {
+            books = application.Workbooks; book = books[Path.GetFileName(path)];
+            if (!StringComparer.OrdinalIgnoreCase.Equals(Path.GetFullPath(path), Path.GetFullPath(book.FullName)))
+                throw new InvalidOperationException("The open workbook is not the requested synthetic fixture.");
+            sheets = book.Worksheets;
+            sheet = (Interop.Worksheet)(object)sheets["Table"]; tables = sheet.ListObjects; table = tables["Records"];
+            range = sheet.Range["A2:G7"]; table.Resize(range);
+            return 0;
+        }
+        finally
+        {
+            ComLifetime.Release(range); ComLifetime.Release(table); ComLifetime.Release(tables);
+            ComLifetime.Release(sheet); ComLifetime.Release(sheets); ComLifetime.Release(book); ComLifetime.Release(books);
+        }
     }
 
     [TestMethod]
