@@ -194,7 +194,7 @@ Pooled across both engines and all three profiles; counts are comparisons, not u
 
 | Check | Available | Agree | Unavailable |
 |---|---:|---:|---:|
-| Invoice / RFP amount | 24 | 18 | 120 |
-| Voucher document number | 46 | 1 | 94 |
-| 2307 TIN | 65 | 14 | 37 |
-| 2307 WHT | 0 | 0 | 102 |
+| Invoice / RFP amount | 24 | 18 | 96 |
+| Voucher document number | 46 | 1 | 124 |
+| 2307 TIN | 65 | 14 | 10 |
+| 2307 WHT | 0 | 0 | 75 |
