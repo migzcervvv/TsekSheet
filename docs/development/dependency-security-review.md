@@ -140,15 +140,15 @@ The existing source-byte baseline, package/candidate validation, typed edits, fo
 
 ## Reproduction and changed files
 
-Run the normal build/regression/publish commands in [the migration report](dotnet-10-migration.md). Security checks, from the repository root in Windows CMD, are:
+Run the normal build/regression/publish commands in [current build instructions](../../README.md). Security checks, from the repository root in Windows CMD, are:
 
 ```cmd
 dotnet restore TsekSheet.sln --locked-mode
-dotnet restore tests\WorkbookLibrary.Evaluation\WorkbookLibrary.Evaluation.csproj --locked-mode
+dotnet restore experiments\archive\WorkbookLibrary.Evaluation\WorkbookLibrary.Evaluation.csproj --locked-mode
 dotnet list TsekSheet.sln package --vulnerable --include-transitive --format json --no-restore
-dotnet list tests\WorkbookLibrary.Evaluation\WorkbookLibrary.Evaluation.csproj package --vulnerable --include-transitive --format json --no-restore
-dotnet list tests\WindowsFileCommit.Evaluation\WindowsFileCommit.Evaluation.csproj package --vulnerable --include-transitive --format json --no-restore
-dotnet list tests\WindowsFileCommit.NativeEvaluation\WindowsFileCommit.NativeEvaluation.csproj package --vulnerable --include-transitive --format json --no-restore
+dotnet list experiments\archive\WorkbookLibrary.Evaluation\WorkbookLibrary.Evaluation.csproj package --vulnerable --include-transitive --format json --no-restore
+dotnet list experiments\archive\WindowsFileCommit.Evaluation\WindowsFileCommit.Evaluation.csproj package --vulnerable --include-transitive --format json --no-restore
+dotnet list experiments\archive\WindowsFileCommit.NativeEvaluation\WindowsFileCommit.NativeEvaluation.csproj package --vulnerable --include-transitive --format json --no-restore
 pushd src\TsekSheet.Frontend
 call npm.cmd audit --json
 popd
@@ -158,6 +158,6 @@ Inspect command exit codes and errors before interpreting an empty findings list
 
 New: this document and `docs/research/evidence/dependency-security-review.json`.
 
-Modified for Step 41: `tests/WorkbookLibrary.Evaluation/WorkbookLibrary.Evaluation.csproj`, its `packages.lock.json` and README; root README/PLANS; current toolchain and migration documentation. The project change is one security override; the lock changes only Xml/Pkcs types/versions/dependency metadata/hashes, not other library versions or targets. The prior Merge/environment/migration code is preserved in the externally advanced HEAD. No original research evidence, source fixture, safety implementation, test logic, npm file, SDK pin or production dependency changed.
+Modified for Step 41: `experiments/archive/WorkbookLibrary.Evaluation/WorkbookLibrary.Evaluation.csproj`, its `packages.lock.json` and README; root README/PLANS; current toolchain and migration documentation. The project change is one security override; the lock changes only Xml/Pkcs types/versions/dependency metadata/hashes, not other library versions or targets. The prior Merge/environment/migration code is preserved in the externally advanced HEAD. No original research evidence, source fixture, safety implementation, test logic, npm file, SDK pin or production dependency changed.
 
 Recommended next milestone: separately retire or requalify/isolate the legacy image-dependent NPOI research graph with a reviewed license and image-feature policy, then perform real native-dialog and genuinely independent offline installation acceptance. Do not expand spreadsheet functionality or declare Phase 2 complete on the strength of this audit.

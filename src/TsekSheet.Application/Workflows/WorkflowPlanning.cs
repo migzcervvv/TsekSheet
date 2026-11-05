@@ -39,7 +39,7 @@ public static class WorkflowPlanning
         token.ThrowIfCancellationRequested();
         if (!plan.ReadyForReview) return plan with { StructuralStatus = "ambiguous-destination" };
         if (plan.Records.Any(r => r.Duplicates.Count > 0)) return plan with { StructuralStatus = "duplicate-review-required" };
-        return session.InspectStructuralInsertion(plan, token);
+        return plan;
     }
 
     public static WorkflowPlan Plan(WorksheetAnalysis analysis, WorkflowProfile profile, IReadOnlyList<WorkflowRecord> records, CancellationToken token = default)
@@ -127,15 +127,4 @@ public static class WorkflowPlanning
         return explanation.Length <= 1024 ? explanation : explanation[..990] + " [context shortened]";
     }
 
-    // An engine contract guard, not a candidate editor. Even a forged CanApply=true cannot mutate a session.
-    public static WorkbookInfo RejectStructuralInsertion(IWorkbookSession session, WorkflowPlan plan, bool approved, bool duplicatesReviewed, CancellationToken token = default)
-    {
-        token.ThrowIfCancellationRequested(); var info = session.Info;
-        if (plan.SessionId != info.SessionId || !info.Worksheets.Any(s => s.Id == plan.WorksheetId) || plan.SourceSha256 != info.SourceSha256)
-            throw WorkflowProfiles.Error("INVALID_PROPOSAL", "Proposal identity does not match this worksheet session.");
-        if (plan.Revision != info.Revision) throw WorkflowProfiles.Error("STALE_REVISION", "The worksheet changed after review. Regenerate the proposal.");
-        if (plan.ProfileHash != WorkflowProfiles.Hash(WorkflowProfiles.Get(plan.ProfileId))) throw WorkflowProfiles.Error("STALE_PROFILE", "The approved profile changed after review.");
-        if (!approved || !plan.ReadyForReview || (plan.Records.Any(r => r.Duplicates.Count > 0) && !duplicatesReviewed)) throw WorkflowProfiles.Error("REVIEW_REQUIRED", "Resolve all choices and review values and duplicate warnings before structural approval.");
-        throw WorkflowProfiles.Error("ROW_INSERTION_DISABLED", InsertionBlock);
-    }
 }

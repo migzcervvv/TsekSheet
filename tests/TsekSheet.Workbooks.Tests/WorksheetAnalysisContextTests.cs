@@ -34,7 +34,7 @@ public sealed class WorksheetAnalysisContextTests
             SetFormulaCache(path, row, cache);
             var sourceHash = Hash(path);
             using (var session = new WorkbookEngine().Open(path))
-            using (var copy = session.CreateWorkingCopy(session.Info.Worksheets[0].Id, 0))
+            using (var copy = session.CreateSnapshot())
             {
                 foreach (var target in new[] { session, copy })
                 {
@@ -53,7 +53,7 @@ public sealed class WorksheetAnalysisContextTests
                     Assert.IsFalse(target.Info.IsDirty);
                     CollectionAssert.AreEqual(cells, target.ReadViewport(sheet, row, 1, 1, 6).Cells.ToArray());
                 }
-                Assert.IsEmpty(copy.WorkingCopy!.Changes);
+                Assert.IsFalse(copy.Info.IsDirty);
             }
             Assert.AreEqual(sourceHash, Hash(path));
             Assert.AreEqual(fixtureHash, Hash(fixture.Path));

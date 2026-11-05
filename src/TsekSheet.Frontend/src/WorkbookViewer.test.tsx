@@ -7,7 +7,6 @@ import type { Transport, Workbook, Viewport } from './bridge/client';
 const sessionId = '11111111-1111-1111-1111-111111111111';
 const sheetId = '22222222-2222-2222-2222-222222222222';
 const hiddenId = '33333333-3333-3333-3333-333333333333';
-const copyId = '44444444-4444-4444-4444-444444444444';
 const book: Workbook = { sessionId, parentSessionId: null, displayName: '<b>synthetic.xlsx', sourceSha256: 'A'.repeat(64), revision: 0, isDirty: false, editingAllowed: true, creator: 'Synthetic', title: 'Artificial',
   worksheets: [{ id: sheetId, name: 'Data', order: 1, visibility: 'Visible', lastRow: 50, lastColumn: 8 }, { id: hiddenId, name: 'Lookup', order: 2, visibility: 'Hidden', lastRow: 2, lastColumn: 2 }], findings: [{ code: 'READ_ONLY', message: 'Inspection only.' }] };
 function viewport(payload: Record<string, unknown>): Viewport {
@@ -21,13 +20,12 @@ afterEach(() => { cleanup(); clients.forEach(c => c.dispose()); clients.length =
 function setup(inspect = false, unsafeCapability = false, fallback = false) {
   const listeners = new Set<(event: { data: unknown }) => void>();
   let mode = 'opened';
-  let changed = false;
   const host: Transport = {
     addEventListener: (_, listener) => { listeners.add(listener); }, removeEventListener: (_, listener) => { listeners.delete(listener); },
     postMessage: request => {
       const m = request as { command: string; requestId: string; payload: Record<string, unknown> };
       queueMicrotask(() => {
-        const error = (m.command === 'workbook.open' && mode === 'error') || (m.command === 'workbook.editCopy' && (mode === 'edit-error' || mode === 'edit-timeout')) || (m.command === 'workbook.saveAsNew' && (mode === 'save-error' || mode === 'save-uncertain')) || (m.command === 'workbook.merge' && mode === 'merge-error');
+        const error = m.command === 'workbook.open' && mode === 'error';
         let result: unknown;
         if (m.command === 'workbook.inspect' || (fallback && m.command === 'workbook.open' && mode !== 'error')) result = { status: 'opened', workbook: { ...book, editingAllowed: false,
           findings: fallback ? [{code:'EDITABLE_ADMISSION_LIMIT_EXCEEDED',message:'Editable validation stopped at 50001 stored cell elements; the limit is 50000.'}] : book.findings,
@@ -36,13 +34,8 @@ function setup(inspect = false, unsafeCapability = false, fallback = false) {
             categories: [{ category: 'Embedded OLE/objects (ignored)', count: 1 }], countStatus: '250 tabs; editable limit 32. Counts unmeasured until selected-sheet scan.',
             capabilities: ['Metadata inspection', 'Read-only browsing', 'Worksheet selection', 'Cell editing', 'Working copies', 'Structural insertion', 'Merge', 'Structural Merge', 'Export'].map((operation, i) => ({ operation, allowed: i < 3 || unsafeCapability, reason: i < 3 ? 'Bounded inspection.' : 'Reopen and pass full editable validation.' })) } } };
         else if (m.command === 'workbook.open') result = mode === 'opened' ? { status: 'opened', workbook: book } : { status: 'cancelled' };
-        else if (m.command === 'workbook.close' || m.command === 'workbook.discard') result = { status: 'closed' };
-        else if (m.command === 'workbook.createCopy') result = { sessionId: copyId, sourceWorksheetId: sheetId, baseRevision: 0, revision: 0, isDirty: false, changeCount: 0 };
-        else if (m.command === 'workbook.previewMerge') result = { destinationName: 'Data', pendingCells: changed ? 1 : 0, canApply: mode !== 'merge-conflict', conflicts: mode === 'merge-conflict' ? [{ code: 'DESTINATION_CONFLICT', message: 'Create a fresh copy.' }] : [] };
-        else if (m.command === 'workbook.merge') result = { workbook: { ...book, revision: changed ? 1 : 0, isDirty: changed }, appliedCells: changed ? 1 : 0 };
-        else if (m.command === 'workbook.editCopy') { if (!error) changed = true; result = { sessionId: copyId, sourceWorksheetId: sheetId, baseRevision: 0, revision: 1, isDirty: true, changeCount: 1 }; }
-        else if (m.command === 'workbook.saveAsNew') result = mode === 'save-cancel' ? { status: 'cancelled' } : { status: 'saved', receipt: { status: 'saved', sessionId, savedRevision: 0, sourceStillDirty: false, rebound: false, cancellationAfterCommit: false, destinationSha256: 'B'.repeat(64), displayName: 'export.xlsx' } };
-        else { const v = viewport(m.payload); if (inspect) { v.cells[0] = { ...v.cells[0], value: '61', kind: 'Number', interpretation: { rawValue: '61', displayValue: '1900-03-01', resolvedType: 'Date', confidence: 'Supported subset', warning: 'Normalized ISO display.', formulaStatus: 'No formula' } }; v.cells[0].format = { ...v.cells[0].format, numberFormatId: 14, effectiveNumberFormatId: 14, formatResolution: 'Direct cell number format' }; v.cells[0].interpretation!.classification = 'Qualified display subset'; v.cells[1] = { ...v.cells[1], value: '123', formula: 'A2+$A$1', interpretation: { rawValue: '123', displayValue: '123', resolvedType: 'Number', confidence: 'Stored', warning: '', formulaStatus: 'Reconstructed shared formula; cached value is unverified.' } }; } if (inspect) v.scan = { declaredDimension: 'A1:XFD1048576', dimensionReliability: 'Untrusted declaration', storedCells: 125000, nonemptyValues: 2, formulas: 1, styledCells: 124998, lastRow: 125000, lastColumn: 6, potentialInflation: true, warnings: ['Raw values only.'] }; if (changed && m.payload.sessionId === copyId) { const cell = v.cells.find(c => c.row === 5 && c.column === 1); if (cell) cell.value = 'Copy-only value'; } result = v; }
+        else if (m.command === 'workbook.close') result = { status: 'closed' };
+        else { const v = viewport(m.payload); if (inspect) { v.cells[0] = { ...v.cells[0], value: '61', kind: 'Number', interpretation: { rawValue: '61', displayValue: '1900-03-01', resolvedType: 'Date', confidence: 'Supported subset', warning: 'Normalized ISO display.', formulaStatus: 'No formula' } }; v.cells[0].format = { ...v.cells[0].format, numberFormatId: 14, effectiveNumberFormatId: 14, formatResolution: 'Direct cell number format' }; v.cells[0].interpretation!.classification = 'Qualified display subset'; v.cells[1] = { ...v.cells[1], value: '123', formula: 'A2+$A$1', interpretation: { rawValue: '123', displayValue: '123', resolvedType: 'Number', confidence: 'Stored', warning: '', formulaStatus: 'Reconstructed shared formula; cached value is unverified.' } }; } if (inspect) v.scan = { declaredDimension: 'A1:XFD1048576', dimensionReliability: 'Untrusted declaration', storedCells: 125000, nonemptyValues: 2, formulas: 1, styledCells: 124998, lastRow: 125000, lastColumn: 6, potentialInflation: true, warnings: ['Raw values only.'] }; result = v; }
         listeners.forEach(l => l({ data: { protocolVersion: 1, type: 'response', requestId: m.requestId, ok: !error, result, error: error ? { code: 'REJECTED', message: mode === 'save-error' ? 'Choose a new filename. Existing files cannot be replaced.' : mode === 'save-uncertain' ? 'The commit occurred but final verification failed. Inspect the selected file before retrying.' : mode === 'edit-error' ? 'This cell contains a formula. Choose an explicit formula edit instead.' : mode === 'edit-timeout' ? 'Desktop request timed out. Its outcome is unknown.' : 'Unsupported workbook.' } : undefined } }));
       });
     },
@@ -51,51 +44,6 @@ function setup(inspect = false, unsafeCapability = false, fallback = false) {
   return { client, mode: (value: string) => { mode = value; } };
 }
 
-test('Merge previews the destination, requires confirmation and refreshes the original view', async () => {
-  const { client } = setup(); render(<WorkbookViewer bridge={client} available />);
-  fireEvent.click(screen.getByRole('button', { name: 'Open workbook' })); await screen.findByRole('table');
-  await waitFor(() => expect((screen.getByRole('button', { name: 'Create working copy' }) as HTMLButtonElement).disabled).toBe(false));
-  fireEvent.click(screen.getByRole('button', { name: 'Create working copy' }));
-  fireEvent.click(await screen.findByRole('button', { name: 'Select A5' }));
-  fireEvent.change(screen.getByRole('textbox', { name: 'Cell value' }), { target: { value: 'Copy-only value' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Apply to working copy' })); await screen.findByText('Copy-only value');
-  await waitFor(() => expect((screen.getByRole('button', { name: 'Review Merge' }) as HTMLButtonElement).disabled).toBe(false));
-  fireEvent.click(screen.getByRole('button', { name: 'Review Merge' }));
-  await screen.findByRole('alertdialog', { name: 'Review worksheet merge' });
-  expect(screen.getByText('Merge into Data')).toBeDefined(); expect(screen.getByText(/1 effective pending cell edits/)).toBeDefined();
-  fireEvent.click(screen.getByRole('button', { name: 'Cancel merge' }));
-  expect((screen.getByRole('combobox', { name: 'Workbook view' }) as HTMLSelectElement).value).toBe(copyId);
-  fireEvent.click(screen.getByRole('button', { name: 'Review Merge' })); await screen.findByRole('alertdialog', { name: 'Review worksheet merge' });
-  fireEvent.click(screen.getByRole('button', { name: 'Confirm merge in memory' }));
-  await screen.findByText(/Merged 1 cells in memory/);
-  expect((screen.getByRole('combobox', { name: 'Workbook view' }) as HTMLSelectElement).value).toBe('original');
-  expect(screen.getByRole('option', { name: /Working copy 1/ })).toBeDefined();
-}, 15000);
-
-test('Merge conflicts disable confirmation and retain the selected working copy', async () => {
-  const fake = setup(); render(<WorkbookViewer bridge={fake.client} available />);
-  fireEvent.click(screen.getByRole('button', { name: 'Open workbook' })); await screen.findByRole('table');
-  await waitFor(() => expect((screen.getByRole('button', { name: 'Create working copy' }) as HTMLButtonElement).disabled).toBe(false));
-  fireEvent.click(screen.getByRole('button', { name: 'Create working copy' })); await screen.findByRole('button', { name: 'Select A5' });
-  await waitFor(() => expect((screen.getByRole('button', { name: 'Review Merge' }) as HTMLButtonElement).disabled).toBe(false));
-  fake.mode('merge-conflict'); fireEvent.click(screen.getByRole('button', { name: 'Review Merge' }));
-  await screen.findByText(/DESTINATION_CONFLICT/);
-  expect((screen.getByRole('button', { name: 'Confirm merge in memory' }) as HTMLButtonElement).disabled).toBe(true);
-  expect((screen.getByRole('combobox', { name: 'Workbook view' }) as HTMLSelectElement).value).toBe(copyId);
-}, 15000);
-
-test('A rejected Merge keeps its working copy available', async () => {
-  const fake = setup(); render(<WorkbookViewer bridge={fake.client} available />);
-  fireEvent.click(screen.getByRole('button', { name: 'Open workbook' })); await screen.findByRole('table');
-  await waitFor(() => expect((screen.getByRole('button', { name: 'Create working copy' }) as HTMLButtonElement).disabled).toBe(false));
-  fireEvent.click(screen.getByRole('button', { name: 'Create working copy' })); await screen.findByRole('button', { name: 'Select A5' });
-  await waitFor(() => expect((screen.getByRole('button', { name: 'Review Merge' }) as HTMLButtonElement).disabled).toBe(false));
-  fireEvent.click(screen.getByRole('button', { name: 'Review Merge' })); await screen.findByRole('alertdialog', { name: 'Review worksheet merge' });
-  fake.mode('merge-error'); fireEvent.click(screen.getByRole('button', { name: 'Confirm merge in memory' }));
-  await screen.findByRole('alert');
-  expect((screen.getByRole('combobox', { name: 'Workbook view' }) as HTMLSelectElement).value).toBe(copyId);
-}, 15000);
-
 test('opens a read-only workbook, renders literal text and formulas, pages, switches hidden sheets and closes', async () => {
   const { client } = setup(); render(<WorkbookViewer bridge={client} available />);
   fireEvent.click(screen.getByRole('button', { name: 'Open workbook' }));
@@ -103,7 +51,7 @@ test('opens a read-only workbook, renders literal text and formulas, pages, swit
   expect(screen.getByText('<b>synthetic.xlsx').tagName).toBe('STRONG');
   expect(screen.getByText('<img src=x>').tagName).toBe('TD');
   expect(screen.getByText('=Lookup!B2')).toBeDefined();
-  expect(screen.getByText('Original workbook view. Edit an isolated working copy.')).toBeDefined();
+  expect(screen.getByText('Read-only workbook view. Use Insert into Excel to add verified receipt rows.')).toBeDefined();
   fireEvent.click(screen.getByRole('button', { name: 'Next rows' }));
   await screen.findByText(/Rows 21–40/);
   await waitFor(() => expect((screen.getByRole('combobox', { name: 'Worksheet' }) as HTMLSelectElement).disabled).toBe(false));
@@ -113,83 +61,6 @@ test('opens a read-only workbook, renders literal text and formulas, pages, swit
   fireEvent.click(screen.getByRole('button', { name: 'Close workbook' }));
   await screen.findByText('Workbook closed. Original file unchanged.');
   expect(screen.queryByRole('table')).toBeNull();
-}, 15000);
-
-test('formula protection errors remain visible and do not mark the working copy dirty', async () => {
-  const fake = setup(); render(<WorkbookViewer bridge={fake.client} available />);
-  fireEvent.click(screen.getByRole('button', { name: 'Open workbook' })); await screen.findByRole('table');
-  await waitFor(() => expect((screen.getByRole('button', { name: 'Create working copy' }) as HTMLButtonElement).disabled).toBe(false));
-  fireEvent.click(screen.getByRole('button', { name: 'Create working copy' }));
-  fireEvent.click(await screen.findByRole('button', { name: 'Select B1' }));
-  expect(screen.getByText(/This cell contains a formula/)).toBeDefined();
-  fireEvent.change(screen.getByRole('combobox', { name: 'Value type' }), { target: { value: 'text' } });
-  fake.mode('edit-error'); fireEvent.click(screen.getByRole('button', { name: 'Apply to working copy' }));
-  expect((await screen.findByRole('alert')).textContent).toContain('explicit formula edit');
-  expect(screen.queryByText('Pending changes in working copies')).toBeNull();
-}, 15000);
-
-test('Save As exports only original session and retains pending copy changes', async () => {
-  const { client } = setup(); render(<WorkbookViewer bridge={client} available />);
-  fireEvent.click(screen.getByRole('button', { name: 'Open workbook' })); await screen.findByRole('table');
-  await waitFor(() => expect((screen.getByRole('button', { name: 'Create working copy' }) as HTMLButtonElement).disabled).toBe(false));
-  fireEvent.click(screen.getByRole('button', { name: 'Create working copy' }));
-  fireEvent.click(await screen.findByRole('button', { name: 'Select A5' }));
-  expect((screen.getByRole('button', { name: 'Save As' }) as HTMLButtonElement).disabled).toBe(true);
-  fireEvent.change(screen.getByRole('textbox', { name: 'Cell value' }), { target: { value: 'Copy-only value' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Apply to working copy' })); await screen.findByText('Copy-only value');
-  await waitFor(() => expect((screen.getByRole('combobox', { name: 'Workbook view' }) as HTMLSelectElement).disabled).toBe(false));
-  fireEvent.change(screen.getByRole('combobox', { name: 'Workbook view' }), { target: { value: 'original' } });
-  await screen.findByText('Sample-1');
-  await waitFor(() => expect((screen.getByRole('button', { name: 'Save As' }) as HTMLButtonElement).disabled).toBe(false));
-  fireEvent.click(screen.getByRole('button', { name: 'Save As' }));
-  await screen.findByText(/Created export.xlsx from original session revision 0/);
-  expect(screen.getByText('Pending changes in working copies')).toBeDefined();
-  expect(screen.getByText(/Save As creates a new .xlsx file/)).toBeDefined();
-}, 15000);
-
-test('Save As distinguishes cancellation, rejection and uncertain result', async () => {
-  const fake = setup(); render(<WorkbookViewer bridge={fake.client} available />);
-  fireEvent.click(screen.getByRole('button', { name: 'Open workbook' })); await screen.findByRole('table');
-  await waitFor(() => expect((screen.getByRole('button', { name: 'Save As' }) as HTMLButtonElement).disabled).toBe(false));
-  fake.mode('save-cancel'); fireEvent.click(screen.getByRole('button', { name: 'Save As' })); await screen.findByText('Save As cancelled. No file was created.');
-  fake.mode('save-error'); fireEvent.click(screen.getByRole('button', { name: 'Save As' })); await screen.findByText(/Choose a new filename/);
-  fake.mode('save-uncertain'); fireEvent.click(screen.getByRole('button', { name: 'Save As' })); await screen.findByText(/commit occurred but final verification failed/);
-  expect(screen.queryByText(/Created export.xlsx/)).toBeNull(); expect(screen.getByRole('table')).toBeDefined();
-}, 15000);
-
-test('an unknown edit outcome requires explicit discard and blocks further edits', async () => {
-  const fake = setup(); render(<WorkbookViewer bridge={fake.client} available />);
-  fireEvent.click(screen.getByRole('button', { name: 'Open workbook' })); await screen.findByRole('table');
-  await waitFor(() => expect((screen.getByRole('button', { name: 'Create working copy' }) as HTMLButtonElement).disabled).toBe(false));
-  fireEvent.click(screen.getByRole('button', { name: 'Create working copy' }));
-  fireEvent.click(await screen.findByRole('button', { name: 'Select A5' }));
-  fake.mode('edit-timeout'); fireEvent.click(screen.getByRole('button', { name: 'Apply to working copy' }));
-  await screen.findByText('Working-copy outcome unknown');
-  expect((screen.getByRole('button', { name: 'Apply to working copy' }) as HTMLButtonElement).disabled).toBe(true);
-  fireEvent.click(screen.getByRole('button', { name: 'Close workbook' }));
-  expect(screen.getByRole('alertdialog')).toBeDefined();
-  fireEvent.click(screen.getByRole('button', { name: 'Discard changes' }));
-  await screen.findByText('Workbook closed. Original file unchanged.');
-}, 15000);
-
-test('edits an isolated copy, shows pending changes, retains the original and confirms discard', async () => {
-  const { client } = setup(); render(<WorkbookViewer bridge={client} available />);
-  fireEvent.click(screen.getByRole('button', { name: 'Open workbook' })); await screen.findByRole('table');
-  await waitFor(() => expect((screen.getByRole('button', { name: 'Create working copy' }) as HTMLButtonElement).disabled).toBe(false));
-  fireEvent.click(screen.getByRole('button', { name: 'Create working copy' }));
-  const cell = await screen.findByRole('button', { name: 'Select A5' }); fireEvent.click(cell);
-  fireEvent.change(screen.getByRole('textbox', { name: 'Cell value' }), { target: { value: 'Copy-only value' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Apply to working copy' }));
-  await screen.findByText('Copy-only value'); await screen.findByText(/Pending changes in working copies/);
-  await waitFor(() => expect((screen.getByRole('combobox', { name: 'Workbook view' }) as HTMLSelectElement).disabled).toBe(false));
-  fireEvent.change(screen.getByRole('combobox', { name: 'Workbook view' }), { target: { value: 'original' } });
-  await screen.findByText('Sample-1'); expect(screen.queryByText('Copy-only value')).toBeNull();
-  await waitFor(() => expect((screen.getByRole('button', { name: 'Close workbook' }) as HTMLButtonElement).disabled).toBe(false));
-  fireEvent.click(screen.getByRole('button', { name: 'Close workbook' }));
-  expect(screen.getByRole('alertdialog').textContent).toContain('Discard pending');
-  fireEvent.click(screen.getByRole('button', { name: 'Keep editing' })); expect(screen.getByRole('table')).toBeDefined();
-  fireEvent.click(screen.getByRole('button', { name: 'Close workbook' })); fireEvent.click(screen.getByRole('button', { name: 'Discard changes' }));
-  await screen.findByText('Workbook closed. Original file unchanged.');
 }, 15000);
 
 test('selection cancellation and rejected opening retain the current view; unavailable host disables opening', async () => {
@@ -225,8 +96,8 @@ test('inspection reports measured limits, prevents mutation and navigates 250 sh
   await screen.findByText(/Compatibility Report/); await screen.findByLabelText('Selected worksheet diagnostics');
   expect(screen.getByText(/250 tabs; editable limit 32/)).toBeDefined();
   expect(screen.getByText(/125,000 stored cell elements/)).toBeDefined();
-  expect((screen.getByRole('button', { name: 'Create working copy' }) as HTMLButtonElement).disabled).toBe(true);
-  expect((screen.getByRole('button', { name: 'Save As' }) as HTMLButtonElement).disabled).toBe(true);
+  expect(screen.queryByRole('button', { name: 'Create working copy' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Save As' })).toBeNull();
   expect(screen.queryByText('Payables Processing')).toBeNull();
   const select = screen.getByRole('combobox', { name: 'Worksheet' }) as HTMLSelectElement;
   await waitFor(() => expect(select.disabled).toBe(false)); expect(select.options.length).toBe(250);
@@ -246,8 +117,8 @@ test('Open workbook adopts inspection as a restricted project and retains the re
   expect(screen.getByText('Workbook opened in inspection mode')).toBeDefined();
   expect(screen.getByText('EDITABLE_ADMISSION_LIMIT_EXCEEDED')).toBeDefined();
   expect(screen.getByText('Details').closest('details')?.textContent).toContain('stopped at 50001');
-  expect((screen.getByRole('button',{name:'Create working copy'}) as HTMLButtonElement).disabled).toBe(true);
-  expect((screen.getByRole('button',{name:'Save As'}) as HTMLButtonElement).disabled).toBe(true);
+  expect(screen.queryByRole('button',{name:'Create working copy'})).toBeNull();
+  expect(screen.queryByRole('button',{name:'Save As'})).toBeNull();
   expect(contexts.some(c=>!!c && (c as {inspection:boolean}).inspection)).toBe(true);
   expect(screen.queryByText('Payables Processing')).toBeNull();
   const sheet=screen.getByRole('combobox',{name:'Worksheet'}) as HTMLSelectElement;

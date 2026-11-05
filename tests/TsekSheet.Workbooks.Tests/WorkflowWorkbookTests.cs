@@ -23,17 +23,17 @@ public sealed class WorkflowWorkbookTests
     {
         using var fixture=new PayablesFixture(heading); var hash=Hash(fixture.Path);
         using var session=new WorkbookEngine().Open(fixture.Path); var before=session.Info;
-        Assert.IsTrue(before.EditingAllowed,string.Join("; ",before.Findings.Select(f=>f.Code+": "+f.Message)));
+        Assert.IsFalse(before.EditingAllowed, "The inspection adapter has no write authority.");
         var sheet=before.Worksheets[0].Id; var cell=session.ReadViewport(sheet,6,1,5,6).Cells.ToArray();
         var plan=WorkflowPlanning.Prepare(session,Request(session));
         Assert.IsTrue(plan.ReadyForReview); Assert.IsFalse(plan.CanApply); Assert.AreEqual(8,plan.Records[0].BaseInsertionRow);
         var missing=Request(session) with {Records=[Record with {Values=new Dictionary<string,string>{["vendor"]="Novel Company",["rfp"]="NEW",["amount"]="25"}}]};
         Assert.AreEqual(heading+7,WorkflowPlanning.Prepare(session,missing).Records[0].BaseInsertionRow);
         Assert.AreEqual(before,session.Info); CollectionAssert.AreEqual(cell,session.ReadViewport(sheet,6,1,5,6).Cells.ToArray()); Assert.AreEqual(hash,Hash(fixture.Path));
-        using var copy=session.CreateWorkingCopy(sheet,0);
+        using var copy=session.CreateSnapshot();
         var copyPlan=WorkflowPlanning.Prepare(copy,Request(copy));
-        Assert.AreEqual("ROW_INSERTION_DISABLED",Assert.ThrowsExactly<WorkbookException>(()=>copy.InsertWorkflowRows(copyPlan with {CanApply=true},true,true)).Code);
-        Assert.AreEqual(0,copy.Info.Revision); Assert.IsFalse(copy.Info.IsDirty); Assert.AreEqual(0,copy.WorkingCopy!.Changes.Count);
+        Assert.IsFalse(copyPlan.CanApply);
+        Assert.AreEqual(0,copy.Info.Revision); Assert.IsFalse(copy.Info.IsDirty);
         Assert.AreEqual(hash,Hash(fixture.Path));
     }
 
@@ -51,29 +51,23 @@ public sealed class WorkflowWorkbookTests
     {
         using var fixture=new PayablesFixture(scenario:"calculation-chain"); var hash=Hash(fixture.Path); using var session=new WorkbookEngine().Open(fixture.Path);
         Assert.IsFalse(session.Info.EditingAllowed); Assert.IsFalse(WorkflowPlanning.Prepare(session,Request(session)).CanApply);
-        Assert.ThrowsExactly<WorkbookException>(()=>session.CreateWorkingCopy(session.Info.Worksheets[0].Id,0));
         Assert.AreEqual(hash,Hash(fixture.Path));
     }
 
     [TestMethod]
-    public void StaleProfilesRevisionsAndForgedApprovalCannotBypassInsertionGate()
+    public void StaleProfilesAndRevisionsCannotBypassReadOnlyPlanning()
     {
         using var fixture=new PayablesFixture(); using var session=new WorkbookEngine().Open(fixture.Path); var hash=Hash(fixture.Path);
-        var plan=WorkflowPlanning.Prepare(session,Request(session));
-        Assert.AreEqual("REVIEW_REQUIRED",Assert.ThrowsExactly<WorkbookException>(()=>session.InsertWorkflowRows(plan,false,false)).Code);
-        Assert.AreEqual("INVALID_PROPOSAL",Assert.ThrowsExactly<WorkbookException>(()=>session.InsertWorkflowRows(plan with {WorksheetId=Guid.NewGuid()},true,true)).Code);
         Assert.AreEqual("STALE_PROFILE",Assert.ThrowsExactly<WorkbookException>(()=>WorkflowPlanning.Prepare(session,Request(session) with {ProfileHash="wrong"})).Code);
-        session.Edit(new(session.Info.Worksheets[0].Id,6,2,"text","Deliberate synthetic edit",0));
-        Assert.AreEqual("STALE_REVISION",Assert.ThrowsExactly<WorkbookException>(()=>session.InsertWorkflowRows(plan,true,true)).Code);
-        Assert.AreEqual("STALE_REVISION",Assert.ThrowsExactly<WorkbookException>(()=>WorkflowPlanning.Prepare(session,Request(session,0))).Code);
-        Assert.AreEqual(1,session.Info.Revision); Assert.AreEqual(hash,Hash(fixture.Path));
+        Assert.AreEqual("STALE_REVISION",Assert.ThrowsExactly<WorkbookException>(()=>WorkflowPlanning.Prepare(session,Request(session,1))).Code);
+        Assert.AreEqual(0,session.Info.Revision); Assert.AreEqual(hash,Hash(fixture.Path));
     }
 
     [TestMethod]
     public void CancellationDuringCaptureRetainsBothCopyAndOriginalState()
     {
         using var fixture=new PayablesFixture(); var hash=Hash(fixture.Path); using var session=new WorkbookEngine().Open(fixture.Path);
-        using var copy=session.CreateWorkingCopy(session.Info.Worksheets[0].Id,0); using var cts=new CancellationTokenSource();
+        using var copy=session.CreateSnapshot(); using var cts=new CancellationTokenSource();
         var reader=new ObservedSession(copy,()=>cts.Cancel());
         Assert.ThrowsExactly<OperationCanceledException>(()=>WorkflowPlanning.Prepare(reader,Request(copy),cts.Token));
         Assert.IsFalse(copy.Info.IsDirty); Assert.IsFalse(session.Info.IsDirty); Assert.AreEqual(0,copy.Info.Revision); Assert.AreEqual(hash,Hash(fixture.Path));
@@ -83,34 +77,14 @@ public sealed class WorkflowWorkbookTests
     public void ConcurrentRevisionChangeAndOversizedWorksheetRejectInsteadOfPartialSearch()
     {
         using var fixture=new PayablesFixture(); using var session=new WorkbookEngine().Open(fixture.Path);
-        var called=false;
-        var reader=new ObservedSession(session,()=>{if(!called){called=true;session.Edit(new(session.Info.Worksheets[0].Id,6,2,"text","Concurrent edit",0));}});
+        ObservedSession? reader=null;
+        reader=new ObservedSession(session,()=>reader!.RevisionDelta++);
         Assert.AreEqual("STALE_REVISION",Assert.ThrowsExactly<WorkbookException>(()=>WorkflowPlanning.Prepare(reader,Request(session))).Code);
         using var large=new PayablesFixture(2100); using var largeSession=new WorkbookEngine().Open(large.Path);
         var capture=new ObservedSession(largeSession,()=>Assert.Fail("Oversized sheet must be rejected before reading any cells."));
         Assert.AreEqual("ANALYSIS_LIMIT",Assert.ThrowsExactly<WorkbookException>(()=>WorkflowPlanning.Prepare(capture,Request(largeSession))).Code);
     }
 
-    [TestMethod]
-    public void PlanningDoesNotAlterMergeOrNewFileSaveAsSemantics()
-    {
-        using var fixture=new PayablesFixture(); var hash=Hash(fixture.Path); var engine=new WorkbookEngine(); using var main=engine.Open(fixture.Path);
-        var sheet=main.Info.Worksheets[0].Id; using var copy=main.CreateWorkingCopy(sheet,0);
-        var oldPlan=WorkflowPlanning.Prepare(main,Request(main)); copy.Edit(new(sheet,6,2,"text","Approved existing-cell edit",0));
-        var copyPlan=WorkflowPlanning.Prepare(copy,Request(copy)); Assert.IsFalse(copyPlan.CanApply);
-        main.Integrate(copy,new(copy.Info.SessionId,sheet,1,0,0));
-        Assert.AreEqual("STALE_REVISION",Assert.ThrowsExactly<WorkbookException>(()=>main.InsertWorkflowRows(oldPlan,true,true)).Code);
-        Assert.IsFalse(main.PreviewIntegration(copy,new(copy.Info.SessionId,sheet,1,1,0)).CanApply);
-        var output=System.IO.Path.Combine(System.IO.Path.GetDirectoryName(fixture.Path)!,"planned-export.xlsx");
-        try
-        {
-            main.SaveAsNew(output,1); using var reopened=engine.Open(output);
-            Assert.AreEqual("Approved existing-cell edit",reopened.ReadViewport(reopened.Info.Worksheets[0].Id,6,2,1,1).Cells[0].Value);
-            Assert.AreEqual("DESTINATION_EXISTS",Assert.ThrowsExactly<WorkbookException>(()=>main.SaveAsNew(output,1)).Code);
-        }
-        finally { File.Delete(output); }
-        Assert.AreEqual(hash,Hash(fixture.Path));
-    }
 
     [TestMethod]
     public async Task ActualBridgePlansButRejectsPathsAndUnfinishedApplyCommands()
@@ -137,12 +111,10 @@ public sealed class WorkflowWorkbookTests
 
     private sealed class ObservedSession(IWorkbookSession inner,Action afterRead) : IWorkbookSession
     {
-        public WorkbookInfo Info=>inner.Info; public WorkingCopyInfo? WorkingCopy=>inner.WorkingCopy;
+        public int RevisionDelta { get; set; }
+        public WorkbookInfo Info=>inner.Info with { Revision = inner.Info.Revision + RevisionDelta };
         public CellViewport ReadViewport(Guid id,int row,int column,int rows,int columns){var result=inner.ReadViewport(id,row,column,rows,columns);afterRead();return result;}
         public IWorkbookSession CreateSnapshot(CancellationToken token=default)=>throw new NotSupportedException();
-        public IWorkbookSession CreateWorkingCopy(Guid id,int revision,CancellationToken token=default)=>throw new NotSupportedException();
-        public WorkbookInfo Edit(CellEdit edit,CancellationToken token=default)=>throw new NotSupportedException();
-        public SaveReceipt SaveAsNew(string path,int revision,CancellationToken token=default)=>throw new NotSupportedException();
         public void Dispose(){}
     }
 }

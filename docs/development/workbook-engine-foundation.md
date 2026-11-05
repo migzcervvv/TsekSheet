@@ -4,15 +4,15 @@ Step 47 extends only the inspection boundary with bounded style/date interpretat
 
 Step 46 adds an independent metadata/selected-sheet inspection path through `WorkbookInspection`; this document’s full-session limits still govern Open workbook and mutation. See [compatibility analyzer](workbook-compatibility-analyzer.md) for precise rejection causes, raw-view limitations and resource budgets.
 
-This document describes the earlier read-only milestone. Later behavior is documented in [workbook editing](workbook-editing-foundation.md), [new-file Save As](workbook-safe-saving.md) and [Merge integration](worksheet-integration.md). Historical tool paths/counts below are superseded by the [current environment and migration handoff](dotnet-10-migration.md).
+This document describes the earlier read-only milestone. Later behavior is documented in [workbook editing](workbook-editing-foundation.md), [new-file Save As](workbook-safe-saving.md) and [Merge integration](worksheet-integration.md). Historical tool paths/counts below are superseded by the [current build instructions](../../README.md).
 
-The current adapter targets .NET 10 after [Step 40](dotnet-10-migration.md); read-only opening, source fingerprints, compatibility rejection and all existing workbook regressions pass without changing their integrity checks.
+The current adapter targets .NET 10 after [current build instructions](../../README.md); read-only opening, source fingerprints, compatibility rejection and all existing workbook regressions pass without changing their integrity checks.
 
 Status: read-only foundation implemented. Phase 2 is not complete.
 
 ## Implementation plan
 
-1. Add plain application contracts and one .NET 8 workbook adapter project, using ClosedXML 0.105.1 and Open XML SDK 3.5.1. No workbook package references in Application or Desktop.
+1. Add plain application contracts and one .NET workbook adapter project, using ClosedXML 0.105.1 and Open XML SDK 3.5.1. No workbook package references in Application or Desktop.
 2. Bound file/package/XML/cell resource consumption before library loading; reject malformed, protected, active or externally linked packages. Preserve source bytes and SHA-256 privately. Expose only bounded, read-only projections and explicit compatibility findings.
 3. Implement disposable sessions and bounded independent serialization/reopening snapshots. No public mutable workbook objects, editing APIs or save paths. Prove lifecycle, source preservation and failure handling with both existing synthetic fixtures.
 4. Build and run core/application tests before enabling desktop integration. Keep native selection paths within C#, scope sessions to the bridge lifetime, validate every viewport and identity, and dispose on navigation/closure.
@@ -23,7 +23,7 @@ No cell edits, sheet integration, row insertion, templates, OCR, Save or Save As
 
 ## Architecture and operation
 
-`TsekSheet.Application.Workbooks` defines plain .NET contracts, immutable data records and a small per-page workspace. `TsekSheet.Workbooks` implements those contracts with ClosedXML **0.105.1** and Open XML SDK **3.5.1** on **net8.0**. The application contract assembly references neither workbook library nor WPF/WebView2. The WPF host references the engine project for composition; workbook-library package references belong to the engine. Locked package graphs are retained, including ClosedXML's production-resolved SixLabors.Fonts **1.0.0**. License and dependency review must be repeated for releases and upgrades; the earlier experiment's graph included NPOI and resolved Fonts 1.0.1.
+`TsekSheet.Application.Workbooks` defines plain .NET contracts, immutable data records and a small per-page workspace. `TsekSheet.Workbooks` implements those contracts with ClosedXML **0.105.1** and Open XML SDK **3.5.1** on **the original library target**. The application contract assembly references neither workbook library nor WPF/WebView2. The WPF host references the engine project for composition; workbook-library package references belong to the engine. Locked package graphs are retained, including ClosedXML's production-resolved SixLabors.Fonts **1.0.0**. License and dependency review must be repeated for releases and upgrades; the earlier experiment's graph included NPOI and resolved Fonts 1.0.1.
 
 The native dialog selects a path, but the path is passed directly to the local C# workspace and engine; React sends no path and receives only the display name, session/worksheet identifiers and bounded inspection data. A successful open replaces the prior workspace session. Cancellation or failure retains it. Opening and viewport work run on a worker thread; workbook operations are serialized per workspace. The session is disposed on close, page navigation, host failure or shutdown. The existing demonstration file picker and diagnostics remain separate.
 
@@ -51,7 +51,7 @@ Disposal releases the ClosedXML model, its in-memory source stream, baseline and
 
 ## Development commands
 
-Run from the repository root in Windows CMD with SDK **8.0.427**, Node **24.22.1**, npm **11.19.1**, and an installed WebView2 Runtime. Package restore may access configured NuGet sources during development; the application uses locally bundled frontend assets and processes workbooks locally.
+Run from the repository root in Windows CMD with SDK **the historical SDK**, Node **24.22.1**, npm **11.19.1**, and an installed WebView2 Runtime. Package restore may access configured NuGet sources during development; the application uses locally bundled frontend assets and processes workbooks locally.
 
 ```cmd
 set DOTNET_CLI_TELEMETRY_OPTOUT=1
@@ -60,12 +60,12 @@ dotnet --version
 dotnet restore TsekSheet.sln --locked-mode
 dotnet build TsekSheet.sln -c Release --no-restore
 dotnet test TsekSheet.sln -c Release --no-build --no-restore
-dotnet test tests\WorkbookLibrary.Evaluation\WorkbookLibrary.Evaluation.csproj --no-restore
+dotnet test experiments\archive\WorkbookLibrary.Evaluation\WorkbookLibrary.Evaluation.csproj --no-restore
 cd src\TsekSheet.Frontend
 node "C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js" run typecheck
 node "C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js" run test -- --run
 cd ..\..
-src\TsekSheet.Desktop\bin\Release\net8.0-windows\TsekSheet.Desktop.exe
+src\TsekSheet.Desktop\bin\Release\the original Windows target\TsekSheet.Desktop.exe
 ```
 
 In the running desktop application, choose **Open workbook**, select a local `.xlsx`, choose a worksheet and page through the viewport. **Close workbook** releases the session. This is inspection only. The actual native dialog needs an interactive Windows desktop; the automated end-to-end viewer test injects fixture paths through an internal host test seam rather than operating the dialog.
@@ -76,7 +76,7 @@ The workbook tests cover both retained synthetic fixtures, source hashes before 
 
 The desktop smoke test hosts real WPF and WebView2, loads the bundled React interface, opens both synthetic workbooks using the internal selector seam, verifies the rendered formula viewport, switches to a hidden worksheet, tests 390/768/1100-pixel layouts, closes each session and verifies the fixture hashes. The normal native picker requires manual interaction and is not exercised by that automation. Native Excel opening/repair, pixel-perfect Excel rendering, calculation fidelity, arbitrary feature preservation and offline operation on a separate clean machine are unverified.
 
-Verification on 2026-10-28: the Release solution build succeeded with **0 warnings and 0 errors**. The solution suite passed **14 application**, **19 workbook**, and **7 desktop** tests, with **0 failed and 0 skipped**. The independent earlier workbook evaluation suite passed **13** harness tests; the frontend suite passed **11** tests. The pinned SDK reported **8.0.427**. The standalone Release executable started with a responsive UI thread and a window; the test then closed that process. SHA-256 hashes of both original synthetic fixtures matched their retained manifest after the tests.
+Verification on 2026-10-28: the Release solution build succeeded with **0 warnings and 0 errors**. The solution suite passed **14 application**, **19 workbook**, and **7 desktop** tests, with **0 failed and 0 skipped**. The independent earlier workbook evaluation suite passed **13** harness tests; the frontend suite passed **11** tests. The pinned SDK reported **the historical SDK**. The standalone Release executable started with a responsive UI thread and a window; the test then closed that process. SHA-256 hashes of both original synthetic fixtures matched their retained manifest after the tests.
 
 The browser-based app-screen inspection of the bundled interface reported **0 failures and 1 warning**: a 41-pixel gap in the pre-existing diagnostics panel at desktop width. The workbook viewer's empty and populated states were inspected at narrow, tablet and desktop widths. The primary job and the selected workbook are visible in the reader, data remains inside its own horizontally scrollable table, and the native host is honestly shown as unavailable in ordinary browser preview. At 390 pixels the table begins below the first screen; the intended primary environment is the Windows desktop. The extra diagnostics spacing is retained rather than redesigning that existing feature in this slice.
 

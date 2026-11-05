@@ -2,7 +2,7 @@
 
 Status: Implemented foundation; Phase 1 acceptance remains open.
 
-This records the shell/transport milestone in [the Phase 1 plan](../../plans/phase-01-desktop-foundation.md). Later workbook editing, Merge and new-file Save As are documented separately. The [Step 40 migration report](dotnet-10-migration.md) records the current .NET 10 standard build and regression results; older validation counts below are historical. Phase acceptance remains open.
+This records the shell/transport milestone in [the Phase 1 plan](../../plans/phase-01-desktop-foundation.md). Later workbook editing, Merge and new-file Save As are documented separately. The [current build instructions](../../README.md) records the current .NET 10 standard build and regression results; older validation counts below are historical. Phase acceptance remains open.
 
 ## Prerequisites and Pinned Dependencies
 
@@ -16,7 +16,7 @@ NuGet package versions remain WebView2 **1.0.4314.35**, MSTest framework/adapter
 
 Current-PC .NET 10 desktop tests pass with WebView2 Runtime **156.0.4314.50 x64**. Earlier counts below used runtime 155.0.4283.62 on the prior PC. Runtime absence is handled with a native error; the app never bootstraps a runtime download. Supply an approved standalone offline runtime installer for clean deployments. Runtime distribution and servicing still need clean-machine acceptance.
 
-The repository now targets .NET 10 LTS. Self-contained releases include their own runtime and require runtime servicing; keeping older SDKs installed does not change which SDK the repository pin selects. See the [migration report](dotnet-10-migration.md) for rollback and compatibility evidence.
+The repository now targets .NET 10 LTS. Self-contained releases include their own runtime and require runtime servicing; keeping older SDKs installed does not change which SDK the repository pin selects. See the [current build instructions](../../README.md) for rollback and compatibility evidence.
 
 ## CMD Build and Test Instructions
 
@@ -105,7 +105,7 @@ The plain Application project owns validation/session/diagnostic behavior. WPF o
 
 ## Validation Record and Remaining Acceptance Work
 
-Verification uses SDK 8.0.427, the existing Windows 10 Pro 22H2 machine, and installed x64 WebView2 155.0.4283.62. This is not a supported clean Windows 11 acceptance environment.
+Verification uses SDK the historical SDK, the existing Windows 10 Pro 22H2 machine, and installed x64 WebView2 155.0.4283.62. This is not a supported clean Windows 11 acceptance environment.
 
 Latest executed verification:
 
@@ -117,7 +117,7 @@ Latest executed verification:
 | Strict frontend typecheck | Passed |
 | Frontend tests | 8 passed, 0 failed, 0 skipped across 3 files |
 | Vite production build | Passed |
-| Self-contained Release win-x64 publish | Passed using .NET 8.0.33 and locked NuGet graph |
+| Self-contained Release win-x64 publish | Passed using .NET.0.33 and locked NuGet graph |
 | Locked solution restore | Passed after making win-x64 explicit; initial NU1004 graph mismatch was corrected |
 
 Initial transient checks also exposed a test's Loaded-event timing, a Vitest fixture-path assumption, and a locked native build module while preview was running. Each was fixed before the passing runs above. No failing or skipped automated test is being counted as passed.
@@ -134,6 +134,6 @@ Before declaring Phase 1 complete, verify:
 2. Manually open/cancel/select a synthetic file through the native dialog, compare file bytes before/after, verify only its basename appears, and check focus returns correctly.
 3. Check keyboard operation, resize behavior, shutdown while a dialog is open, and repeated initialization/renderer failure recovery with a human-visible native window.
 4. Review runtime/profile retention, application/runtime network behavior, offline runtime servicing, exact redistribution licenses, signatures, and distribution artifacts.
-5. Resolve the documented supported-OS and .NET 8 maintenance deadline before a maintained release. Installer/upgrade hardening remains Phase 5.
+5. Resolve the documented supported-OS and .NET maintenance deadline before a maintained release. Installer/upgrade hardening remains Phase 5.
 
 Read the final build/test output for current passing/failing/skipped counts; no unexecuted acceptance check counts as passed. Phase 1 remains open until these criteria have evidence.

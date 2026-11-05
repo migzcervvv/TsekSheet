@@ -7,7 +7,7 @@
 - Node 24.22.1. PATH npm and roaming npm both reported 10.9.8, below the existing required range. npm 11.13.0 was provisioned under ignored `artifacts/step43-tooling`, with the existing `NpmCliPath` build override. No global installation, project package change, dependency upgrade, lockfile change or guard bypass occurred.
 - ClosedXML 0.105.1, Open XML SDK 3.5.1, WebView2 1.0.4314.35; React 19.3.1, TypeScript 7.0.2, Vite 8.3.5; test packages unchanged.
 
-An initial no-restore attempt found stale net8 assets. The first sandboxed locked restore failed NuGet SSL authentication. A retry with user-cache/network access restored locked solution dependencies successfully. Independent evaluation/native/managed locked restores also passed. These environment failures are retained as diagnostics, not counted as passing verification.
+An initial no-restore attempt found stale original-framework assets. The first sandboxed locked restore failed NuGet SSL authentication. A retry with user-cache/network access restored locked solution dependencies successfully. Independent evaluation/native/managed locked restores also passed. These environment failures are retained as diagnostics, not counted as passing verification.
 
 ## Final results
 
@@ -64,13 +64,13 @@ From Windows CMD in the repository root, use the existing approved npm path or t
 dotnet restore TsekSheet.sln --locked-mode
 dotnet build TsekSheet.sln -c Release --no-restore -p:NpmCliPath=C:\Users\mcs\Desktop\Projects\TsekSheet\artifacts\step43-tooling\node_modules\npm\bin\npm-cli.js
 dotnet test TsekSheet.sln -c Release --no-build --no-restore
-dotnet restore tests\WorkbookLibrary.Evaluation --locked-mode
-dotnet test tests\WorkbookLibrary.Evaluation -c Release --no-restore
-dotnet run --project tests\WorkbookLibrary.Evaluation -c Release --no-build --no-restore
-dotnet restore tests\WindowsFileCommit.NativeEvaluation --locked-mode
-dotnet run --project tests\WindowsFileCommit.NativeEvaluation -c Release --no-restore
-dotnet restore tests\WindowsFileCommit.Evaluation --locked-mode
-dotnet run --project tests\WindowsFileCommit.Evaluation -c Release --no-restore
+dotnet restore experiments\archive\WorkbookLibrary.Evaluation --locked-mode
+dotnet test experiments\archive\WorkbookLibrary.Evaluation -c Release --no-restore
+dotnet run --project experiments\archive\WorkbookLibrary.Evaluation -c Release --no-build --no-restore
+dotnet restore experiments\archive\WindowsFileCommit.NativeEvaluation --locked-mode
+dotnet run --project experiments\archive\WindowsFileCommit.NativeEvaluation -c Release --no-restore
+dotnet restore experiments\archive\WindowsFileCommit.Evaluation --locked-mode
+dotnet run --project experiments\archive\WindowsFileCommit.Evaluation -c Release --no-restore
 pushd src\TsekSheet.Frontend
 node ..\..\artifacts\step43-tooling\node_modules\npm\bin\npm-cli.js run typecheck
 node ..\..\artifacts\step43-tooling\node_modules\npm\bin\npm-cli.js run test -- --run

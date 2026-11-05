@@ -96,7 +96,6 @@ public sealed partial class WorkbookInspectionTests
         Assert.AreEqual(100,r.Scan.LastRowElement);
         foreach (var cell in r.Cells) Assert.AreEqual(session.ReadViewport(sheet.Id, cell.Row, cell.Column, 1, 1).Cells[0], cell);
         Assert.AreEqual(hash, Hash(path)); Assert.IsFalse(info.EditingAllowed); Assert.AreEqual(0, session.Info.Revision);
-        Assert.ThrowsExactly<WorkbookException>(() => session.CreateWorkingCopy(sheet.Id, 0));
     }
     [TestMethod]
     public void CaptureRejectsStaleIdentityIncompleteRequestsCancellationAndDisposedSession()

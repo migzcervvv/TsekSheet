@@ -27,7 +27,7 @@ internal sealed class TablePreservationDiagnostics(object pending)
 
     private T Read<T>(string property) => (T)pending.GetType().GetProperty(property)!.GetValue(pending)!;
 
-    internal async Task<string> WriteAsync(ExcelHost host, SectionInsertPreview preview, int iteration,
+    internal async Task WriteAsync(ExcelHost host, SectionInsertPreview preview, int iteration,
         IReadOnlyList<string> differences, TestContext context)
     {
         var before = Read<PreservationSnapshot>("Before");
@@ -44,14 +44,6 @@ internal sealed class TablePreservationDiagnostics(object pending)
         {
             Iteration = iteration, preview.Sheet, preview.Range, preview.InsertRow,
             Differences = differences,
-            TableRangeDifferences = target.Tables.Select(expected => new
-            {
-                Worksheet = target.Name,
-                Range = expected.Name == section.TableName ? expectedTableAddress : expected.Address,
-                Property = $"ListObject[{expected.Name}].Range",
-                Expected = expected.Name == section.TableName ? expectedTableAddress : expected.Address,
-                Actual = after.Sheets.Single(s => s.Name == target.Name).Tables.SingleOrDefault(t => t.Name == expected.Name)?.Address
-            }).Where(d => d.Expected != d.Actual),
             Expected = new
             {
                 TableName = table.Name, TableRange = expectedTableAddress,
@@ -71,7 +63,6 @@ internal sealed class TablePreservationDiagnostics(object pending)
         File.WriteAllText(path, JsonSerializer.Serialize(record, new JsonSerializerOptions { WriteIndented = true }));
         context.AddResultFile(path);
         Console.Error.WriteLine($"Table preservation evidence: {path}");
-        return path;
     }
 
     private static object Flatten(PreservationSnapshot snapshot) => new

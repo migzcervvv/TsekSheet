@@ -11,12 +11,6 @@ public sealed class WorkbookEngine : IWorkbookEngine
     private readonly SemaphoreSlim admissions = new(1, 1);
     private int active;
     private long estimatedBytes;
-    internal Func<byte[], byte[]>? CandidateFaultForTesting { get; set; }
-    internal CommitFaults? CommitFaultsForTesting { get; set; }
-    internal bool StructuralExperimentsEnabled { get; set; }
-    internal Action<StructuralStage>? StructuralFaultForTesting { get; set; }
-    internal bool StructuralIntegrationExperimentsEnabled { get; set; }
-    internal Action<StructuralLifecycleStage>? StructuralLifecycleFaultForTesting { get; set; }
 
     public WorkbookEngine(WorkbookLimits? limits = null)
     {
@@ -56,7 +50,6 @@ public sealed class WorkbookEngine : IWorkbookEngine
                 bytes = new byte[checked((int)file.Length)]; file.ReadExactly(bytes);
             }
             var session = LoadCore(bytes, Path.GetFileName(fullPath), Convert.ToHexString(SHA256.HashData(bytes)), null, null, cancellationToken);
-            session.BindOriginalPath(fullPath);
             return session;
             }
             finally { admissions.Release(); }

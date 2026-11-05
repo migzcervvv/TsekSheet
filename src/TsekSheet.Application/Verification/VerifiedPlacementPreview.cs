@@ -45,19 +45,11 @@ public static class VerifiedPlacement
 {
     public static VerifiedPlacementBatchPreview PreviewMany(IWorkbookSession session,
         MappingDestination expectedDestination, IReadOnlyList<VerifiedPlacementInput> inputs,
-        CancellationToken token = default) => CaptureMany(session, expectedDestination, inputs, false, token);
-
-    /// <summary>
-    /// Adds only the existing read-only structural capability diagnostic. A pass
-    /// neither generates a candidate nor authorizes approval, adoption or writes.
-    /// </summary>
-    public static VerifiedPlacementBatchPreview PreflightMany(IWorkbookSession session,
-        MappingDestination expectedDestination, IReadOnlyList<VerifiedPlacementInput> inputs,
-        CancellationToken token = default) => CaptureMany(session, expectedDestination, inputs, true, token);
+        CancellationToken token = default) => CaptureMany(session, expectedDestination, inputs, token);
 
     private static VerifiedPlacementBatchPreview CaptureMany(IWorkbookSession session,
         MappingDestination expectedDestination, IReadOnlyList<VerifiedPlacementInput> inputs,
-        bool inspectStructure, CancellationToken token)
+        CancellationToken token)
     {
         ArgumentNullException.ThrowIfNull(session);
         token.ThrowIfCancellationRequested();
@@ -84,7 +76,6 @@ public static class VerifiedPlacement
             expectedDestination.Revision, profile, token);
         var proposal = WorkflowPlanning.Plan(analysis, profile,
             records.Select((record, index) => Input(record, requests[index].Choices)).ToArray(), token);
-        if (inspectStructure) proposal = WorkflowPlanning.InspectStructure(session, proposal, token);
         // Recheck after every diagnostic branch, including the engine call. The
         // captured versions remain observations, never durable write authority.
         VerifiedMapping.RequireDestination(session, expectedDestination);
