@@ -224,6 +224,8 @@ Status: DONE (T2 verification checkpoint satisfied; in-memory fast receipt loop 
 
 Status: DONE (respect explicit duplicate policy; preserve source-hash/restart-safe submission guards; instrument and remove redundant preview readback; median 0.861 -> 0.515 s on 20 synthetic previews; final Application 645/0/0, Workbooks 457/0/0, Desktop 26/0/0, Frontend 90/0/0, Excel 24/0/0 passed/failed/skipped; two full Release Excel runs executed, with an initial table-preservation mismatch not reproduced by the isolated three-mode rerun or final full run; checks unchanged, owner review of this risk remains)
 
+Diagnostics status: IN REVIEW (fresh integration PR; failure snapshots include explicit ListObject range differences and an intentional synthetic preservation-difference test; original failure classification remains inconclusive).
+
 ### T3 - OCR bake-off (can run in parallel with T1/T2)
 
 Status: TODO (needs the document set in `fixtures/redacted/docs/`)
@@ -274,6 +276,7 @@ Status: TODO
 
 | Risk                                                 | Mitigation                                                    |
 | ---------------------------------------------------- | ------------------------------------------------------------- |
+| intermittent preservation mismatch (1 occurrence, unreproduced; snapshots enabled) | Classification: inconclusive; retain snapshots on recurrence |
 | Excel version/bitness differences on office machines | Record version in diagnostics; test on M365 64-bit first      |
 | Excel modal dialogs or busy state block automation   | Bounded retry + "Excel is busy" UI state                      |
 | COM writes clear Excel's undo stack                  | Backup before first write + action log of inserts             |
