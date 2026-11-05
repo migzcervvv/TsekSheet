@@ -4,7 +4,7 @@ Status: Planned
 
 Target: Windows x64
 
-.NET baseline: Installed x64 SDK **8.0.427**, WPF target **net8.0-windows**, and application-library target **net8.0**, retaining **Visual Studio 2022** compatibility. Do not install .NET 10. .NET 8 support ends **November 10, 2026**; an upgrade to a supported .NET release will be required for a maintained release beyond that date. Other technology decisions remain unchanged.
+.NET baseline: Installed x64 SDK **the historical SDK**, WPF target **the original Windows target**, and application-library target **the original library target**, retaining **Visual Studio 2022** compatibility. .NET 10 is the only supported target. the original .NET baseline support ends **November 10, 2026**; an upgrade to a supported .NET release will be required for a maintained release beyond that date. Other technology decisions remain unchanged.
 
 ## Scope and Source Requirements
 
@@ -23,7 +23,7 @@ Phase 0 is still in progress under the roadmap. Confirm its architecture/toolcha
 ### Environment
 
 - A supported Windows x64 development machine and a separate clean Windows x64 test environment. Record the tested Windows build and supported minimum only after verification.
-- Installed x64 .NET SDK 8.0.427 with WPF targeting support, plus Visual Studio 2022 with the required desktop workload or a verified compatible CLI/MSBuild toolchain. An IDE is optional; build and test entry points must be documented. Keep solution and test tooling compatible with Visual Studio 2022.
+- Installed x64 .NET SDK the historical SDK with WPF targeting support, plus Visual Studio 2022 with the required desktop workload or a verified compatible CLI/MSBuild toolchain. An IDE is optional; build and test entry points must be documented. Keep solution and test tooling compatible with Visual Studio 2022.
 - The x64 WebView2 Runtime supplied through an approved offline installation/distribution path. Account for runtime absence without offering an automatic online bootstrap.
 - An x64 Node.js development runtime and npm for frontend builds and tests. End users must not need Node.js or npm.
 - Git and Windows Command Prompt (CMD) as the default development command environment for reproducible repository tasks. Python, Excel installation, OCR tools, and workbook libraries are not Phase 1 prerequisites.
@@ -31,11 +31,11 @@ Phase 0 is still in progress under the roadmap. Confirm its architecture/toolcha
 
 ### Dependency Verification Gate
 
-The .NET SDK is fixed at installed 8.0.427 with the .NET 8 targets above. Other dependency recommendations and inspection evidence are recorded in [toolchain.md](../docs/development/toolchain.md); combined execution remains subject to verification. In task P1-01, verify versions against official vendor/package documentation and the actual Windows toolchain, then record exact choices and evidence. Avoid floating `latest` dependencies in implementation.
+The .NET SDK is fixed at installed the historical SDK with the the original .NET baseline targets above. Other dependency recommendations and inspection evidence are recorded in [toolchain.md](../docs/development/toolchain.md); combined execution remains subject to verification. In task P1-01, verify versions against official vendor/package documentation and the actual Windows toolchain, then record exact choices and evidence. Avoid floating `latest` dependencies in implementation.
 
 | Dependency or choice | Verification required before pinning |
 | --- | --- |
-| .NET SDK, target framework, Windows targeting | Pin installed SDK 8.0.427; use net8.0-windows for WPF and net8.0 for application libraries. Verify VS 2022 compatibility, x64 build/publish behavior, Windows minimum, and test tooling. Record November 10, 2026 end of support and the maintained-release upgrade requirement. Do not install .NET 10. |
+| .NET SDK, target framework, Windows targeting | Pin installed SDK the historical SDK; use the original Windows target for WPF and the original library target for application libraries. Verify VS 2022 compatibility, x64 build/publish behavior, Windows minimum, and test tooling. Record November 10, 2026 end of support and the maintained-release upgrade requirement. .NET 10 is the only supported target. |
 | WPF host runtime | Confirm framework-dependent versus self-contained development distribution. Prefer a self-contained `win-x64` smoke-test artifact if redistribution and size are acceptable; do not assume .NET is installed on a clean machine. |
 | `Microsoft.Web.WebView2` SDK package | Exact stable package version, WPF/.NET compatibility, required runtime API level, native x64 loader output, and supported security/lifecycle APIs. |
 | WebView2 Runtime | Exact runtime used for tests, supported distribution model, minimum compatible runtime, offline installer availability/terms, and how runtime maintenance occurs without a first-run download. SDK and runtime versions are distinct. |
@@ -85,7 +85,7 @@ tests/
   contracts/                 Shared valid/invalid JSON fixtures
 ```
 
-Use two production .NET projects initially. Desktop targets `net8.0-windows` with WPF and x64 settings. Application targets `net8.0` without Windows UI dependencies. Use SDK 8.0.427 and retain Visual Studio 2022 compatibility. Desktop references Application; Application never references Desktop. Frontend communicates only through the message contract and does not reference .NET projects.
+Use two production .NET projects initially. Desktop targets `the original Windows target` with WPF and x64 settings. Application targets `the original library target` without Windows UI dependencies. Use SDK the historical SDK and retain Visual Studio 2022 compatibility. Desktop references Application; Application never references Desktop. Frontend communicates only through the message contract and does not reference .NET projects.
 
 Do not create empty Domain, Workbook, Template, OCR, Infrastructure, or Contracts assemblies. Later phases can introduce a Domain project when real domain behavior justifies it. For Phase 1, plain contracts and small use cases fit in Application. Keep WebView transport details in Desktop, using shared fixtures to test their serialized meaning across C# and TypeScript.
 
@@ -102,7 +102,7 @@ Each numbered task is sized for a separate Codex session. Start each session by 
 Dependencies: Phase 0 architecture/toolchain findings.
 
 - Inventory installed tools without changing machine configuration implicitly.
-- Resolve the dependency-verification table from official sources and compatibility probes, retaining installed SDK 8.0.427 and Visual Studio 2022 compatibility. Record .NET 8's November 10, 2026 support deadline and required upgrade for a maintained release.
+- Resolve the dependency-verification table from official sources and compatibility probes, retaining installed SDK the historical SDK and Visual Studio 2022 compatibility. Record the original .NET baseline's November 10, 2026 support deadline and required upgrade for a maintained release.
 - Record exact versions, x64/Windows constraints, runtime distribution choice, restore/build/test commands, and required offline artifacts.
 - Keep Python, workbook packages, and template schema work out of the dependency set.
 
@@ -112,7 +112,7 @@ Exit check: A subsequent session can reproduce the selected environment; unsuppo
 
 Dependencies: P1-01.
 
-- Create Desktop, Application, and test projects with the reference direction above; pin SDK 8.0.427, target `net8.0-windows` for WPF and `net8.0` for application libraries, and preserve Visual Studio 2022 compatibility.
+- Create Desktop, Application, and test projects with the reference direction above; pin SDK the historical SDK, target `the original Windows target` for WPF and `the original library target` for application libraries, and preserve Visual Studio 2022 compatibility.
 - Enable nullable analysis and ordinary compiler checks; avoid unrelated build customization.
 - Add a minimal WPF window and an application service returning static foundation metadata.
 - Add a meaningful headless test for that service and a dependency check preventing Application from referencing WPF/WebView2.
@@ -295,7 +295,7 @@ Excel and OCR behavior has no executable coverage in this phase because neither 
 ## 8. Definition of Done
 
 - P1-01 through P1-10 are complete with reviewable changes and reproducible validation evidence.
-- Exact dependency versions and compatibility/runtime distribution decisions are recorded; lockfiles and SDK 8.0.427 selection reproduce the tested build with Visual Studio 2022 compatibility. The .NET 8 support deadline of November 10, 2026 and maintained-release upgrade requirement are explicit.
+- Exact dependency versions and compatibility/runtime distribution decisions are recorded; lockfiles and SDK the historical SDK selection reproduce the tested build with Visual Studio 2022 compatibility. The the original .NET baseline support deadline of November 10, 2026 and maintained-release upgrade requirement are explicit.
 - The minimal project/reference structure and bridge contract are documented. No speculative subsystem or unused framework is introduced.
 - Every acceptance criterion has a corresponding passed check or explicit reproducible verification record. Failed or unexecuted mandatory checks keep Phase 1 incomplete.
 - The clean-machine Windows x64 artifact, offline prerequisites, build/test/publish instructions, and known runtime limits are available for the next implementation session.

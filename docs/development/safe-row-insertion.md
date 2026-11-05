@@ -1,5 +1,7 @@
 # Safe row insertion foundation — Step 42
 
+> Historical evidence for the retired write path. Current workbook changes use Excel; see [README](../../README.md).
+
 ## Step 45 current status
 
 The [real desktop candidate-review flow](step45-verification.md) now generates an isolated oracle-accepted candidate and records explicit revision/fingerprint-bound **review-only** approval. Unqualified native heights block approval; all public adoption/Apply remain disabled regardless of experimental flags. No insertion, Merge or export follows review approval. Seventeen further native captures improve evidence but do not establish general compatibility. Exact raw row heights/flags/defaults/styles remain protected; no 22/21.95 tolerance or normalization was added. Historical sections below retain prior checkpoints.
@@ -79,7 +81,7 @@ Local test evidence: `artifacts/step42-tests/step42-verified_*.trx`, independent
 
 ## Original fingerprints
 
-Both retained synthetic originals match `tests/WorkbookLibrary.Evaluation/Fixtures/sha256.json` after verification:
+Both retained synthetic originals match `experiments/archive/WorkbookLibrary.Evaluation/Fixtures/sha256.json` after verification:
 
 | File | SHA-256 |
 | --- | --- |
@@ -104,7 +106,7 @@ Modified for this milestone:
 - `tests/TsekSheet.Desktop.Tests/DesktopSmokeTests.cs`, `TsekSheet.Desktop.Tests.csproj`, `tests/TsekSheet.Workbooks.Tests/TsekSheet.Workbooks.Tests.csproj`.
 - `README.md`, `PLANS.md`, `docs/development/worksheet-integration.md`.
 
-Preserved pre-existing Step 41 changes in README/PLANS, `docs/development/dotnet-10-migration.md`, `toolchain.md`, `dependency-security-review.md`, `docs/research/evidence/dependency-security-review.json` and `tests/WorkbookLibrary.Evaluation/{README.md,WorkbookLibrary.Evaluation.csproj,packages.lock.json}`. No new package/SDK/target-framework migration was needed for Step 42. Temporary build/test/publish outputs are ignored local artifacts.
+Preserved pre-existing Step 41 changes in README/PLANS, `toolchain.md`, `dependency-security-review.md`, `docs/research/evidence/dependency-security-review.json` and `experiments/archive/WorkbookLibrary.Evaluation/{README.md,WorkbookLibrary.Evaluation.csproj,packages.lock.json}`. No new package/SDK/target-framework migration was needed for Step 42. Temporary build/test/publish outputs are ignored local artifacts.
 
 ## Reproduce checks
 
@@ -114,13 +116,13 @@ Use the Windows CMD / VS Code .NET 10 setup in [toolchain.md](toolchain.md). Fro
 dotnet restore TsekSheet.sln --locked-mode
 dotnet build TsekSheet.sln -c Release --no-restore
 dotnet test TsekSheet.sln -c Release --no-build --no-restore
-dotnet restore tests\WorkbookLibrary.Evaluation --locked-mode
-dotnet test tests\WorkbookLibrary.Evaluation -c Release --no-restore
-dotnet run --project tests\WorkbookLibrary.Evaluation -c Release --no-restore
-dotnet restore tests\WindowsFileCommit.NativeEvaluation --locked-mode
-dotnet run --project tests\WindowsFileCommit.NativeEvaluation -c Release --no-restore
-dotnet restore tests\WindowsFileCommit.Evaluation --locked-mode
-dotnet run --project tests\WindowsFileCommit.Evaluation -c Release --no-restore
+dotnet restore experiments\archive\WorkbookLibrary.Evaluation --locked-mode
+dotnet test experiments\archive\WorkbookLibrary.Evaluation -c Release --no-restore
+dotnet run --project experiments\archive\WorkbookLibrary.Evaluation -c Release --no-restore
+dotnet restore experiments\archive\WindowsFileCommit.NativeEvaluation --locked-mode
+dotnet run --project experiments\archive\WindowsFileCommit.NativeEvaluation -c Release --no-restore
+dotnet restore experiments\archive\WindowsFileCommit.Evaluation --locked-mode
+dotnet run --project experiments\archive\WindowsFileCommit.Evaluation -c Release --no-restore
 cd src\TsekSheet.Frontend
 npm.cmd run typecheck
 npm.cmd run test -- --run

@@ -2,6 +2,8 @@
 
 [README](README.md) · **Changelog**
 
+- 2026-11-05 — T2b: Remove the legacy working-copy/candidate/Merge/export path and UI, retain read-only inspection and Excel receipt workflows, archive evaluation projects, and remove obsolete runtime outputs and migration rollback material; project targets are .NET 10 only.
+
 - 2026-11-05 — T2e-FIX: Stop inferring item-number/vendor-invoice uniqueness without a profile policy, retain source-hash and restart-safe submission guards, instrument preview stages, and skip the demonstrated redundant duplicate readback while preserving all Excel safety checks.
 - 2026-11-04 — T2e: Add a session-only receipt queue with retained explicit destinations/accounts, draft row previews, one Add Row verification confirmation, automatic advance and skip/review; reject duplicates/stale targets and preserve existing Excel write safeguards; measure the old/new 20-receipt workflows.
 - 2026-11-04 — Documentation: Add README/Changelog navigation and summarize the supplied pre-reset development history.

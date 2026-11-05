@@ -25,10 +25,6 @@ export interface Workbook { compatibility?: CompatibilityReport | null; sessionI
 export interface CellInterpretation { rawValue: string; displayValue: string; resolvedType: string; confidence: string; warning: string; formulaStatus: string; classification?: string; formatResolution?: string }
 export interface Cell { interpretation?: CellInterpretation | null; row: number; column: number; value: string; kind: string; formula: string | null; truncated: boolean; format: { numberFormat: string; numberFormatId: number; bold: boolean; italic: boolean; fillColor: string; effectiveNumberFormatId?: number | null; formatResolution?: string | null; formatClassification?: string | null } }
 export interface Viewport { scan?: WorksheetScan | null; sessionId: string; worksheetId: string; startRow: number; startColumn: number; rows: number; columns: number; cells: Cell[] }
-export interface WorkingCopy { sessionId: string; sourceWorksheetId: string; baseRevision: number; revision: number; isDirty: boolean; changeCount: number }
-export interface SaveReceipt { status: 'saved'; sessionId: string; savedRevision: number; sourceStillDirty: boolean; rebound: false; cancellationAfterCommit: boolean; destinationSha256: string; displayName: string }
-export interface MergePayload { sessionId: string; workingCopyId: string; worksheetId: string; expectedCopyRevision: number; expectedRevision: number; expectedBaseRevision: number }
-export interface MergePreview { destinationName: string; pendingCells: number; canApply: boolean; conflicts: { code: string; message: string }[] }
 import {validSectionReview} from './sectionReview';
 import type {ReviewSnapshot, ReviewBinding, ReviewDecision} from './sectionReview';
 interface Results {
@@ -58,9 +54,6 @@ interface Results {
   'sectionReview.cancel': {status:'cancelled'};
   'workflow.profiles': { profiles: WorkflowProfile[] };
   'workbook.planRecords': WorkflowPlan;
-  'workbook.generateCandidate': CandidateReview;
-  'workbook.approveCandidate': CandidateReview;
-  'workbook.cancelCandidate': {status:'cancelled'};
   'foundation.handshake': Handshake;
   'foundation.getInfo': Info;
   'foundation.selectFile': Selection;
@@ -70,12 +63,6 @@ interface Results {
   'workbook.open': { status: 'cancelled' | 'opened'; workbook?: Workbook | null };
   'workbook.readViewport': Viewport;
   'workbook.close': { status: 'closed' };
-  'workbook.discard': { status: 'closed' };
-  'workbook.createCopy': WorkingCopy;
-  'workbook.editCopy': WorkingCopy;
-  'workbook.saveAsNew': { status: 'saved' | 'cancelled'; receipt?: SaveReceipt | null };
-  'workbook.previewMerge': MergePreview;
-  'workbook.merge': { workbook: Workbook; appliedCells: number };
 }
 interface Payloads {
   'receipt.queue': Record<string,never>;
@@ -104,9 +91,6 @@ interface Payloads {
   'sectionReview.cancel': {sessionId:string;worksheetId:string};
   'workflow.profiles': Record<string, never>;
   'workbook.planRecords': WorkflowRequest;
-  'workbook.generateCandidate': WorkflowRequest & {destinationSessionId:string; expectedDestinationRevision:number};
-  'workbook.approveCandidate': CandidateApproval;
-  'workbook.cancelCandidate': {sessionId:string; candidateId:string; expectedRevision:number};
   'foundation.handshake': { supportedVersions: number[] };
   'foundation.getInfo': Record<string, never>;
   'foundation.selectFile': Record<string, never>;
@@ -116,12 +100,6 @@ interface Payloads {
   'workbook.open': Record<string, never>;
   'workbook.readViewport': { sessionId: string; worksheetId: string; startRow: number; startColumn: number; rows: number; columns: number };
   'workbook.close': { sessionId: string };
-  'workbook.discard': { sessionId: string };
-  'workbook.createCopy': { sessionId: string; worksheetId: string; expectedRevision: number };
-  'workbook.editCopy': { sessionId: string; worksheetId: string; row: number; column: number; kind: 'text' | 'number' | 'date' | 'formula'; value: string; expectedRevision: number };
-  'workbook.saveAsNew': { sessionId: string; expectedRevision: number };
-  'workbook.previewMerge': MergePayload;
-  'workbook.merge': MergePayload;
 }
 type Command = keyof Results;
 type ObjectValue = Record<string, unknown>;
@@ -188,8 +166,6 @@ function validResult(command: Command, r: unknown): boolean {
     case 'sectionReview.cancel': return r.status==='cancelled';
     case 'workflow.profiles': return validProfiles(r);
     case 'workbook.planRecords': return validWorkflowPlan(r);
-    case 'workbook.generateCandidate': case 'workbook.approveCandidate': return validCandidateReview(r);
-    case 'workbook.cancelCandidate': return r.status==='cancelled';
     case 'foundation.handshake': return r.selectedVersion === 1 && text(r.applicationName) && text(r.version) && object(r.capabilities)
       && ['diagnostics', 'fileSelection', 'workbooks', 'templates', 'ocr'].every(k => typeof (r.capabilities as ObjectValue)[k] === 'boolean');
     case 'foundation.getInfo': return text(r.applicationName) && text(r.version) && text(r.platform) && typeof r.hasUnsavedWork === 'boolean';
@@ -198,14 +174,8 @@ function validResult(command: Command, r: unknown): boolean {
     case 'diagnostics.cancel': return r.status === 'requested' || r.status === 'notRunning';
     case 'workbook.inspect': return r.status === 'cancelled' || (r.status === 'opened' && validWorkbook(r.workbook) && !!r.workbook.compatibility);
     case 'workbook.open': return r.status === 'cancelled' || (r.status === 'opened' && validWorkbook(r.workbook) && r.workbook.revision === 0 && !r.workbook.isDirty);
-    case 'workbook.previewMerge': return text(r.destinationName) && integer(r.pendingCells, 0, 1000) && typeof r.canApply === 'boolean'
-      && Array.isArray(r.conflicts) && r.conflicts.length <= 16 && r.conflicts.every((c: unknown) => object(c) && text(c.code) && content(c.message)) && r.canApply === (r.conflicts.length === 0);
-    case 'workbook.merge': return validWorkbook(r.workbook) && integer(r.appliedCells, 0, 1000);
     case 'workbook.readViewport': return validViewport(r);
     case 'workbook.close': return r.status === 'closed';
-    case 'workbook.discard': return r.status === 'closed';
-    case 'workbook.saveAsNew': return r.status === 'cancelled' || (r.status === 'saved' && object(r.receipt) && r.receipt.status === 'saved' && guid(r.receipt.sessionId) && integer(r.receipt.savedRevision, 0, 2147483647) && typeof r.receipt.sourceStillDirty === 'boolean' && r.receipt.rebound === false && typeof r.receipt.cancellationAfterCommit === 'boolean' && typeof r.receipt.destinationSha256 === 'string' && /^[a-f\d]{64}$/i.test(r.receipt.destinationSha256) && text(r.receipt.displayName) && !/[\\/]/.test(r.receipt.displayName));
-    case 'workbook.createCopy': case 'workbook.editCopy': return guid(r.sessionId) && guid(r.sourceWorksheetId) && integer(r.baseRevision, 0, 2147483647) && integer(r.revision, 0, 2147483647) && typeof r.isDirty === 'boolean' && integer(r.changeCount, 0, 1000);
   }
 }
 
@@ -227,7 +197,7 @@ export class BridgeClient {
     const promise = new Promise<Results[C]>((resolve, reject) => {
       if (this.disposed) { reject(new BridgeTransportError('closed', false, 'Desktop connection closed.')); return; }
       if (this.pending.size >= 16) { reject(new BridgeTransportError('capacity', false, 'Too many pending requests.')); return; }
-      const timer = setTimeout(() => { this.pending.delete(id); reject(new BridgeTransportError('timeout', true, 'Desktop request timed out. Its outcome is unknown.')); }, command === 'foundation.selectFile' || command === 'workbook.open' || command === 'workbook.saveAsNew' || command === 'sectionReview.start' ? 120000 : this.timeoutMs);
+      const timer = setTimeout(() => { this.pending.delete(id); reject(new BridgeTransportError('timeout', true, 'Desktop request timed out. Its outcome is unknown.')); }, command === 'foundation.selectFile' || command === 'workbook.open' || command === 'sectionReview.start' ? 120000 : this.timeoutMs);
       this.pending.set(id, { command, resolve: value => resolve(value as Results[C]), reject, timer });
       try { this.transport.postMessage({ protocolVersion: 1, requestId: id, command, payload }); }
       catch { this.finish(id); reject(new BridgeTransportError('unavailable', true, 'Desktop connection is unavailable.')); }
@@ -263,5 +233,5 @@ export class BridgeClient {
     for (const [id, p] of this.pending) { this.finish(id); p.reject(new BridgeTransportError('closed', true, 'Desktop connection closed.')); }
   }
 }
-import { validProfiles, validWorkflowPlan, validCandidateReview } from './workflows';
-import type { WorkflowProfile, WorkflowRequest, WorkflowPlan, CandidateReview, CandidateApproval } from './workflows';
+import { validProfiles, validWorkflowPlan } from './workflows';
+import type { WorkflowProfile, WorkflowRequest, WorkflowPlan } from './workflows';

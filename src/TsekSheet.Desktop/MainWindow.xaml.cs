@@ -20,7 +20,6 @@ public partial class MainWindow : Window
     private readonly IWorkbookEngine workbookEngine = new WorkbookEngine();
     private readonly Func<CancellationToken, Task<string?>>? workbookSelector;
     private readonly Func<bool>? confirmDiscard;
-    private readonly Func<CancellationToken, Task<string?>>? saveSelector;
     private readonly Func<CancellationToken, Task<string?>>? sectionProfileSelector;
     private bool dialogOpen;
     private readonly Func<CancellationToken, Task<string?>>? documentSelector;
@@ -30,7 +29,7 @@ public partial class MainWindow : Window
 
     public MainWindow() : this(null, null, null) { }
 
-    internal MainWindow(string? assetDirectory, string? profileDirectory, string? browserExecutableFolder, Func<CancellationToken, Task<string?>>? workbookSelector = null, Func<bool>? confirmDiscard = null, Func<CancellationToken, Task<string?>>? saveSelector = null, Func<CancellationToken, Task<string?>>? sectionProfileSelector = null, Func<CancellationToken, Task<string?>>? documentSelector = null,
+    internal MainWindow(string? assetDirectory, string? profileDirectory, string? browserExecutableFolder, Func<CancellationToken, Task<string?>>? workbookSelector = null, Func<bool>? confirmDiscard = null, Func<CancellationToken, Task<string?>>? sectionProfileSelector = null, Func<CancellationToken, Task<string?>>? documentSelector = null,
         IReadOnlyList<TsekSheet.Application.Workflows.WorkflowProfile>? workflowProfiles = null, TsekSheet.Excel.ExcelHost? ownedExcelHost = null,
         Func<CancellationToken, Task<IReadOnlyList<string>>>? documentQueueSelector = null)
     {
@@ -39,7 +38,6 @@ public partial class MainWindow : Window
         browserFolder = browserExecutableFolder;
         this.workbookSelector = workbookSelector;
         this.confirmDiscard = confirmDiscard;
-        this.saveSelector = saveSelector;
         this.sectionProfileSelector = sectionProfileSelector;
         this.documentSelector = documentSelector;
         this.documentQueueSelector = documentQueueSelector;
@@ -125,7 +123,7 @@ public partial class MainWindow : Window
         selectedPath = null;
         excelHost ??= new TsekSheet.Excel.ExcelHost();
         var profiles = workflowProfiles ?? TsekSheet.Application.Workflows.WorkflowProfiles.All;
-        session = new BridgeSession(Send, SelectFileAsync, workbooks: new WorkbookWorkspace(workbookEngine, SelectWorkbookAsync, SelectSaveDestinationAsync, SelectSectionProfileAsync), selectDocument: SelectDocumentAsync, renderer: new TsekSheet.Application.Documents.LocalDocumentRenderer(Path.Combine(AppContext.BaseDirectory,"renderer","TsekSheet.Renderer.exe")),
+        session = new BridgeSession(Send, SelectFileAsync, workbooks: new WorkbookWorkspace(workbookEngine, SelectWorkbookAsync, SelectSectionProfileAsync), selectDocument: SelectDocumentAsync, renderer: new TsekSheet.Application.Documents.LocalDocumentRenderer(Path.Combine(AppContext.BaseDirectory,"renderer","TsekSheet.Renderer.exe")),
             excel: new TsekSheet.Application.Excel.ExcelReceiptInsertion(excelHost, excelHost, id => profiles.Single(p => p.Id == id)), selectExcelWorkbook: SelectExcelWorkbookAsync, profiles: profiles, selectDocuments: SelectDocumentsAsync);
     }
 
@@ -218,27 +216,6 @@ public partial class MainWindow : Window
         finally { dialogOpen = false; }
     }
 
-    private Task<string?> SelectSaveDestinationAsync(CancellationToken token)
-    {
-        token.ThrowIfCancellationRequested();
-        if (saveSelector != null) return saveSelector(token);
-        if (dialogOpen) throw new WorkbookException("BUSY", "A native file dialog is already open.");
-        dialogOpen = true;
-        try
-        {
-            var dialog = CreateSaveDialog();
-            dialog.FileOk += (_, e) =>
-            {
-                if (!Path.Exists(dialog.FileName)) return;
-                e.Cancel = true;
-                MessageBox.Show(this, "Choose a new filename. TsekSheet cannot overwrite an existing file.", "Save As", MessageBoxButton.OK, MessageBoxImage.Information);
-            };
-            var selected = dialog.ShowDialog(this) == true ? dialog.FileName : null;
-            token.ThrowIfCancellationRequested();
-            return Task.FromResult(selected);
-        }
-        finally { dialogOpen = false; }
-    }
 
     private Task<string?> SelectSectionProfileAsync(CancellationToken token)
     {
@@ -305,12 +282,6 @@ public partial class MainWindow : Window
         }
         finally { dialogOpen = false; }
     }
-    internal static SaveFileDialog CreateSaveDialog() => new()
-    {
-        Title = "Save As — original session only; working-copy edits excluded",
-        Filter = "Excel workbook (*.xlsx)|*.xlsx", DefaultExt = ".xlsx", AddExtension = true,
-        CheckPathExists = true, OverwritePrompt = false, CreatePrompt = false, CreateTestFile = false
-    };
 
     private void Fail(string message, bool retry = true)
     {

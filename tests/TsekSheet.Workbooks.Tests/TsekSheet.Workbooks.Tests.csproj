@@ -11,6 +11,6 @@
     <PackageReference Include="MSTest.TestAdapter" Version="4.5.2" />
     <PackageReference Include="MSTest.TestFramework" Version="4.5.2" />
     <ProjectReference Include="..\..\src\TsekSheet.Workbooks\TsekSheet.Workbooks.csproj" />
-    <Content Include="..\WorkbookLibrary.Evaluation\Fixtures\*.xlsx" Link="Fixtures\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\experiments\archive\WorkbookLibrary.Evaluation\Fixtures\*.xlsx" Link="Fixtures\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

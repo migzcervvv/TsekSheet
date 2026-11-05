@@ -13,19 +13,19 @@ This work follows [AGENTS.md](../../AGENTS.md), [GOALS.md](../../GOALS.md), [PLA
 ## Evidence and version selection
 
 - **Source verified:** publisher documentation, license texts, NuGet package metadata, and the restored packages' `.nuspec` license declarations. A documented API is not evidence of preservation.
-- **Experiment verified:** executed .NET 8 load/mutate/save/reopen probes, saved-package ZIP/XML comparisons, schema validation, and fixture hashes.
+- **Experiment verified:** executed .NET load/mutate/save/reopen probes, saved-package ZIP/XML comparisons, schema validation, and fixture hashes.
 - **Recommended:** a proposed Phase 2 strategy, not an implemented or accepted compatibility guarantee.
 - **Not executed:** explicit report entries for licensing gates and missing prototypes. These are not passes or proof that a library lacks the feature.
 
-SDK: **8.0.427**, target **net8.0**, x64 Windows host. Stable package versions observed in official NuGet metadata were ClosedXML 0.105.1, EPPlus 8.7.2, NPOI 2.8.1, and DocumentFormat.OpenXml 3.5.1. NPOI runtime experiments intentionally use **2.7.6**, whose restored package declares Apache-2.0, rather than assuming the newer binary terms are suitable. No NPOI 2.8.x binary or EPPlus instance was executed.
+SDK: **the historical SDK**, target **the original library target**, x64 Windows host. Stable package versions observed in official NuGet metadata were ClosedXML 0.105.1, EPPlus 8.7.2, NPOI 2.8.1, and DocumentFormat.OpenXml 3.5.1. NPOI runtime experiments intentionally use **2.7.6**, whose restored package declares Apache-2.0, rather than assuming the newer binary terms are suitable. No NPOI 2.8.x binary or EPPlus instance was executed.
 
-The experiment's [project](../../tests/WorkbookLibrary.Evaluation/WorkbookLibrary.Evaluation.csproj) and [lock file](../../tests/WorkbookLibrary.Evaluation/packages.lock.json) pin the resolved graph. [Restored license inventory](evidence/restored-package-licenses.json) records package versions, declared licenses, and repository commits, including test infrastructure. The graph was restored together: ClosedXML used SixLabors.Fonts 1.0.1 as resolved with NPOI. A future production-only dependency graph must be checked separately.
+The experiment's [project](../../experiments/archive/WorkbookLibrary.Evaluation/WorkbookLibrary.Evaluation.csproj) and [lock file](../../experiments/archive/WorkbookLibrary.Evaluation/packages.lock.json) pin the resolved graph. [Restored license inventory](evidence/restored-package-licenses.json) records package versions, declared licenses, and repository commits, including test infrastructure. The graph was restored together: ClosedXML used SixLabors.Fonts 1.0.1 as resolved with NPOI. A future production-only dependency graph must be checked separately.
 
 ## Library comparison
 
 | Criterion | ClosedXML 0.105.1 | EPPlus 8.7.2 | NPOI 2.7.6 / current 2.8.1 | Open XML SDK 3.5.1 |
 | --- | --- | --- | --- | --- |
-| .NET 8 | .NET Standard assets; compiled and executed on .NET 8 | Native net8.0 assets; metadata only | net8.0 assets; 2.7.6 executed, 2.8.1 metadata only | net8.0 assets; compiled and executed |
+| .NET | .NET Standard assets; compiled and executed on .NET | Native the original library target assets; metadata only | the original library target assets; 2.7.6 executed, 2.8.1 metadata only | the original library target assets; compiled and executed |
 | Commercial redistribution | MIT; retain required notices, review dependencies | Commercial license required for the intended commercial context; PolyForm Noncommercial is not a commercial grant | 2.7.6 package declares Apache-2.0; NSax dependency declares LGPL-3.0-only. Current binaries have additional maintenance-fee terms | MIT; retain notices and review dependencies |
 | `.xlsx` open/save | Verified on both fixtures | Documented; not run | Verified on both fixtures with XSSF 2.7.6 | Verified with SpreadsheetDocument |
 | Formula text and cross-sheet references | Checked baseline formulas preserved; shifted direct summary references followed insertion | Documented support; unverified here | Checked baseline formulas preserved; shifted direct summary references followed insertion | Preserved in untouched parts; row address edits supply no automatic formula translation |
@@ -50,22 +50,22 @@ The actual 2.7.6 dependency graph also contains **NSax 1.0.2, LGPL-3.0-only** ac
 
 ## Synthetic fixtures and safety
 
-The independent SDK [generator](../../tests/WorkbookLibrary.Evaluation/FixtureFactory.cs) creates two artificial workbooks with no real financial or personal data:
+The independent SDK [generator](../../experiments/archive/WorkbookLibrary.Evaluation/FixtureFactory.cs) creates two artificial workbooks with no real financial or personal data:
 
 | Fixture | Main worksheet / summary | Alternate worksheet / summary | Purpose |
 | --- | --- | --- | --- |
-| [reimbursement-synthetic.xlsx](../../tests/WorkbookLibrary.Evaluation/Fixtures/reimbursement-synthetic.xlsx) | Expense Draft / 10 | Second Batch / 14 | Reimbursement-like input, calculated amounts, date column and totals |
-| [laboratory-synthetic.xlsx](../../tests/WorkbookLibrary.Evaluation/Fixtures/laboratory-synthetic.xlsx) | Lab Runs / 16 | Instrument B / 22 | Generic measurement log using the same structural pattern |
+| [reimbursement-synthetic.xlsx](../../experiments/archive/WorkbookLibrary.Evaluation/Fixtures/reimbursement-synthetic.xlsx) | Expense Draft / 10 | Second Batch / 14 | Reimbursement-like input, calculated amounts, date column and totals |
+| [laboratory-synthetic.xlsx](../../experiments/archive/WorkbookLibrary.Evaluation/Fixtures/laboratory-synthetic.xlsx) | Lab Runs / 16 | Instrument B / 22 | Generic measurement log using the same structural pattern |
 
 Each also has a hidden Lookup sheet and an Overview sheet. Data starts at row 5, followed by a summary, a merged marker three rows below it, and dependent content five rows below it. Both data sheets have a real table. Coverage includes numeric/date formats, bold/fill, explicit widths and heights, title/footer merges, global and worksheet-scoped names, cross-sheet formulas, an explicit self-reference with absolute/mixed anchors, workbook date-system metadata, core/custom properties, and an opaque custom XML payload. Artificial labels and the custom property identify the synthetic provenance.
 
 Summary coordinates and names are fixture specifications passed to the probes, not production constants. Only the selected main sheet is changed; the differently sized alternate sheet is checked for preservation. No template JSON or mapping engine exists. Applying an insertion to both sheets in a single transaction was not tested.
 
-Creation uses `FileMode.CreateNew`; generation refuses to overwrite an existing fixture. [SHA-256 manifest](../../tests/WorkbookLibrary.Evaluation/Fixtures/sha256.json) identifies the retained inputs. Each probe loads source bytes into its own memory streams, writes to a new GUID-scoped directory under `artifacts/workbook-evaluation`, and checks the source file hash afterward. No library save API receives a source fixture filename. All 72 matrix entries report unchanged sources.
+Creation uses `FileMode.CreateNew`; generation refuses to overwrite an existing fixture. [SHA-256 manifest](../../experiments/archive/WorkbookLibrary.Evaluation/Fixtures/sha256.json) identifies the retained inputs. Each probe loads source bytes into its own memory streams, writes to a new GUID-scoped directory under `artifacts/workbook-evaluation`, and checks the source file hash afterward. No library save API receives a source fixture filename. All 72 matrix entries report unchanged sources.
 
 ## Experiment method and results
 
-The isolated [evaluation project](../../tests/WorkbookLibrary.Evaluation/README.md) is deliberately outside `TsekSheet.sln` and has no production project references. Its methods are prototypes of library calls, not a workbook engine. An independent ZIP/XML inspector normalizes shared versus inline strings, simple sheet-name quoting, numeric representations and the tested style properties. It compares explicit cell content, formula text, styles, names, table extents, selected dimensions, sheet order/state, merges and metadata against an operation-specific oracle. It also runs OpenXmlValidator and reopens outputs with the candidate library.
+The isolated [evaluation project](../../experiments/archive/WorkbookLibrary.Evaluation/README.md) is deliberately outside `TsekSheet.sln` and has no production project references. Its methods are prototypes of library calls, not a workbook engine. An independent ZIP/XML inspector normalizes shared versus inline strings, simple sheet-name quoting, numeric representations and the tested style properties. It compares explicit cell content, formula text, styles, names, table extents, selected dimensions, sheet order/state, merges and metadata against an operation-specific oracle. It also runs OpenXmlValidator and reopens outputs with the candidate library.
 
 Recorded additions of previously implicit column widths and nonconflicting generator custom properties are observations, not integrity failures. Existing explicit widths/properties are checked. ClosedXML materializes default widths of 9.140625 on sheets with no explicit columns. Their pixel-level appearance was not verified. NPOI adds Generator/Generator Version custom properties. These transformations remain visible in [raw results](evidence/compatibility-results.json); no byte-identical round-trip claim is made.
 
@@ -130,7 +130,7 @@ The two fixtures do not cover `.xls`, `.xlsb`, macro-enabled formats, encryption
 
 Formula preservation is distinct from calculation. Formula text and selected dependencies were checked; cached values and Excel-equivalent calculation were not. Mixed/absolute anchors exist in a stationary self-reference, but movement/copy of every anchor pattern is not covered. No native Excel open/repair/recalculation or visual comparison was performed. The performance fixtures do not replace adversarial or user-approved representative workbooks.
 
-EPPlus remains an alternative only after an appropriate license and actual compatibility experiments. NPOI 2.8.x behavior remains untested. Vulnerability advisory review and a production dependency/license manifest remain release requirements. The retained .NET 8 baseline ends support November 10, 2026; a maintained release beyond that date requires the already documented upgrade.
+EPPlus remains an alternative only after an appropriate license and actual compatibility experiments. NPOI 2.8.x behavior remains untested. Vulnerability advisory review and a production dependency/license manifest remain release requirements. The retained .NET baseline ends support November 10, 2026; a maintained release beyond that date requires the already documented upgrade.
 
 ## Reproduction and verification
 
@@ -140,20 +140,20 @@ Run from the repository root in Windows CMD. Package acquisition requires an app
 set DOTNET_CLI_TELEMETRY_OPTOUT=1
 set TESTINGPLATFORM_TELEMETRY_OPTOUT=1
 dotnet --version
-dotnet restore tests\WorkbookLibrary.Evaluation\WorkbookLibrary.Evaluation.csproj --locked-mode
-dotnet build tests\WorkbookLibrary.Evaluation\WorkbookLibrary.Evaluation.csproj --no-restore
-dotnet run --project tests\WorkbookLibrary.Evaluation --no-build --no-restore
-dotnet test tests\WorkbookLibrary.Evaluation\WorkbookLibrary.Evaluation.csproj --no-restore --logger trx
-dotnet run --project tests\WorkbookLibrary.Evaluation --no-build --no-restore -- --benchmark ClosedXML
-dotnet run --project tests\WorkbookLibrary.Evaluation --no-build --no-restore -- --benchmark NPOI
-dotnet run --project tests\WorkbookLibrary.Evaluation --no-build --no-restore -- --benchmark OpenXmlSdk
+dotnet restore experiments\archive\WorkbookLibrary.Evaluation\WorkbookLibrary.Evaluation.csproj --locked-mode
+dotnet build experiments\archive\WorkbookLibrary.Evaluation\WorkbookLibrary.Evaluation.csproj --no-restore
+dotnet run --project experiments\archive\WorkbookLibrary.Evaluation --no-build --no-restore
+dotnet test experiments\archive\WorkbookLibrary.Evaluation\WorkbookLibrary.Evaluation.csproj --no-restore --logger trx
+dotnet run --project experiments\archive\WorkbookLibrary.Evaluation --no-build --no-restore -- --benchmark ClosedXML
+dotnet run --project experiments\archive\WorkbookLibrary.Evaluation --no-build --no-restore -- --benchmark NPOI
+dotnet run --project experiments\archive\WorkbookLibrary.Evaluation --no-build --no-restore -- --benchmark OpenXmlSdk
 dotnet build TsekSheet.sln -c Release --no-restore
 dotnet test TsekSheet.sln -c Release --no-build --no-restore --logger trx
 cd src\TsekSheet.Frontend
 node "C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js" run test -- --run
 ```
 
-Committed fixtures are reused by default. `dotnet run --project tests\WorkbookLibrary.Evaluation -- --generate` is only for initial generation into a fixture directory where neither source file exists; rerunning against the retained fixtures deliberately throws. Do not delete them merely to run evaluation. Performance inputs are independently generated in fresh artifact directories.
+Committed fixtures are reused by default. `dotnet run --project experiments\archive\WorkbookLibrary.Evaluation -- --generate` is only for initial generation into a fixture directory where neither source file exists; rerunning against the retained fixtures deliberately throws. Do not delete them merely to run evaluation. Performance inputs are independently generated in fresh artifact directories.
 
 The matrix runner returns nonzero for execution errors or source mutation. Known compatibility failures remain explicit `Failed` records even when the runner exits zero; its exit code is not a compatibility acceptance gate. Inspect totals and every difference. Unexecuted cases carry their reasons. Raw candidate outputs and TRX files remain under ignored artifact/TestResults directories; the dated JSON evidence is retained here for review. Early inspector-development runs were superseded after correcting number-format scoping and overlapping key relocation; no final library claim uses those runs.
 
@@ -175,6 +175,6 @@ Observed verification:
 ## Files added
 
 - `docs/research/workbook-library-evaluation.md` and three evidence JSON files (compatibility matrix, performance samples, restored-package licenses).
-- `tests/WorkbookLibrary.Evaluation/`: project and lock file; fixture generator; library probes; ZIP/XML inspector; integrity oracle; console runner/benchmark; 13 harness cases; README; two `.xlsx` sources and their SHA-256 manifest.
+- `experiments/archive/WorkbookLibrary.Evaluation/`: project and lock file; fixture generator; library probes; ZIP/XML inspector; integrity oracle; console runner/benchmark; 13 harness cases; README; two `.xlsx` sources and their SHA-256 manifest.
 
 No existing source or architecture files were modified. Generated build/test artifacts are outside the deliverable source changes. Phase 0 and Phase 2 remain incomplete.

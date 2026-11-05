@@ -158,7 +158,7 @@ Status: PROVISIONALLY ACCEPTED (synthetic; reopened T2 fixes merged via PR #5 at
 
 ### T2b - Remove the superseded write path
 
-Status: TODO (after T2 accepted)
+Status: IN REVIEW (legacy write APIs/bridge/UI and their exclusive tests removed; evaluation projects archived; .NET 10 only; Release build 0 warnings/errors; final Application 498/0/0, Workbooks 188/0/0, Desktop 23/0/0, Excel 24/0/0, Frontend 70/0/0 passed/failed/skipped; hosted 20-receipt Excel flow passed; initial retirement-test and workbook-switch-wait failures corrected with results retained)
 
 - Remove ClosedXML editing/candidate/structural code and their bridge commands
   (`workbook.createCopy/editCopy/discard/merge/previewMerge/generateCandidate/
@@ -167,8 +167,8 @@ approveCandidate/cancelCandidate/saveAsNew`) and tests that only cover them. Kee
 - Move the evaluation-only projects `tests/WorkbookLibrary.Evaluation`,
   `tests/WindowsFileCommit.Evaluation` and `tests/WindowsFileCommit.NativeEvaluation` to
   `experiments/archive/` (removes the ImageSharp advisories from the active build).
-- Remove all .NET 8 targets, files and references (net8 TargetFrameworks, retained
-  pre-migration comparison/rollback files, net8 mentions in docs/README). .NET 10 only.
+- .NET 10 only: remove obsolete target frameworks, generated outputs, retained
+  pre-migration comparison/rollback files and outdated runtime references in docs/README.
 
 ### T2c - Verify all
 

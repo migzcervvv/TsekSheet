@@ -12,19 +12,8 @@ public sealed class WorkbookWorkspaceTests
     {
         public bool Disposed { get; private set; }
         public WorkbookInfo Info { get; private set; } = new(Guid.NewGuid(), null, "artificial.xlsx", "ABC", 0, false, true, "", "", [new(Guid.NewGuid(), "Data", 1, "Visible", 2, 2)], []);
-        private Guid? selected;
-        private readonly List<CellChange> changes = [];
         public CellViewport ReadViewport(Guid worksheetId, int startRow, int startColumn, int rows, int columns) => new(Info.SessionId, worksheetId, startRow, startColumn, rows, columns, []);
         public IWorkbookSession CreateSnapshot(CancellationToken cancellationToken = default) => throw new NotSupportedException();
-        public IWorkbookSession CreateWorkingCopy(Guid worksheetId, int expectedRevision, CancellationToken cancellationToken = default) => new Session { selected = worksheetId, Info = Info with { SessionId = Guid.NewGuid(), ParentSessionId = Info.SessionId } };
-        public WorkbookInfo Edit(CellEdit edit, CancellationToken cancellationToken = default) { Info = Info with { Revision = Info.Revision + 1, IsDirty = true }; changes.Add(new(edit.WorksheetId, edit.Row, edit.Column, edit.Kind, edit.Value, Info.Revision)); return Info; }
-        public WorkingCopyInfo? WorkingCopy => selected is Guid id ? new(Info.SessionId, id, 0, Info.Revision, Info.IsDirty, changes.AsReadOnly()) : null;
-        public int Saves; public string? LastDestination;
-        public SaveReceipt SaveAsNew(string destination, int expectedRevision, CancellationToken cancellationToken = default)
-        {
-            Saves++; LastDestination = destination;
-            return new("saved", Info.SessionId, Info.Revision, Info.IsDirty, false, false, new string('A', 64), "export.xlsx");
-        }
         public void Dispose() => Disposed = true;
     }
     private sealed class Engine : IWorkbookEngine
@@ -98,7 +87,7 @@ public sealed class WorkbookWorkspaceTests
     {
         var messages = new List<JsonElement>(); var engine = new Engine();
         using var bridge = new BridgeSession(json => messages.Add(JsonDocument.Parse(json).RootElement.Clone()), _ => Task.FromResult(new FileSelection("cancelled")),
-            workbooks: new WorkbookWorkspace(engine, _ => Task.FromResult<string?>("native-only-path.xlsx"), _ => Task.FromResult<string?>("native-only-destination.xlsx")));
+            workbooks: new WorkbookWorkspace(engine, _ => Task.FromResult<string?>("native-only-path.xlsx")));
         Task Send(string id, string command, object payload, string origin = BridgePolicy.Origin) => bridge.HandleAsync(origin, JsonSerializer.Serialize(new { protocolVersion = 1, requestId = id, command, payload }));
         await Send("early", "workbook.open", new { }); Assert.AreEqual("NOT_READY", messages[^1].GetProperty("error").GetProperty("code").GetString());
         await Send("hello", "foundation.handshake", new { supportedVersions = new[] { 1 } });
@@ -110,49 +99,14 @@ public sealed class WorkbookWorkspaceTests
         Assert.IsFalse(messages[^1].GetRawText().Contains("native-only-path", StringComparison.Ordinal));
         await Send("view", "workbook.readViewport", new { sessionId = engine.Current.Info.SessionId, worksheetId = engine.Current.Info.Worksheets[0].Id, startRow = 1, startColumn = 1, rows = 10, columns = 5 });
         Assert.IsTrue(messages[^1].GetProperty("ok").GetBoolean());
-        await Send("copy", "workbook.createCopy", new { sessionId = engine.Current.Info.SessionId, worksheetId = engine.Current.Info.Worksheets[0].Id, expectedRevision = 0 });
-        var copyId = messages[^1].GetProperty("result").GetProperty("sessionId").GetGuid();
-        await Send("edit", "workbook.editCopy", new { sessionId = copyId, worksheetId = engine.Current.Info.Worksheets[0].Id, row = 1, column = 1, kind = "text", value = "changed", expectedRevision = 0 });
-        Assert.IsTrue(messages[^1].GetProperty("result").GetProperty("isDirty").GetBoolean());
-        await Send("info-after-edit", "foundation.getInfo", new { }); Assert.IsTrue(messages[^1].GetProperty("result").GetProperty("hasUnsavedWork").GetBoolean());
-        await Send("close-dirty", "workbook.close", new { sessionId = engine.Current.Info.SessionId }); Assert.AreEqual("UNSAVED_CHANGES", messages[^1].GetProperty("error").GetProperty("code").GetString());
-        await Send("bad", "workbook.readViewport", new { sessionId = "wrong" }); Assert.AreEqual("INVALID_REQUEST", messages[^1].GetProperty("error").GetProperty("code").GetString());
-        await Send("save", "workbook.save", new { }); Assert.AreEqual("UNSUPPORTED_COMMAND", messages[^1].GetProperty("error").GetProperty("code").GetString());
-        await Send("save-path", "workbook.saveAsNew", new { sessionId = engine.Current.Info.SessionId, expectedRevision = 0, path = "forbidden.xlsx" });
-        Assert.AreEqual("INVALID_REQUEST", messages[^1].GetProperty("error").GetProperty("code").GetString()); Assert.AreEqual(0, engine.Current.Saves);
-        await Send("save-copy", "workbook.saveAsNew", new { sessionId = copyId, expectedRevision = 1 }); Assert.AreEqual("WORKING_COPY_SAVE_UNSUPPORTED", messages[^1].GetProperty("error").GetProperty("code").GetString());
-        await Send("save-new", "workbook.saveAsNew", new { sessionId = engine.Current.Info.SessionId, expectedRevision = 0 });
-        Assert.IsTrue(messages[^1].GetProperty("ok").GetBoolean()); Assert.AreEqual(1, engine.Current.Saves);
-        Assert.IsFalse(messages[^1].GetRawText().Contains("native-only-destination", StringComparison.Ordinal)); Assert.IsTrue(bridge.HasPendingWorkbookChanges);
-        await Send("discard", "workbook.discard", new { sessionId = engine.Current.Info.SessionId }); Assert.AreEqual("closed", messages[^1].GetProperty("result").GetProperty("status").GetString());
+        foreach (var command in new[] { "workbook.createCopy", "workbook.editCopy", "workbook.discard", "workbook.merge", "workbook.previewMerge", "workbook.generateCandidate", "workbook.approveCandidate", "workbook.cancelCandidate", "workbook.saveAsNew" })
+        {
+            await Send(command.Replace('.', '-'), command, new { });
+            Assert.AreEqual("UNSUPPORTED_COMMAND", messages[^1].GetProperty("error").GetProperty("code").GetString());
+        }
+        await Send("close", "workbook.close", new { sessionId = engine.Current.Info.SessionId });
+        Assert.AreEqual("closed", messages[^1].GetProperty("result").GetProperty("status").GetString());
         bridge.Dispose(); Assert.IsTrue(engine.Current.Disposed);
     }
 
-    [TestMethod]
-    public async Task PendingWorkingCopyRequiresExplicitDiscardAndNeverEditsMainSession()
-    {
-        var engine = new Engine(); using var workspace = new WorkbookWorkspace(engine, _ => Task.FromResult<string?>("native-only-path.xlsx"));
-        var main = (await workspace.OpenAsync()).Workbook!; var worksheet = main.Worksheets[0].Id;
-        var copy = await workspace.CreateWorkingCopyAsync(main.SessionId, worksheet, 0);
-        Assert.AreEqual("READ_ONLY_WORKBOOK", (await Assert.ThrowsExactlyAsync<WorkbookException>(() => workspace.EditWorkingCopyAsync(main.SessionId, new(worksheet, 1, 1, "text", "x", 0)))).Code);
-        copy = await workspace.EditWorkingCopyAsync(copy.SessionId, new(worksheet, 1, 1, "text", "x", 0));
-        Assert.IsTrue(copy.IsDirty); Assert.AreEqual(1, copy.Revision); Assert.IsTrue(workspace.HasPendingChanges); Assert.IsFalse(engine.Current.Info.IsDirty);
-        Assert.AreEqual("UNSAVED_CHANGES", (await Assert.ThrowsExactlyAsync<WorkbookException>(() => workspace.CloseAsync(main.SessionId))).Code);
-        Assert.AreEqual("UNSAVED_CHANGES", (await Assert.ThrowsExactlyAsync<WorkbookException>(() => workspace.OpenAsync())).Code);
-        Assert.AreEqual("closed", await workspace.CloseAsync(main.SessionId, true)); Assert.IsTrue(engine.Current.Disposed); Assert.IsFalse(workspace.HasPendingChanges);
-    }
-
-    [TestMethod]
-    public async Task SaveRequiresFreshNativeSelectionAndRejectsStaleRevision()
-    {
-        var engine = new Engine(); var selections = 0; var cancel = true;
-        using var workspace = new WorkbookWorkspace(engine, _ => Task.FromResult<string?>("native-only-path.xlsx"), _ => { selections++; return Task.FromResult(cancel ? null : "native-destination.xlsx"); });
-        var main = (await workspace.OpenAsync()).Workbook!;
-        Assert.AreEqual("STALE_REVISION", (await Assert.ThrowsExactlyAsync<WorkbookException>(() => workspace.SaveAsNewAsync(main.SessionId, 1))).Code); Assert.AreEqual(0, selections);
-        Assert.AreEqual("cancelled", (await workspace.SaveAsNewAsync(main.SessionId, 0)).Status); Assert.AreEqual(0, engine.Current.Saves);
-        cancel = false;
-        Assert.AreEqual("saved", (await workspace.SaveAsNewAsync(main.SessionId, 0)).Status);
-        Assert.AreEqual("saved", (await workspace.SaveAsNewAsync(main.SessionId, 0)).Status);
-        Assert.AreEqual(3, selections); Assert.AreEqual(2, engine.Current.Saves);
-    }
 }

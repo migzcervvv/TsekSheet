@@ -24,10 +24,10 @@ public sealed class WorkbookProjectOpeningTests
     public async Task RejectedEditablePackagesOpenAsInspectionProjectsWithoutNewAuthority(string feature, string code, string explanation)
     {
         using var fixture = new AccountingCompatibilityFixture(feature);
-        var hash = Hash(fixture.Path); var engine = new WorkbookEngine(); var saveSelections = 0;
+        var hash = Hash(fixture.Path); var engine = new WorkbookEngine();
         var rejected = Assert.ThrowsExactly<WorkbookException>(() => engine.Open(fixture.Path));
         Assert.AreEqual(code, rejected.Code); StringAssert.Contains(rejected.Message, explanation);
-        using var workspace = new WorkbookWorkspace(engine, _ => Task.FromResult<string?>(fixture.Path), _ => { saveSelections++; return Task.FromResult<string?>(fixture.Path + ".output.xlsx"); });
+        using var workspace = new WorkbookWorkspace(engine, _ => Task.FromResult<string?>(fixture.Path));
         var info = (await workspace.OpenAsync()).Workbook!;
         Assert.IsFalse(info.EditingAllowed); Assert.IsFalse(info.IsDirty); Assert.AreEqual(0, info.Revision);
         Assert.IsNotNull(info.Compatibility);
@@ -36,17 +36,14 @@ public sealed class WorkbookProjectOpeningTests
         foreach (var sheet in new[] { info.Worksheets[0], info.Worksheets[^1] })
             Assert.AreEqual("1", (await workspace.ReadAsync(info.SessionId, sheet.Id, 1, 1, 1, 1)).Cells[0].Value);
         Assert.AreEqual("Hidden", info.Worksheets[^1].Visibility);
-        Assert.AreEqual("EDIT_UNSUPPORTED", (await Assert.ThrowsExactlyAsync<WorkbookException>(() => workspace.CreateWorkingCopyAsync(info.SessionId, info.Worksheets[0].Id, 0))).Code);
-        Assert.AreEqual("EDIT_UNSUPPORTED", (await Assert.ThrowsExactlyAsync<WorkbookException>(() => workspace.SaveAsNewAsync(info.SessionId, 0))).Code);
         Assert.AreEqual("READ_ONLY_INSPECTION", (await Assert.ThrowsExactlyAsync<WorkbookException>(() => workspace.PlanRecordsAsync(new(info.SessionId, info.Worksheets[0].Id, 0, "synthetic-payables", "", [])))).Code);
-        Assert.AreEqual("READ_ONLY_WORKBOOK", (await Assert.ThrowsExactlyAsync<WorkbookException>(() => workspace.EditWorkingCopyAsync(info.SessionId, new(info.Worksheets[0].Id, 1, 1, "text", "blocked", 0)))).Code);
-        Assert.AreEqual(0, saveSelections); Assert.IsFalse(workspace.HasPendingChanges);
+        Assert.IsFalse(workspace.HasPendingChanges);
         await workspace.CloseAsync(info.SessionId);
         Assert.AreEqual(hash, Hash(fixture.Path)); Assert.IsFalse(File.Exists(fixture.Path + ".output.xlsx"));
     }
 
     [TestMethod]
-    public async Task SwitchingBetweenInspectionAndEditableProjectsKeepsDirtyAndSessionGuards()
+    public async Task SwitchingBetweenReadOnlyProjectsKeepsSessionGuards()
     {
         using var complex = new AccountingCompatibilityFixture("cells");
         using var ordinary = new AccountingCompatibilityFixture("plain");
@@ -55,13 +52,10 @@ public sealed class WorkbookProjectOpeningTests
         using var workspace = new WorkbookWorkspace(new WorkbookEngine(), _ => Task.FromResult<string?>(selected));
         var inspection = (await workspace.OpenAsync()).Workbook!;
         selected = ordinary.Path; var editable = (await workspace.OpenAsync()).Workbook!;
-        Assert.IsTrue(editable.EditingAllowed); Assert.IsNull(editable.Compatibility);
+        Assert.IsFalse(editable.EditingAllowed); Assert.IsNull(editable.Compatibility);
         Assert.AreEqual("SESSION_NOT_FOUND", (await Assert.ThrowsExactlyAsync<WorkbookException>(() => workspace.ReadAsync(inspection.SessionId, inspection.Worksheets[0].Id, 1, 1, 1, 1))).Code);
-        var copy = await workspace.CreateWorkingCopyAsync(editable.SessionId, editable.Worksheets[0].Id, 0);
-        await workspace.EditWorkingCopyAsync(copy.SessionId, new(editable.Worksheets[0].Id, 1, 1, "number", "2", 0));
         selected = complex.Path;
-        Assert.AreEqual("UNSAVED_CHANGES", (await Assert.ThrowsExactlyAsync<WorkbookException>(() => workspace.OpenAsync())).Code);
-        await workspace.CloseAsync(editable.SessionId, true);
+        await workspace.CloseAsync(editable.SessionId);
         var reopened = (await workspace.OpenAsync()).Workbook!;
         Assert.IsFalse(reopened.EditingAllowed); Assert.AreNotEqual(inspection.SessionId, reopened.SessionId);
         Assert.AreEqual(complexHash, Hash(complex.Path)); Assert.AreEqual(ordinaryHash, Hash(ordinary.Path));
@@ -100,7 +94,5 @@ public sealed class WorkbookProjectOpeningTests
         await Assert.ThrowsExactlyAsync<WorkbookException>(() => workspace.ReadAsync(info.SessionId, info.Worksheets[1].Id, 1, 1, 1, 1));
         using var session = new WorkbookEngine().Open(advanced.Path);
         Assert.IsFalse(session.Info.EditingAllowed); Assert.IsTrue(session.Info.Findings.Any(f => f.Code == "ADVANCED_CONTENT"));
-        Assert.ThrowsExactly<WorkbookException>(() => session.CreateWorkingCopy(session.Info.Worksheets[0].Id, 0));
-        Assert.ThrowsExactly<WorkbookException>(() => session.SaveAsNew(advanced.Path + ".output.xlsx", 0));
     }
 }

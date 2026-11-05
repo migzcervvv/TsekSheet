@@ -82,8 +82,7 @@ public sealed class VerifiedPlacementBatchTests
             Assert.ThrowsExactly<NotSupportedException>(() => ((IList<VerifiedMappingPreview>)result.Mappings).Clear());
             Assert.ThrowsExactly<NotSupportedException>(() => ((IList<VerifiedMappedField>)result.Mappings[0].Fields).Clear());
             Assert.ThrowsExactly<NotSupportedException>(() => ((IList<RecordInsertionProposal>)result.Proposal.Records).Clear());
-            Assert.AreEqual("ROW_INSERTION_DISABLED", Assert.ThrowsExactly<WorkbookException>(() =>
-                ((IWorkbookSession)session).InsertWorkflowRows(result.Proposal with { CanApply = true }, true, true)).Code);
+            Assert.IsNull(typeof(IWorkbookSession).GetMethod("InsertWorkflowRows"));
         }
         CollectionAssert.AreEqual(before, reviews.Select(r => Snap(r.Snapshot)).ToArray());
         Assert.AreEqual(cells, Snap(session.Cells.Values.SelectMany(c => c.Values)));
