@@ -16,22 +16,31 @@ public interface ILocalDocumentRenderer
 // One process per page, no shell, paths, temporary files, extraction or workbook access.
 public sealed class LocalDocumentRenderer(string workerPath, TimeSpan? timeout = null) : ILocalDocumentRenderer
 {
-    public async Task<RenderedDocumentPage> RenderAsync(byte[] bytes, LocalDocumentKind kind, int page, CancellationToken token)
+    public Task<RenderedDocumentPage> RenderAsync(byte[] bytes, LocalDocumentKind kind, int page, CancellationToken token) => RenderCoreAsync(bytes,kind,page,0,token);
+    // Evaluation opt-in only. The preview interface and its limits remain unchanged.
+    public Task<RenderedDocumentPage> RenderAtDpiAsync(byte[] bytes, LocalDocumentKind kind, int page, int dpi, CancellationToken token)
     {
-        if(bytes is not {Length:>=8 and <=33554432} || page is <1 or >1000 || !Enum.IsDefined(kind))
+        if(dpi is <72 or >1200)throw new ArgumentOutOfRangeException(nameof(dpi));
+        return RenderCoreAsync(bytes,kind,page,dpi,token);
+    }
+    private async Task<RenderedDocumentPage> RenderCoreAsync(byte[] bytes, LocalDocumentKind kind, int page, int dpi, CancellationToken token)
+    {
+        if(bytes is null || bytes.Length<8 || bytes.Length>(dpi==0?33554432:134217728) || page is <1 or >1000 || !Enum.IsDefined(kind))
             throw Error("RENDER_LIMIT","Document or page exceeds the supported rendering limits.");
         token.ThrowIfCancellationRequested();
         using var deadline=CancellationTokenSource.CreateLinkedTokenSource(token);
         deadline.CancelAfter(timeout??TimeSpan.FromSeconds(20));
         using var process=new Process{StartInfo=new ProcessStartInfo(Path.GetFullPath(workerPath)){
             UseShellExecute=false,CreateNoWindow=true,RedirectStandardInput=true,RedirectStandardOutput=true,RedirectStandardError=true}};
-        using var job=new RenderJob();
+        if(dpi!=0){process.StartInfo.ArgumentList.Add("--dpi");process.StartInfo.ArgumentList.Add(dpi.ToString(System.Globalization.CultureInfo.InvariantCulture));}
+        var encodedLimit=dpi==0?16780000:67110000;
+        using var job=new RenderJob(dpi==0?512:1024);
         Task<string>? output=null,error=null;
         try
         {
             if(!process.Start())throw Error("RENDER_UNAVAILABLE","Local renderer could not start.");
             job.Attach(process);
-            output=ReadBounded(process.StandardOutput,16780000,deadline.Token);
+            output=ReadBounded(process.StandardOutput,encodedLimit,deadline.Token);
             error=ReadBounded(process.StandardError,2048,deadline.Token);
             var header=new byte[12];
             BitConverter.GetBytes(page).CopyTo(header,0);BitConverter.GetBytes((int)kind).CopyTo(header,4);BitConverter.GetBytes(bytes.Length).CopyTo(header,8);
@@ -43,7 +52,8 @@ public sealed class LocalDocumentRenderer(string workerPath, TimeSpan? timeout =
             if(process.ExitCode!=0)throw Error("RENDER_REJECTED","Document is malformed, encrypted, unsupported or exceeds rendering limits.");
             var result=JsonSerializer.Deserialize<RenderedDocumentPage>(json,new JsonSerializerOptions(JsonSerializerDefaults.Web){UnmappedMemberHandling=System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow});
             if(result==null || result.PageNumber!=page || result.PageCount is <1 or >1000 || page>result.PageCount
-                || result.Width is <1 or >1600 || result.Height is <1 or >1600 || result.PngBase64.Length>16777216)
+                || result.Width<1 || result.Height<1 || result.Width>(dpi==0?1600:16384) || result.Height>(dpi==0?1600:16384)
+                || (long)result.Width*result.Height>(dpi==0?2560000:64000000) || result.PngBase64.Length>encodedLimit)
                 throw Error("RENDER_REJECTED","Local renderer returned an invalid page.");
             var png=Convert.FromBase64String(result.PngBase64);
             if(png.Length<24 || !png.AsSpan(0,8).SequenceEqual(new byte[]{137,80,78,71,13,10,26,10})
@@ -79,11 +89,11 @@ public sealed class LocalDocumentRenderer(string workerPath, TimeSpan? timeout =
     // Assignment occurs before any source bytes are sent. Fail closed if limits cannot be set.
     private sealed class RenderJob : SafeHandleZeroOrMinusOneIsInvalid
     {
-        public RenderJob():base(true)
+        public RenderJob(int memoryMb):base(true)
         {
             SetHandle(CreateJobObject(IntPtr.Zero,null));
             if(IsInvalid)throw Error("RENDER_UNAVAILABLE","Renderer resource limits are unavailable.");
-            var limits=new Extended{Basic=new Basic{Flags=0x2000|0x100|0x8,ActiveProcesses=1},ProcessMemory=(UIntPtr)(512*1024*1024)};
+            var limits=new Extended{Basic=new Basic{Flags=0x2000|0x100|0x8,ActiveProcesses=1},ProcessMemory=(UIntPtr)((ulong)memoryMb*1024*1024)};
             if(!SetInformationJobObject(handle,9,ref limits,(uint)Marshal.SizeOf<Extended>()))
             {Dispose();throw Error("RENDER_UNAVAILABLE","Renderer resource limits could not be set.");}
         }
