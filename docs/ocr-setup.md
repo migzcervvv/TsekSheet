@@ -263,3 +263,17 @@ continues to write metrics only. Optional private `inspection-counts.csv` contai
 Counts are reviewer-labelled overlapping affected packets, not an exhaustive error tally.
 Original T3b tables remain marked superseded; corrected runs replace only the corrected
 section. Model/engine settings are unchanged; no engine decision follows automatically.
+
+To summarize a deliberately stopped run without rerunning OCR, retain the original run and
+select only complete packets through an explicit boundary:
+
+```powershell
+dotnet tools/OcrEval/bin/Release/net10.0-windows/OcrEval.dll --summarize artifacts/ocr-eval/<run> --max-packets 17 --input fixtures/redacted/docs --output artifacts/ocr-eval/<new-subset-run> --report docs/ocr-bakeoff.md
+```
+
+The corrected metrics schema is validated against fixed categories/numbers; incomplete
+packet/configuration groups are rejected. The new output contains only the selected metrics
+and machine metadata. No models are loaded. Original partial results remain untouched.
+The owner limited the corrected T3b-FIX study to packets 1–17; partial packet 18 is excluded
+and packets 19–20 were not run. Prior superseded tables are not directly comparable because
+the source/scoring rules and retained packet scope changed.

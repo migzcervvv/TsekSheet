@@ -135,7 +135,15 @@ public static class RealEvaluation
             }
         }
         finally { foreach (var client in clients.Values) await client.DisposeAsync(); }
-        var text = new List<string> { "## Real documents — T3b-FIX (corrected)", "", "No engine decision. Prior T3b results below are superseded. Notes flags describe annotations, not measured handwriting or printed-field subsets. Only verified packet expectations enter scoring; no truth values were changed.", "", "| Engine | Profile | Scored/expected | Notes-clear exact | Notes-flag exact | CER | Invoice pick | Rotated/pages | s/page | Peak MB | Errors |", "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|" };
+        WriteReport(input,report,metrics,summaries,"Completed the requested evaluation scope.",Path.Combine(output,"results.csv"));
+        return summaries.Any(s => s.Errors > 0) ? 1 : 0;
+    }
+    private static void WriteReport(string input,string report,List<Metric> metrics,List<Summary> summaries,string scopeNote,string resultsPath)
+    {
+        var text = new List<string> { "## Real documents — T3b-FIX (corrected)", "", "No engine decision. Prior T3b results are superseded. Notes flags describe annotations, not measured handwriting or printed-field subsets. Only verified packet expectations enter scoring; no truth values were changed.", "", "| Engine | Profile | Scored/expected | Notes-clear exact | Notes-flag exact | CER | Invoice pick | Rotated/pages | s/page | Peak MB | Errors |", "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|" };
+        text.Insert(2,scopeNote);
+        var cohort=summaries.Where(s=>s.Engine==summaries[0].Engine && s.Profile==summaries[0].Profile).ToArray();
+        text.Insert(3,$"Scope: {cohort.Length} packets ({cohort.Count(s=>s.InvoiceEligible)} invoice, {cohort.Count(s=>!s.InvoiceEligible)} non-invoice); {cohort.Sum(s=>s.Pages)} distinct pages, {summaries.Sum(s=>s.Pages)} page/configuration observations. Notes-flagged packets: {cohort.Count(s=>s.Handwritten)}; notes-clear packets: {cohort.Count(s=>!s.Handwritten)}.");
         static string Accuracy(IEnumerable<Metric> rows) { var a=rows.Where(m=>m.Present).ToArray();return a.Length==0?"n/a":(a.Count(m=>m.Exact)/(double)a.Length).ToString("P1",CultureInfo.InvariantCulture); }
         static string Cer(IEnumerable<Metric> rows) { var a=rows.Where(m=>m.Present).ToArray();return a.Length==0?"n/a":((double)a.Sum(m=>m.Edits)/Math.Max(1,a.Sum(m=>m.Characters))).ToString("P2",CultureInfo.InvariantCulture); }
         foreach(var g in summaries.GroupBy(s=>(s.Engine,s.Profile)))
@@ -148,6 +156,10 @@ public static class RealEvaluation
             text.Add($"| {g.Key.Engine} | {g.Key.Profile} | {(g.Key.Handwritten?"notes_contains_handwritten":"notes_clear")} | {g.Key.Scope} | {g.Key.Field} | {g.Count(m=>m.Expected)} | {g.Count(m=>m.Present)} | {Accuracy(g)} | {Cer(g)} |");
         text.AddRange(["", "| Unscored reason | Field expectations (all six settings) |", "|---|---:|"]);
         foreach(var g in metrics.Where(m=>m.Expected && !m.Present).GroupBy(m=>m.Status))text.Add($"| {g.Key} | {g.Count()} |");
+        var resultRows=Csv.Read(resultsPath).Skip(1).ToArray();foreach(var row in resultRows)MetricSchema.Validate(row);
+        text.AddRange(["", "Cross-checks are OCR-to-OCR agreement, not verified accuracy. Missing operands or ambiguous document references remain unavailable.", "", "| Engine | Profile | Cross-check | Agree/available | Unavailable |", "|---|---|---|---:|---:|"]);
+        foreach(var g in resultRows.Where(r=>r[5] is "invoice_rfp_amount" or "voucher_document_no" or "2307_tin" or "2307_wht").GroupBy(r=>(Engine:r[0],Profile:r[1],Check:r[5])))
+            text.Add($"| {g.Key.Engine} | {g.Key.Profile} | {g.Key.Check} | {g.Count(r=>r[6]=="1" && r[7]=="1")}/{g.Count(r=>r[6]=="1")} | {g.Count(r=>r[6]=="0")} |");
         var reviewPath=Path.Combine(input,"inspection-counts.csv");
         if(File.Exists(reviewPath))
         {
@@ -160,11 +172,36 @@ public static class RealEvaluation
                 text.Add($"| {row[0]} | {value} |");
             }
         }
-        text.AddRange(["", "Page-local fields use owner-annotated primary pages unless private source review marks them ambiguous/mismatched. RFP/voucher/WHT/net-payment fields require independent, hash-bound field-source verification; absent, ambiguous, stale or mismatched expectations remain unscored. Field accuracy never verifies its own answer key. Identifiers retain letters, separators and leading zeros. Gross/net amounts stay distinct; no first/largest selection or gross/net fallback is used. Voucher cross-checks compare the invoice identifier to document reference, never voucher number. Non-invoice primary sources are excluded from invoice-page selection denominators and invoice identifier/type scoring. All pages are still processed. Cardinal corrections are inferred; full rotation correctness remains unverified. The private review observed one residual orientation failure; this is not a measured 141-page rotation success rate. Time includes renderer, orientation probes, full parent bitmap decode/rotation/re-encoding, preprocessing and OCR/IPC; engine initialization is excluded. Peak is sampled active OCR-job memory, excluding parent/renderer. CER/accuracy apply only to scorable expectations; no private text/values/names are persisted in metrics. No engine/model/UI/Excel changes; no T4."]);
+        text.AddRange(["", "Page-local fields use owner-annotated primary pages unless private source review marks them ambiguous/mismatched. RFP/voucher/WHT/net-payment fields require independent, hash-bound field-source verification; absent, ambiguous, stale or mismatched expectations remain unscored. Field accuracy never verifies its own answer key. Identifiers retain letters, separators and leading zeros. Gross/net amounts stay distinct; no first/largest selection or gross/net fallback is used. Voucher cross-checks compare the invoice identifier to document reference, never voucher number. Non-invoice primary sources are excluded from invoice-page selection denominators and invoice identifier/type scoring. All pages in retained complete packets are processed. Cardinal corrections are inferred; full rotation correctness remains unverified. The private review observed one residual orientation failure; this is not a measured study-wide rotation success rate. Time includes renderer, orientation probes, full parent bitmap decode/rotation/re-encoding, preprocessing and OCR/IPC; engine initialization is excluded. Peak is sampled active OCR-job memory, excluding parent/renderer. CER/accuracy apply only to scorable expectations; no private text/values/names are persisted in metrics. No engine/model/UI/Excel changes; no T4."]);
         var existing=File.Exists(report)?File.ReadAllText(report):"# OCR bake-off\n";
         var correctedMarker=existing.IndexOf("## Real documents — T3b-FIX (corrected)",StringComparison.Ordinal);if(correctedMarker>=0)existing=existing[..correctedMarker];
         existing=existing.Replace("## Real documents\n","## Real documents — T3b (superseded)\n\n**Superseded: incorrect page-local packet-reference scoring, digits-only identifiers, whole-line amount extraction and incomplete timing. Do not use these tables to interpret engine quality.**\n");
         Directory.CreateDirectory(Path.GetDirectoryName(report)!);File.WriteAllText(report,existing.TrimEnd()+"\n\n"+string.Join('\n',text)+"\n");
-        return summaries.Any(s => s.Errors > 0) ? 1 : 0;
     }
+    public static int Summarize(string input,string run,string output,string report,int maxPacket)
+    {
+        input=Configuration.Local(input);run=Configuration.Local(run);output=Configuration.Local(output);report=Configuration.Local(report);
+        if(maxPacket<1 || Directory.Exists(output) || output.StartsWith(input.TrimEnd(Path.DirectorySeparatorChar)+Path.DirectorySeparatorChar,StringComparison.OrdinalIgnoreCase) || !report.EndsWith(".md",StringComparison.OrdinalIgnoreCase))throw new IOException("Use a new metrics output outside the input tree and a Markdown report.");
+        var all=Csv.Read(Path.Combine(run,"results.csv"));
+        var header="engine,preprocess,packet,page,notes_contains_handwritten,metric,applicable,exact,edits,reference_characters,label,predicted_class,truth_class,rotation_degrees,seconds,peak_mb,error,scope,source_status,expected_present".Split(',');
+        if(all.Length<2 || !all[0].SequenceEqual(header))throw new InvalidDataException("Only corrected metrics schema can be summarized.");
+        var rows=all.Skip(1).ToArray();foreach(var row in rows)MetricSchema.Validate(row);
+        var selected=rows.Where(r=>int.Parse(r[2],CultureInfo.InvariantCulture)<=maxPacket).ToArray();
+        var metrics=new List<Metric>();var summaries=new List<Summary>();
+        int I(string[] row,int n)=>int.Parse(row[n],CultureInfo.InvariantCulture);
+        double D(string[] row,int n)=>double.Parse(row[n],CultureInfo.InvariantCulture);
+        foreach(var g in selected.GroupBy(r=>(Engine:r[0],Profile:r[1],Packet:I(r,2))))
+        {
+            var pages=g.Where(r=>r[5]=="page").ToArray();var picks=g.Where(r=>r[5]=="invoice_page_pick").ToArray();
+            if(picks.Length!=1 || pages.Select(r=>I(r,3)).Distinct().Count()!=pages.Length || pages.Length==0 || pages.Length!=pages.Max(r=>I(r,3)) || g.Where(r=>PacketRules.Fields.Contains(r[5])).Select(r=>r[5]).Distinct().Count()!=PacketRules.Fields.Length)throw new InvalidDataException("Requested subset contains an incomplete configuration.");
+            var pick=picks[0];summaries.Add(new(g.Key.Engine,g.Key.Profile,g.Key.Packet,I(pick,4)==1,I(pick,7)==1,pages.Length,pages.Count(r=>I(r,13)!=0),pages.Count(r=>I(r,16)!=0),pages.Sum(r=>D(r,14)),pages.Max(r=>D(r,15)),I(pick,6)==1));
+        }
+        if(summaries.Select(s=>s.Packet).Distinct().Count()!=maxPacket || summaries.GroupBy(s=>s.Packet).Any(g=>g.Count()!=6))throw new InvalidDataException("The requested complete packet boundary is unavailable.");
+        foreach(var r in selected.Where(r=>PacketRules.Fields.Contains(r[5])))metrics.Add(new(r[0],r[1],I(r,2),I(r,3),I(r,4)==1,r[5],I(r,6)==1,I(r,7)==1,I(r,8),I(r,9),r[10],I(r,19)==1,r[18],r[17]));
+        Directory.CreateDirectory(output);using(var writer=new StreamWriter(Path.Combine(output,"results.csv"))){writer.WriteLine(Csv.Line(header));foreach(var row in selected)writer.WriteLine(Csv.Line(row));}
+        File.Copy(Path.Combine(run,"machine.json"),Path.Combine(output,"machine.json"));
+        WriteReport(input,report,metrics,summaries,$"Owner-requested boundary: packets 1–{maxPacket}. Later partial observations are retained in the original local run but excluded here. Packets beyond this boundary are not part of the corrected accepted study.",Path.Combine(output,"results.csv"));
+        return summaries.Any(s=>s.Errors>0)?1:0;
+    }
+
 }

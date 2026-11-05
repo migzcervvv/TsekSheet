@@ -4,6 +4,14 @@ namespace TsekSheet.OcrEval.Tests;
 [TestClass]
 public sealed class ExtractionFixTests
 {
+    [TestMethod]
+    public void MetricsOnlySummaryRejectsRawContentAndWrongSchemas()
+    {
+        Assert.ThrowsExactly<InvalidDataException>(()=>MetricSchema.Validate(["private text"]));
+        var row=new[]{"tesseract-psm6","none","1","1","0","total","1","0","2","6","","","","0","1.000000","100.000000","0","page_local","annotated_page","1"};
+        MetricSchema.Validate(row);row[10]="FICTIONAL RAW OCR CONTENT";
+        Assert.ThrowsExactly<InvalidDataException>(()=>MetricSchema.Validate(row));
+    }
     private static WordBox W(string text,double x,double y,double width=100)=>new(text,1,x,y,width,20);
     [TestMethod]
     [DataRow("4.00")]
