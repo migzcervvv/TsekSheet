@@ -2,7 +2,7 @@
 
 [README](README.md) · **Changelog**
 
-- 2026-11-05 — T3a: Add a local OCR evaluation console with synthetic Philippine receipts, supervised Tesseract/PP-OCRv5 CPU workers, shared preprocessing/extraction, opt-in high-resolution PDF rendering, model-free tests and reproducible accuracy/time/memory reports; no engine decision or product integration.
+- 2026-11-05 — Build hotfix: Restore the Excel test diagnostic writer's snapshot path and ListObject range details lost in merge 17eb02b; preserve assertions and production behavior.
 
 - 2026-11-05 — T2e-FIX diagnostics: Retain preservation failure snapshots with explicit ListObject expected/actual ranges and verify attachment generation using a deliberate change to an Excel-authored synthetic fixture; original mismatch remains inconclusive.
 
