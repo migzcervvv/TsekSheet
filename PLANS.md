@@ -226,6 +226,8 @@ Status: DONE (respect explicit duplicate policy; preserve source-hash/restart-sa
 
 Diagnostics status: IN REVIEW (fresh integration PR; failure snapshots include explicit ListObject range differences and an intentional synthetic preservation-difference test; original failure classification remains inconclusive).
 
+Build hotfix status: IN REVIEW (`t/fix-excel-tests-build`; restore the diagnostic contract removed by merge 17eb02b; Release build 0 errors, Excel twice 25/0/0, Application 498/0/0, final Desktop 23/0/0 passed/failed/skipped; initial Desktop receipt-timing failure did not reproduce unchanged, cause unresolved).
+
 ### T3 - OCR bake-off (can run in parallel with T1/T2)
 
 Status: TODO (needs the document set in `fixtures/redacted/docs/`)

@@ -2,6 +2,8 @@
 
 [README](README.md) · **Changelog**
 
+- 2026-11-05 — Build hotfix: Restore the Excel test diagnostic writer's snapshot path and ListObject range details lost in merge 17eb02b; preserve assertions and production behavior.
+
 - 2026-11-05 — T2e-FIX diagnostics: Retain preservation failure snapshots with explicit ListObject expected/actual ranges and verify attachment generation using a deliberate change to an Excel-authored synthetic fixture; original mismatch remains inconclusive.
 
 - 2026-11-05 — T2e-FIX: Stop inferring item-number/vendor-invoice uniqueness without a profile policy, retain source-hash and restart-safe submission guards, instrument preview stages, and skip the demonstrated redundant duplicate readback while preserving all Excel safety checks.
