@@ -228,18 +228,43 @@ Diagnostics status: IN REVIEW (fresh integration PR; failure snapshots include e
 
 ### T3 - OCR bake-off (can run in parallel with T1/T2)
 
-Status: TODO (needs the document set in `fixtures/redacted/docs/`)
+Status: SPLIT into T3a (synthetic harness) and T3b (redacted evaluation).
 
-- Harness in `tools/OcrEval`: for each page run each engine x preprocessing profile and
-  compare against ground truth.
-- Engines: Tesseract 5 (process, `--oem 1`, psm 3/6/11); PaddleOCR PP-OCRv5 mobile det + rec
-  ONNX via `Microsoft.ML.OnnxRuntime` (CPU).
-- Preprocessing: none; deskew + Sauvola/adaptive threshold; deskew + denoise + contrast
-  normalize. Render PDF pages at 300 DPI (or native resolution for embedded scans).
-- Metrics per engine/profile: character error rate, field exact match (amount, date,
-  reference no., payee), seconds/page and peak RAM on the A15 and, if available, a minimum-class
-  machine.
-- Output: `docs/ocr-bakeoff.md` with one results table. The planner picks the engine.
+Split: T3a supplies the offline synthetic evaluation harness; T3b evaluates redacted
+documents and supports the planner's later engine decision. No engine is selected by T3a.
+
+### T3a - Offline OCR evaluation harness
+
+Status: IN REVIEW (120 synthetic images, 1,440 comparisons, zero runtime errors;
+OcrEval 24/0/0, Application 498/0/0, Desktop renderer 5/0/0 passed/failed/skipped;
+summary in `docs/ocr-bakeoff.md`; no engine decision. Release solution build exposes
+the unchanged Excel-test CS0815 recorded under Risks.)
+
+- `tools/OcrEval`, .NET 10 Windows console; folder inputs PDF/PNG/JPG and
+  `truth.csv` (`file,vendor,tin,invoice,date,amount`), usable on redacted inputs unchanged.
+- Existing renderer: opt-in 300 DPI, higher embedded-image native resolution; preview unchanged.
+- Generate 20 fake Philippine receipts with clean/blur/noise/skew 3–8 degrees/JPEG q20/
+  low-contrast variants (120 images), truth and a vendor list.
+- Tesseract 5 process, tessdata_best eng, OEM 1, PSM 3/6/11; PP-OCRv5 mobile
+  detection/recognition ONNX on CPU. Local configured assets only; setup records sources,
+  versions, hashes and licenses. Supervised workers; no product UI or Excel changes.
+- Shared extraction rules and preprocessing: none; deskew/adaptive threshold;
+  deskew/denoise/CLAHE. Report CER, field exact match, time and peak working set by
+  engine/preprocess/variant, with WMI machine metadata.
+- Run results under `artifacts/ocr-eval/<run>/`; one summary table in
+  `docs/ocr-bakeoff.md`. Unit tests for extraction and CER require no models.
+- Acceptance: both engines complete the synthetic evaluation offline, summary generated,
+  model-free unit tests pass. Stop before T3b/T4; no engine decision.
+
+### T3b - Redacted OCR evaluation and engine decision support
+
+Status: TODO (requires redacted documents; not authorized by T3a)
+
+- Run the T3a harness unchanged against `fixtures/redacted/docs/` with typed truth and
+  an optional vendor list; retain results per engine/preprocess/variant.
+- Report field accuracy, field CER, seconds/page and peak RAM on the A15 and, if
+  available, a minimum-class machine. Synthetic results do not establish real-scan accuracy.
+- Update `docs/ocr-bakeoff.md`; the planner decides the engine before T4.
 
 ### T4 - OCR in the product
 
@@ -277,6 +302,7 @@ Status: TODO
 | Risk                                                 | Mitigation                                                    |
 | ---------------------------------------------------- | ------------------------------------------------------------- |
 | intermittent preservation mismatch (1 occurrence, unreproduced; snapshots enabled) | Classification: inconclusive; retain snapshots on recurrence |
+| Release solution build: existing Excel-test CS0815 at `SectionInsertTests.cs:99` | Present unchanged on main: `TablePreservationDiagnostics.WriteAsync` returns `Task`, but the test assigns its awaited result; outside T3a, no Excel changes made |
 | Excel version/bitness differences on office machines | Record version in diagnostics; test on M365 64-bit first      |
 | Excel modal dialogs or busy state block automation   | Bounded retry + "Excel is busy" UI state                      |
 | COM writes clear Excel's undo stack                  | Backup before first write + action log of inserts             |

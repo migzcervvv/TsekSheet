@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <PlatformTarget>x64</PlatformTarget>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/TsekSheet.Application/TsekSheet.Application.csproj" />
+    <ProjectReference Include="../../src/TsekSheet.Renderer/TsekSheet.Renderer.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.31.1" />
+    <PackageReference Include="OpenCvSharp4" Version="4.13.0.20260627" />
+    <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.13.0.20260627" />
+    <PackageReference Include="System.Management" Version="10.0.14" />
+  </ItemGroup>
+  <Target Name="CopyEvaluationRenderer" AfterTargets="Build">
+    <ItemGroup><RendererFiles Include="../../src/TsekSheet.Renderer/bin/$(Configuration)/net10.0-windows10.0.19041.0/**/*" /></ItemGroup>
+    <Copy SourceFiles="@(RendererFiles)" DestinationFiles="@(RendererFiles->'$(OutDir)renderer/%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
+</Project>
