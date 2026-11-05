@@ -46,11 +46,27 @@ public static class SpatialAmounts
             if(next>=parsed.Length || next>n+4 || parsed[next].Labels.Length>0)continue;
             var below=rows[next];var above=rows[n];
             if(below.Min(w=>w.Y)-above.Max(w=>w.Y+w.Height)>5*above.Average(w=>w.Height))continue;
+            var last=next;
+            while(last+1<parsed.Length && parsed[last+1].Cash.Length>0
+                && (parsed[last+1].Labels.Length==0 || parsed[last+1].Labels.All(l=>l.Field=="total"))
+                && rows[last+1].Min(w=>w.Y)-rows[last].Max(w=>w.Y+w.Height)<=3*above.Average(w=>w.Height))
+            {
+                last++;
+            }
             for(var j=0;j<ls.Length;j++)
             {
                 var left=j==0?double.NegativeInfinity:(ls[j-1].Right+ls[j].Left)/2;
                 var right=j==ls.Length-1?double.PositiveInfinity:(ls[j].Right+ls[j+1].Left)/2;
-                var candidates=parsed[next].Cash.Where(c=>(c.Left+c.Right)/2>left && (c.Left+c.Right)/2<right).ToArray();
+                var dataRows=Enumerable.Range(next,last-next+1).ToArray();
+                // Multiple body rows require an explicit aggregate row, even when
+                // their numbers happen to be equal. Never take the first item.
+                if(dataRows.Length>1)
+                {
+                    var totals=dataRows.Where(r=>parsed[r].Labels.Any(l=>l.Field=="total")).ToArray();
+                    if(totals.Length!=1){ambiguous.Add(ls[j].Field);continue;}
+                    dataRows=totals;
+                }
+                var candidates=dataRows.SelectMany(r=>parsed[r].Cash).Where(c=>(c.Left+c.Right)/2>left && (c.Left+c.Right)/2<right).ToArray();
                 if(candidates.Length==1)Add(ls[j],candidates[0]);else if(candidates.Length>1)ambiguous.Add(ls[j].Field);
             }
         }

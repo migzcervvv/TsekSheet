@@ -6,6 +6,26 @@ public sealed class ExtractionFixTests
 {
     private static WordBox W(string text,double x,double y,double width=100)=>new(text,1,x,y,width,20);
     [TestMethod]
+    [DataRow("4.00")]
+    [DataRow("9.00")]
+    public void ColumnWithMultipleBodyRowsNeedsAnExplicitAggregate(string second)
+    {
+        var f=PacketRules.Extract(new OcrResult("",[W("VAT Amount",0,0),W("4.00",0,30),W(second,0,60)]),"111-222-333-000",out var labels);
+        Assert.AreEqual("",f["vat"]);Assert.AreEqual("ambiguous",labels["vat"]);
+    }
+    [TestMethod]
+    public void ExplicitColumnTotalIsNotTheFirstBodyAmount()
+    {
+        var f=PacketRules.Extract(new OcrResult("",[W("Tax Withheld",500,0),W("2.00",500,30),W("3.00",500,60),W("Total",0,90),W("5.00",500,90)]),"111-222-333-000",out _);
+        Assert.AreEqual("5.00",f["wht"]);
+    }
+    [TestMethod]
+    public void ConflictingColumnTotalsRemainAmbiguous()
+    {
+        var f=PacketRules.Extract(new OcrResult("",[W("Tax Withheld",500,0),W("2.00",500,30),W("Total",0,60),W("2.00",500,60),W("Grand Total",0,90),W("3.00",500,90)]),"111-222-333-000",out var labels);
+        Assert.AreEqual("",f["wht"]);Assert.AreEqual("ambiguous",labels["wht"]);
+    }
+    [TestMethod]
     public void MultiColumnHeadersAssociateByCoordinatesNotMagnitude()
     {
         var result=new OcrResult("",[W("Gross Total",0,0),W("VAT Amount",400,0),W("Net Amount Due",800,0),W("120.00",0,30),W("20.00",400,30),W("117.00",800,30)]);
