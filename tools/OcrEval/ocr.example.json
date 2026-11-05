@@ -1,4 +1,5 @@
 {
+  "ownTin": "000-000-000-000",
   "tesseract": "../../artifacts/ocr-assets/tesseract-env/Library/bin/tesseract.exe",
   "tessdata": "../../artifacts/ocr-assets",
   "detectionModel": "../../artifacts/ocr-assets/PP-OCRv5_mobile_det_onnx_infer/inference.onnx",

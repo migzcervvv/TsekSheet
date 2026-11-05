@@ -18,7 +18,10 @@ try
     using var cancelled = new CancellationTokenSource();
     Console.CancelKeyPress += (_, e) => { e.Cancel = true; cancelled.Cancel(); };
     var output = options.GetValueOrDefault("--output", Path.Combine("artifacts", "ocr-eval", DateTime.UtcNow.ToString("yyyyMMddTHHmmssfffZ") + "-" + Guid.NewGuid().ToString("N")[..8]));
-    return await Evaluation.Run(input, config, output, options.GetValueOrDefault("--report", Path.Combine("docs", "ocr-bakeoff.md")), cancelled.Token);
+    var report = options.GetValueOrDefault("--report", Path.Combine("docs", "ocr-bakeoff.md"));
+    var header = Csv.Read(Path.Combine(input, "truth.csv"))[0];
+    return header.Contains("page") ? await RealEvaluation.Run(input, config, output, report, cancelled.Token)
+        : await Evaluation.Run(input, config, output, report, cancelled.Token);
 }
 catch (OperationCanceledException) { Console.Error.WriteLine("Evaluation cancelled; partial raw results are retained."); return 2; }
 catch (Exception error) { Console.Error.WriteLine(error.ToString()); return 1; }

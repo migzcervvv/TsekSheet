@@ -185,3 +185,54 @@ retains exact OCR strings.
 
 Synthetic-only results do not decide the engine. T3b redacted evaluation and T4
 product integration remain separate tickets.
+
+## Real-document packets (T3b)
+
+The console detects this exact truth header and uses the metrics-only packet path:
+
+```csv
+file,page,doc_type,vendor,tin,invoice_type,invoice,date,vatable,vat,total,wht,amount_due,rfp_no,voucher_no,notes
+```
+
+UTF-8 BOM and RFC4180 quoted names/fields are supported. Empty trailing records are
+ignored. Each nonempty row labels one invoice/receipt page, numbered from 1; multiple
+labelled pages per packet are supported. Every PDF page is rendered/classified, including
+pages without truth. Ground-truth values never influence orientation, OCR, extraction or
+page selection. Only nonempty canonical truth fields are scored; handwritten notes select
+a separate reporting group. Classifications are scored only where truth exists.
+
+Use the same run command with `--input fixtures/redacted/docs`; keep output under ignored
+`artifacts/ocr-eval/`. The schema selects packet mode automatically. No OCR text, source
+names, field values, images or crops are persisted by this mode. `results.csv` contains
+anonymous packet ordinals, page indices, fixed label/classification categories and numeric
+metrics only. `machine.json` contains hardware metrics. Never commit private inputs or
+raw derived content. The generated Real documents section preserves the synthetic report.
+
+Set `ownTin` in ignored local configuration; the committed zero-filled example is a
+placeholder and packet mode rejects it. All TINs with that nine-digit taxpayer root are
+excluded, including zero-padded branch variants. Amount categories are separate, with
+anchored labels and no VAT conversion; `total_amount_due`, `amount_due` and `net_amount_due`
+are distinct label matches. Conflicting labels/values produce an ambiguous empty value.
+Invoice numbers compare digits only; SI/OR/INV type aliases canonicalize independently.
+
+Cardinal orientation uses four reduced-resolution Tesseract PSM6 text/confidence probes
+at 0/90/180/270, then rotates the full bitmap before final OCR for both engines. The score
+uses English document keywords and confidence-weighted text length. This is a heuristic,
+not a trained orientation classifier. Correction counts are inferred, not verified rotation
+success: the supplied truth schema has no orientation labels. Probe time/memory is charged
+to every engine/profile; initialization stays separate, and peak excludes renderer/parent.
+
+Page selection ranks invoice classifications first, then invoice/receipt keywords and
+extracted invoice/total presence, choosing the earliest tie. Service invoices map to
+sales_invoice; generic invoices to invoice_official_receipt; out-of-taxonomy truth types
+map to other. Report-only cross-check rows compare invoice vs RFP due amounts (fallback
+to total), invoice number vs voucher document number, and invoice vs 2307 TIN/WHT.
+Missing operands are unavailable. These checks do not authorize writes or select an engine.
+
+Summary exact match pools nonempty field instances. All truth fields are scored on their
+annotated page; packet references absent from that page count as misses. Cross-check voucher
+numbers use the first voucher/document/CV-number label. Timing excludes full-resolution
+parent bitmap rotation/re-encoding. These limitations must accompany engine comparisons.
+Anonymous packet ordinals follow first-file appearance in truth.csv. Only applicable rows
+enter accuracy/agreement denominators; page rows carry timing/classification metadata, and
+their exact flag has no scoring meaning.

@@ -258,15 +258,18 @@ the unchanged Excel-test CS0815 recorded under Risks.)
 - Acceptance: both engines complete the synthetic evaluation offline, summary generated,
   model-free unit tests pass. Stop before T3b/T4; no engine decision.
 
-### T3b - Redacted OCR evaluation and engine decision support
+### T3b - Real-document OCR evaluation
 
-Status: TODO (requires redacted documents; not authorized by T3a)
+Status: IN PROGRESS (local packet truth, metrics-only output; no product UI changes or engine decision).
 
-- Run the T3a harness unchanged against `fixtures/redacted/docs/` with typed truth and
-  an optional vendor list; retain results per engine/preprocess/variant.
-- Report field accuracy, field CER, seconds/page and peak RAM on the A15 and, if
-  available, a minimum-class machine. Synthetic results do not establish real-scan accuracy.
-- Update `docs/ocr-bakeoff.md`; the planner decides the engine before T4.
+- Extend the harness for BOM/RFC4180 packet truth: page classification/selection,
+  cardinal orientation, own-TIN exclusion, labelled amounts, digits-only invoice comparison
+  and report-only invoice/RFP/voucher/2307 cross-checks.
+- Run Tesseract PSM6 (best T3a field accuracy) and Paddle v5 mobile across all three
+  preprocessing profiles; report each field, page pick, correction count, time/memory and
+  handwritten subsets separately. No engine decision.
+- Append Real documents tables to `docs/ocr-bakeoff.md`; artifacts contain numeric
+  metrics/fixed categories only. Never commit inputs, OCR text, values or crops. Stop before T4.
 
 ### T4 - OCR in the product
 
