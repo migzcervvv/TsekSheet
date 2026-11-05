@@ -2,7 +2,7 @@
 
 ## Follow-up: new-file implementation evidence
 
-The later native harness at `tests/WindowsFileCommit.NativeEvaluation` reproduced the old missing-target and apparent collision failures. Directory enumeration exposed renamed files such as `target.bin.bin` followed by stray Unicode characters. The filename allocation had no UTF-16 NUL terminator. Adding two zero bytes, while keeping `FileNameLength` equal to the filename bytes excluding the terminator, removed those outcomes in repeated absolute-path tests. This establishes a defect in the old native buffer rather than evidence that Windows silently overwrote the colliding target: the observed existing target remained unchanged while the stage moved to a different, unintended filename.
+The later native harness at `experiments/archive/WindowsFileCommit.NativeEvaluation` reproduced the old missing-target and apparent collision failures. Directory enumeration exposed renamed files such as `target.bin.bin` followed by stray Unicode characters. The filename allocation had no UTF-16 NUL terminator. Adding two zero bytes, while keeping `FileNameLength` equal to the filename bytes excluding the terminator, removed those outcomes in repeated absolute-path tests. This establishes a defect in the old native buffer rather than evidence that Windows silently overwrote the colliding target: the observed existing target remained unchanged while the stage moved to a different, unintended filename.
 
 The x64 layout is checked at runtime (root at 8, length at 16, name at 20). The directory-relative variant consistently returns error 87 and is explicitly unsupported. The final harness treats that documented experimental rejection separately from successful absolute-path commits and real collision rejection. Two final runs each completed 600 checks with zero failures: 200 expected relative-mode rejections, 200 successful absolute/NT-path new-file renames, and 200 existing-target collisions per run. Earlier uncorrected-buffer runs failed and are not acceptance evidence.
 
@@ -12,7 +12,7 @@ Historical status of the preceding investigation: research only, with saving dis
 
 ## Scope and findings
 
-The .NET 8 harness at `tests/WindowsFileCommit.Evaluation` operates only on synthetic `.bin` files in a unique local temporary directory, removes only its own files, and does not reference production code or Excel fixtures. The test volume was local NTFS on the Windows development machine. Three runs completed: 390 scenarios each, 1,170 total, zero failures. The second and third runs included NTFS volume/file identity checks for new-file moves and existing-target collisions; the third used a separate process for deletion and rename. Every scenario checks a separate synthetic source and unrelated file. Stage content, destination content and backup content are checked in scenarios where applicable.
+The .NET harness at `experiments/archive/WindowsFileCommit.Evaluation` operates only on synthetic `.bin` files in a unique local temporary directory, removes only its own files, and does not reference production code or Excel fixtures. The test volume was local NTFS on the Windows development machine. Three runs completed: 390 scenarios each, 1,170 total, zero failures. The second and third runs included NTFS volume/file identity checks for new-file moves and existing-target collisions; the third used a separate process for deletion and rename. Every scenario checks a separate synthetic source and unrelated file. Stage content, destination content and backup content are checked in scenarios where applicable.
 
 The original handle-based rename experiment was removed before this investigation. Its inconsistent success/missing-output and collision behavior cannot be attributed to a demonstrated root cause from the retained evidence. It is not valid to infer the cause from the later managed `File.Move` results. Handle ownership, the native buffer layout, path interpretation, cleanup timing, and error capture remain possibilities requiring an exact retained reproduction. The harness closes and flushes its staging handle before moving, so it does not test the old exclusive-handle rename implementation.
 
@@ -52,10 +52,10 @@ The child-process boundary case is synchronized by waiting for creation before t
 
 ## Reproduction
 
-From Windows CMD at the repository root, with .NET SDK 8.0.427:
+From Windows CMD at the repository root, with .NET SDK the historical SDK:
 
 ```cmd
-dotnet run --project tests\WindowsFileCommit.Evaluation\WindowsFileCommit.Evaluation.csproj -c Release
+dotnet run --project experiments\archive\WindowsFileCommit.Evaluation\WindowsFileCommit.Evaluation.csproj -c Release
 dotnet test TsekSheet.sln
 ```
 

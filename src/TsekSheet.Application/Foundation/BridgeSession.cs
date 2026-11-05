@@ -111,7 +111,7 @@ public sealed class BridgeSession : IDisposable
                 Success(id!, new { selectedVersion = 1, applicationName = new ApplicationMetadataService().ApplicationName, version = "0.1.0", capabilities = new { sourceRendering = renderer != null, receipts = selectDocument != null, diagnostics = true, fileSelection = true, workbooks = workbooks != null, templates = false, ocr = false } });
                 return;
             }
-            if (command is not ("receipt.changeProfile" or "receipt.queue" or "receipt.enqueue" or "receipt.navigate" or "receipt.prepare" or "excel.previewDraft" or "excel.addRow" or "excel.listWorkbooks" or "excel.previewInsert" or "excel.insert" or "receipt.render" or "receipt.cancelRender" or "receipt.select" or "receipt.state" or "receipt.start" or "receipt.correct" or "receipt.verify" or "receipt.retract" or "receipt.close" or "receipt.preview" or "sectionReview.start" or "sectionReview.decide" or "sectionReview.retract" or "sectionReview.cancel" or "foundation.getInfo" or "foundation.selectFile" or "diagnostics.run" or "diagnostics.cancel" or "workbook.open" or "workbook.inspect" or "workbook.readViewport" or "workbook.close" or "workbook.discard" or "workbook.createCopy" or "workbook.editCopy" or "workbook.saveAsNew" or "workbook.previewMerge" or "workbook.merge" or "workflow.profiles" or "workbook.planRecords" or "workbook.generateCandidate" or "workbook.approveCandidate" or "workbook.cancelCandidate"))
+            if (command is not ("receipt.changeProfile" or "receipt.queue" or "receipt.enqueue" or "receipt.navigate" or "receipt.prepare" or "excel.previewDraft" or "excel.addRow" or "excel.listWorkbooks" or "excel.previewInsert" or "excel.insert" or "receipt.render" or "receipt.cancelRender" or "receipt.select" or "receipt.state" or "receipt.start" or "receipt.correct" or "receipt.verify" or "receipt.retract" or "receipt.close" or "receipt.preview" or "sectionReview.start" or "sectionReview.decide" or "sectionReview.retract" or "sectionReview.cancel" or "foundation.getInfo" or "foundation.selectFile" or "diagnostics.run" or "diagnostics.cancel" or "workbook.open" or "workbook.inspect" or "workbook.readViewport" or "workbook.close" or "workflow.profiles" or "workbook.planRecords"))
             { Error(id!, "UNSUPPORTED_COMMAND", "Command is unavailable."); return; }
             if (!ready) { Error(id!, "NOT_READY", "Handshake is required."); return; }
             if (command == "receipt.queue")
@@ -299,31 +299,6 @@ public sealed class BridgeSession : IDisposable
             if (command!.StartsWith("workbook.", StringComparison.Ordinal))
             {
                 if (workbooks == null) { Error(id!, "UNSUPPORTED_COMMAND", "Read-only workbooks are unavailable in this host."); return; }
-                if (command == "workbook.generateCandidate")
-                {
-                    if (!HasOnly(payload,"sessionId","worksheetId","expectedRevision","profileId","profileHash","records","destinationSessionId","expectedDestinationRevision")
-                        || !Guid.TryParseExact(payload.GetProperty("destinationSessionId").GetString(),"D",out var destination)
-                        || !payload.GetProperty("expectedDestinationRevision").TryGetInt32(out var destinationRevision) || destinationRevision < 0)
-                    { Error(id!,"INVALID_REQUEST","Invalid candidate generation payload."); return; }
-                    var fields = JsonSerializer.Deserialize<Dictionary<string,JsonElement>>(payload.GetRawText())!;
-                    fields.Remove("destinationSessionId"); fields.Remove("expectedDestinationRevision");
-                    var request = WorkflowProfiles.ParseRequest(JsonSerializer.Serialize(fields));
-                    Success(id!,await workbooks.GenerateCandidateAsync(destination,destinationRevision,request)); return;
-                }
-                if (command == "workbook.approveCandidate")
-                {
-                    if (!HasOnly(payload,"sessionId","destinationSessionId","worksheetId","candidateId","reviewSha256","candidateSha256","manifestSha256","sourceSha256","expectedCopyRevision","expectedDestinationRevision","profileId","profileHash","duplicatesReviewed"))
-                    { Error(id!,"INVALID_REQUEST","Invalid candidate approval payload."); return; }
-                    var request = JsonSerializer.Deserialize<CandidateReviewApproval>(payload.GetRawText(),JsonOptions)!;
-                    Success(id!,await workbooks.ApproveCandidateAsync(request)); return;
-                }
-                if (command == "workbook.cancelCandidate")
-                {
-                    if (!HasOnly(payload,"sessionId","candidateId","expectedRevision") || !Guid.TryParseExact(payload.GetProperty("sessionId").GetString(),"D",out var copyId)
-                        || !Guid.TryParseExact(payload.GetProperty("candidateId").GetString(),"D",out var candidateId) || !payload.GetProperty("expectedRevision").TryGetInt32(out var revision) || revision < 0)
-                    { Error(id!,"INVALID_REQUEST","Invalid review cancellation payload."); return; }
-                    Success(id!,new { status = await workbooks.CancelCandidateAsync(copyId,candidateId,revision) }); return;
-                }
                 if (command is "workbook.open" or "workbook.inspect")
                 {
                     if (!HasOnly(payload)) { Error(id!, "INVALID_REQUEST", "Workbook opening accepts no paths or other arguments."); return; }
@@ -331,53 +306,19 @@ public sealed class BridgeSession : IDisposable
                 }
                 var names = command switch
                 {
-                    "workbook.close" or "workbook.discard" => new[] { "sessionId" },
-                    "workbook.saveAsNew" => new[] { "sessionId", "expectedRevision" },
+                    "workbook.close" => new[] { "sessionId" },
                     "workbook.planRecords" => new[] { "sessionId", "worksheetId", "expectedRevision", "profileId", "profileHash", "records" },
-                    "workbook.previewMerge" or "workbook.merge" => new[] { "sessionId", "workingCopyId", "worksheetId", "expectedCopyRevision", "expectedRevision", "expectedBaseRevision" },
-                    "workbook.createCopy" => new[] { "sessionId", "worksheetId", "expectedRevision" },
-                    "workbook.editCopy" => new[] { "sessionId", "worksheetId", "row", "column", "kind", "value", "expectedRevision" },
                     _ => new[] { "sessionId", "worksheetId", "startRow", "startColumn", "rows", "columns" }
                 };
                 if (!HasOnly(payload, names) || payload.GetProperty("sessionId").ValueKind != JsonValueKind.String || !Guid.TryParseExact(payload.GetProperty("sessionId").GetString(), "D", out var sessionId))
                 { Error(id!, "INVALID_REQUEST", "Invalid workbook session payload."); return; }
-                if (command is "workbook.close" or "workbook.discard") { Success(id!, new { status = await workbooks.CloseAsync(sessionId, command == "workbook.discard") }); return; }
-                if (command == "workbook.saveAsNew")
-                {
-                    if (!payload.GetProperty("expectedRevision").TryGetInt32(out var revision) || revision < 0) { Error(id!, "INVALID_REQUEST", "Invalid revision."); return; }
-                    Success(id!, await workbooks.SaveAsNewAsync(sessionId, revision)); return;
-                }
+                if (command is "workbook.close") { Success(id!, new { status = await workbooks.CloseAsync(sessionId) }); return; }
                 if (payload.GetProperty("worksheetId").ValueKind != JsonValueKind.String || !Guid.TryParseExact(payload.GetProperty("worksheetId").GetString(), "D", out var worksheetId)
                     ) { Error(id!, "INVALID_REQUEST", "Invalid worksheet identity."); return; }
                 if (command == "workbook.planRecords")
                 {
                     var request = WorkflowProfiles.ParseRequest(payload.GetRawText());
                     Success(id!, await workbooks.PlanRecordsAsync(request)); return;
-                }
-                if (command is "workbook.previewMerge" or "workbook.merge")
-                {
-                    if (payload.GetProperty("workingCopyId").ValueKind != JsonValueKind.String || !Guid.TryParseExact(payload.GetProperty("workingCopyId").GetString(), "D", out var copyId)
-                        || !payload.GetProperty("expectedCopyRevision").TryGetInt32(out var copyRevision) || copyRevision < 0
-                        || !payload.GetProperty("expectedRevision").TryGetInt32(out var revision) || revision < 0
-                        || !payload.GetProperty("expectedBaseRevision").TryGetInt32(out var baseRevision) || baseRevision < 0)
-                    { Error(id!, "INVALID_REQUEST", "Invalid integration identity or revisions."); return; }
-                    var request = new WorksheetIntegrationRequest(copyId, worksheetId, copyRevision, revision, baseRevision);
-                    if (command == "workbook.previewMerge") Success(id!, await workbooks.PreviewIntegrationAsync(sessionId, request));
-                    else Success(id!, await workbooks.IntegrateAsync(sessionId, request));
-                    return;
-                }
-                if (command == "workbook.createCopy")
-                {
-                    if (!payload.GetProperty("expectedRevision").TryGetInt32(out var revision) || revision < 0) { Error(id!, "INVALID_REQUEST", "Invalid revision."); return; }
-                    Success(id!, await workbooks.CreateWorkingCopyAsync(sessionId, worksheetId, revision)); return;
-                }
-                if (command == "workbook.editCopy")
-                {
-                    if (!payload.GetProperty("row").TryGetInt32(out var editRow) || !payload.GetProperty("column").TryGetInt32(out var editColumn)
-                        || !payload.GetProperty("expectedRevision").TryGetInt32(out var revision) || revision < 0
-                        || payload.GetProperty("kind").ValueKind != JsonValueKind.String || payload.GetProperty("value").ValueKind != JsonValueKind.String)
-                    { Error(id!, "INVALID_REQUEST", "Invalid cell edit."); return; }
-                    Success(id!, await workbooks.EditWorkingCopyAsync(sessionId, new CellEdit(worksheetId, editRow, editColumn, payload.GetProperty("kind").GetString()!, payload.GetProperty("value").GetString()!, revision))); return;
                 }
                 if (!payload.GetProperty("startRow").TryGetInt32(out var row) || !payload.GetProperty("startColumn").TryGetInt32(out var column)
                     || !payload.GetProperty("rows").TryGetInt32(out var rows) || !payload.GetProperty("columns").TryGetInt32(out var columns))

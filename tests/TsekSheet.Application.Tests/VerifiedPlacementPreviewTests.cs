@@ -104,8 +104,7 @@ public sealed class VerifiedPlacementPreviewTests
             Assert.AreEqual(record.Duplicates[0], chosen.Proposal.Records[0].Duplicates[0]);
             Assert.IsTrue(chosen.Proposal.ReadyForReview);
             Assert.IsFalse(chosen.CanApply);
-            Assert.AreEqual("ROW_INSERTION_DISABLED", Assert.ThrowsExactly<WorkbookException>(() =>
-                ((IWorkbookSession)session).InsertWorkflowRows(chosen.Proposal with { CanApply = true }, true, true)).Code);
+            Assert.IsNull(typeof(IWorkbookSession).GetMethod("InsertWorkflowRows"));
         }
         Assert.ThrowsExactly<NotSupportedException>(() => ((IList<DuplicateWarning>)record.Duplicates).Clear());
         Assert.AreEqual("INVALID_SECTION_CHOICE", Assert.ThrowsExactly<WorkbookException>(() =>
@@ -279,8 +278,6 @@ public sealed class VerifiedPlacementPreviewTests
         public Action? BeforeInfo;
         public int Reads;
         public int InfoReads;
-        public Func<WorkflowPlan, CancellationToken, WorkflowPlan>? Inspect;
-        public int Inspections;
         public Session(WorkflowProfile p)
         {
             var first = WorkflowPlanningTests.Capture(p);
@@ -300,16 +297,7 @@ public sealed class VerifiedPlacementPreviewTests
             AfterRead?.Invoke();
             return result;
         }
-        public WorkingCopyInfo? WorkingCopy => null;
-        public WorkflowPlan InspectStructuralInsertion(WorkflowPlan plan, CancellationToken token = default)
-        {
-            Inspections++;
-            return Inspect?.Invoke(plan, token) ?? throw new AssertFailedException("Placement must not inspect candidates.");
-        }
         public IWorkbookSession CreateSnapshot(CancellationToken token = default) => throw new AssertFailedException("Placement must only read.");
-        public IWorkbookSession CreateWorkingCopy(Guid id, int revision, CancellationToken token = default) => throw new AssertFailedException("Placement must only read.");
-        public WorkbookInfo Edit(CellEdit edit, CancellationToken token = default) => throw new AssertFailedException("Placement must only read.");
-        public SaveReceipt SaveAsNew(string path, int revision, CancellationToken token = default) => throw new AssertFailedException("Placement must only read.");
         public void Dispose() { }
     }
 }

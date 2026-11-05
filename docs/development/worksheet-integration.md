@@ -1,5 +1,7 @@
 # Worksheet integration
 
+> Historical evidence for the retired write path. Current workbook changes use Excel; see [README](../../README.md).
+
 ## Step 45 public-review boundary
 
 Public review tickets cannot enter structural integration, even after explicit metadata approval or changes to internal experimental flags. No structural Merge bridge/UI command was added. Existing internally generated Step 44 tickets still use the separately gated, exact-base/revision/oracle-validated one-operation transaction described below. Ordinary recorded-cell Merge remains unchanged. Native row-height uncertainty and incomplete production mutation UI keep Apply disabled; see [Step 45 verification](step45-verification.md).
@@ -14,9 +16,9 @@ The entire approved copy package is cloned and reopened. The oracle compares it 
 
 Only one reviewed structural integration per main session is supported in this experiment. Legacy repeated raw insertion tests do not imply repeated reviewed Merge support. A second integration or later divergence cannot bypass the retained export proof. Failures/cancellation retain both states and support retry of the same valid request. Tests cover corrupt/reopenable tampering and all Merge stage faults. [Structural export](workbook-safe-saving.md) uses a separate proof; no integration saves automatically. [Step 44 verification](step44-verification.md) records exact evidence and disabled production gates.
 
-Status: conservative Merge implemented with backend, bridge, frontend and real WPF/WebView2 regression evidence. Replace and Create New remain disabled. [Step 39 environment repair](dotnet-10-migration.md) subsequently restored the standard .NET 8 Release build; the prerequisite mismatch and diagnostic-build results below describe the earlier integration run. Phase 2 remains incomplete.
+Status: conservative Merge implemented with backend, bridge, frontend and real WPF/WebView2 regression evidence. Replace and Create New remain disabled. [current build instructions](../../README.md) subsequently restored the standard .NET Release build; the prerequisite mismatch and diagnostic-build results below describe the earlier integration run. Phase 2 remains incomplete.
 
-Current follow-up: [Step 40](dotnet-10-migration.md) migrates all projects to .NET 10 and reverifies the unchanged Merge implementation, rollback/conflict tests and real desktop workflow. Current build/runtime requirements come from that report; the earlier milestone's environment and counts below remain historical.
+Current follow-up: [current build instructions](../../README.md) migrates all projects to .NET 10 and reverifies the unchanged Merge implementation, rollback/conflict tests and real desktop workflow. Current build/runtime requirements come from that report; the earlier milestone's environment and counts below remain historical.
 
 Step 42 follow-up: [workflow proposals](workflow-profiles.md) perform read-only section/entity analysis. [Structural insertion](safe-row-insertion.md) remains disabled and proposals cannot be replayed as recorded-cell Merge edits. Existing Merge and new-file Save As guarantees are unchanged; Phase 2 is incomplete.
 
@@ -77,7 +79,7 @@ Copies are intentionally retained unchanged after success. Their historical edit
 
 Starting checkout: clean `main`, commit `c828394a580be35cb7065d5b82ac4557765e1688`. No branch change, pull, rebase, commit, push or dependency upgrade was performed.
 
-Observed environment: Windows build 10.0.26200, x64; .NET SDK 8.0.427 / MSBuild 17.11.69; projects target net8.0 and net8.0-windows. Installed SDKs include 3.1.426, 5.0.408/416, 6.0.428, 7.0.410, 8.0.427 and 9.0.312. Desktop runtime 8.0.33 is installed. Node 24.16.0/npm 11.13.0 differ from the exact repository requirement 24.22.1/11.19.1. The configured default npm CLI path is absent. Git is 2.47.1.windows.1. WebView2 registry version is 156.0.4314.50. The Python WindowsApps alias fails to start; Python/OCR is not used in this slice. Historical toolchain documents refer to the prior PC.
+Observed environment: Windows build 10.0.26200, x64; .NET SDK the historical SDK / MSBuild 17.11.69; projects target the original library target and the original Windows target. Installed SDKs include 3.1.426, 5.0.408/416, 6.0.428, 7.0.410, the historical SDK and 9.0.312. Desktop runtime 8.0.33 is installed. Node 24.16.0/npm 11.13.0 differ from the exact repository requirement 24.22.1/11.19.1. The configured default npm CLI path is absent. Git is 2.47.1.windows.1. WebView2 registry version is 156.0.4314.50. The Python WindowsApps alias fails to start; Python/OCR is not used in this slice. Historical toolchain documents refer to the prior PC.
 
 | Check | Result |
 | --- | --- |
@@ -140,9 +142,9 @@ Standard verification remains mandatory once prerequisites are corrected:
 dotnet restore TsekSheet.sln --locked-mode
 dotnet build TsekSheet.sln -c Release --no-restore
 dotnet test TsekSheet.sln -c Release --no-build --no-restore --logger trx
-dotnet restore tests/WorkbookLibrary.Evaluation/WorkbookLibrary.Evaluation.csproj --locked-mode
-dotnet test tests/WorkbookLibrary.Evaluation/WorkbookLibrary.Evaluation.csproj -c Release --no-restore
-dotnet run --project tests/WorkbookLibrary.Evaluation -c Release --no-restore
+dotnet restore experiments/archive/WorkbookLibrary.Evaluation/WorkbookLibrary.Evaluation.csproj --locked-mode
+dotnet test experiments/archive/WorkbookLibrary.Evaluation/WorkbookLibrary.Evaluation.csproj -c Release --no-restore
+dotnet run --project experiments/archive/WorkbookLibrary.Evaluation -c Release --no-restore
 # From src/TsekSheet.Frontend:
 npm.cmd ci --no-audit --no-fund
 npm.cmd run typecheck

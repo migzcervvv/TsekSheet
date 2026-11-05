@@ -343,11 +343,7 @@ public sealed class VerifiedMappingPreviewTests
             AfterRead?.Invoke();
             return result;
         }
-        public WorkingCopyInfo? WorkingCopy => null;
         public IWorkbookSession CreateSnapshot(CancellationToken token = default) => throw new AssertFailedException("Mapping must only read.");
-        public IWorkbookSession CreateWorkingCopy(Guid id, int revision, CancellationToken token = default) => throw new AssertFailedException("Mapping must only read.");
-        public WorkbookInfo Edit(CellEdit edit, CancellationToken token = default) => throw new AssertFailedException("Mapping must only read.");
-        public SaveReceipt SaveAsNew(string path, int revision, CancellationToken token = default) => throw new AssertFailedException("Mapping must only read.");
         public void Dispose() { }
     }
 }

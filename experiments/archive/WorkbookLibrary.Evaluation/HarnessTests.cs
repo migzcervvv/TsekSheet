@@ -5,7 +5,7 @@ namespace WorkbookLibrary.Evaluation;
 [TestClass]
 public sealed class HarnessTests
 {
-    private static string FixturePath(FixtureSpec spec) => Path.Combine(Program.FindRoot(), "tests", "WorkbookLibrary.Evaluation", "Fixtures", spec.FileName);
+    private static string FixturePath(FixtureSpec spec) => Path.Combine(Program.FindRoot(), "experiments", "archive", "WorkbookLibrary.Evaluation", "Fixtures", spec.FileName);
     private static string FreshOutput() { var folder = Path.Combine(Program.FindRoot(), "artifacts", "workbook-evaluation", "test-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(folder); return Path.Combine(folder, "candidate.xlsx"); }
 
     [TestMethod]

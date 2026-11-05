@@ -23,7 +23,7 @@ public sealed class WorkbookEngineTests
         using (var session = engine.Open(path))
         {
             var info = session.Info; id = info.SessionId;
-            Assert.AreEqual(hash, info.SourceSha256); Assert.IsFalse(info.IsDirty); Assert.AreEqual(0, info.Revision); Assert.IsTrue(info.EditingAllowed);
+            Assert.AreEqual(hash, info.SourceSha256); Assert.IsFalse(info.IsDirty); Assert.AreEqual(0, info.Revision); Assert.IsFalse(info.EditingAllowed);
             Assert.AreEqual(4, info.Worksheets.Count); Assert.AreEqual("SyntheticFixtureGenerator", info.Creator);
             var hidden = info.Worksheets.Single(s => s.Name == "Lookup"); Assert.AreEqual("Hidden", hidden.Visibility);
             var sheet = info.Worksheets.Single(s => s.Name == main); Assert.AreEqual(summary + 5, sheet.LastRow); Assert.AreEqual(5, sheet.LastColumn);
@@ -125,7 +125,6 @@ public sealed class WorkbookEngineTests
                 Assert.IsTrue(session.Info.Findings.Any(f => f.Code == "ADVANCED_CONTENT"));
                 Assert.IsFalse(session.Info.EditingAllowed);
                 Assert.AreEqual("SNAPSHOT_UNSUPPORTED", Assert.ThrowsExactly<WorkbookException>(() => session.CreateSnapshot()).Code);
-                Assert.AreEqual("EDIT_UNSUPPORTED", Assert.ThrowsExactly<WorkbookException>(() => session.Edit(new(session.Info.Worksheets[0].Id, 5, 1, "text", "blocked", 0))).Code);
                 Assert.AreEqual("Sample-1", session.ReadViewport(session.Info.Worksheets[0].Id, 5, 1, 1, 1).Cells[0].Value);
             }
             Assert.AreEqual(hash, Hash(path));

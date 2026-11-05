@@ -1,5 +1,7 @@
 # Workbook safe-saving foundation
 
+> Historical evidence for the retired write path. Current workbook changes use Excel; see [README](../../README.md).
+
 ## Step 45 review is not exportable content
 
 Generating or approving a public review changes no accepted workbook data/revision/dirty state and creates no structural export proof. The review-only invariant prevents those candidates from being adopted or integrated, even with experimental flags. Ordinary Save As continues to export accepted main-session bytes only and excludes unmerged/unapplied reviews. The internally tested structural export path below remains separate. No automatic save, source write or overwrite is introduced. [Step 45](step45-verification.md) preserves all commit, rollback and fingerprint checks.
@@ -14,7 +16,7 @@ Unmerged working-copy changes remain excluded, direct copy exports still reject,
 
 Status: new-file-only Save As is enabled for the supported Windows x64/local fixed NTFS policy. Existing-file Save and replacement remain unavailable. Phase 2 is incomplete.
 
-Current follow-up: [Step 40 .NET 10 migration](dotnet-10-migration.md) preserves this implementation and restrictions. All workbook/save regressions, 600 native rename checks and 390 managed commit checks pass on SDK 10.0.403/runtime 10.0.14. Older framework/tool paths and results below describe the original saving milestone.
+Current follow-up: [current build instructions](../../README.md) preserves this implementation and restrictions. All workbook/save regressions, 600 native rename checks and 390 managed commit checks pass on SDK 10.0.403/runtime 10.0.14. Older framework/tool paths and results below describe the original saving milestone.
 
 ## Implementation sequence
 
@@ -83,14 +85,14 @@ Crash/power-loss tests, actual disk exhaustion, FAT/exFAT/ReFS, live network sha
 dotnet --version
 dotnet build TsekSheet.sln
 dotnet test TsekSheet.sln
-dotnet run --project tests\WindowsFileCommit.NativeEvaluation\WindowsFileCommit.NativeEvaluation.csproj -c Release
+dotnet run --project experiments\archive\WindowsFileCommit.NativeEvaluation\WindowsFileCommit.NativeEvaluation.csproj -c Release
 cd src\TsekSheet.Frontend
 npm run typecheck
 npm run test -- --run
 npm run build
 ```
 
-SDK 8.0.427, ClosedXML 0.105.1, and Open XML SDK 3.5.1 remain unchanged. Existing-file replacement still requires a separately proven strategy and acceptance tests.
+the historical SDK, ClosedXML 0.105.1, and Open XML SDK 3.5.1 remain unchanged. Existing-file replacement still requires a separately proven strategy and acceptance tests.
 
 ## Recorded verification and changed files
 
@@ -103,4 +105,4 @@ Original fixture SHA-256 values remained:
 
 Production files added/modified: `src/TsekSheet.Workbooks/NewFileCommit.cs`, `WorkbookEngine.cs`, `WorkbookSession.cs`; `src/TsekSheet.Application/Workbooks/WorkbookContracts.cs`, `WorkbookWorkspace.cs`; `src/TsekSheet.Application/Foundation/BridgeSession.cs`; `src/TsekSheet.Desktop/MainWindow.xaml.cs`; `src/TsekSheet.Frontend/src/bridge/client.ts`, `WorkbookViewer.tsx`.
 
-Tests/research: `tests/TsekSheet.Workbooks.Tests/NewFileCommitTests.cs`; `SafeSaveDisabledTests.cs` renamed/reworked as `SafeSaveWorkbookTests.cs`; `tests/TsekSheet.Application.Tests/WorkbookWorkspaceTests.cs`; `tests/TsekSheet.Desktop.Tests/DesktopSmokeTests.cs`; `src/TsekSheet.Frontend/src/WorkbookViewer.test.tsx`; `tests/WindowsFileCommit.NativeEvaluation/Program.cs`, its project file and generated package lock; this document and `docs/research/windows-safe-file-commit.md`. No retained fixture or dependency version was changed.
+Tests/research: `tests/TsekSheet.Workbooks.Tests/NewFileCommitTests.cs`; `SafeSaveDisabledTests.cs` renamed/reworked as `SafeSaveWorkbookTests.cs`; `tests/TsekSheet.Application.Tests/WorkbookWorkspaceTests.cs`; `tests/TsekSheet.Desktop.Tests/DesktopSmokeTests.cs`; `src/TsekSheet.Frontend/src/WorkbookViewer.test.tsx`; `experiments/archive/WindowsFileCommit.NativeEvaluation/Program.cs`, its project file and generated package lock; this document and `docs/research/windows-safe-file-commit.md`. No retained fixture or dependency version was changed.

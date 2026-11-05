@@ -468,12 +468,8 @@ public sealed class ReadOnlySectionAnalysisTests
         public WorkbookInfo Info=>new(region.SessionId,null,"synthetic.xlsx",changed||ForceChanged?new string('B',64):region.SourceSha256,0,false,false,"","",
           [new(region.WorksheetId,"Artificial",1,"Visible",0,0)],[],Compatibility:new(1,1,1,1,0,0,false,[],[],"Unmeasured"));
         public InspectionRegion CaptureInspectionRegion(InspectionRegionRequest request,CancellationToken token=default){Captures++;token.ThrowIfCancellationRequested();if(ChangeSource)changed=true;return WrongCapture?region with {SessionId=Guid.NewGuid()}:region;}
-        public WorkingCopyInfo? WorkingCopy=>null;
         public CellViewport ReadViewport(Guid id,int r,int c,int rows,int cols)=>throw new NotSupportedException();
         public IWorkbookSession CreateSnapshot(CancellationToken t=default)=>throw new NotSupportedException();
-        public IWorkbookSession CreateWorkingCopy(Guid id,int rev,CancellationToken t=default)=>throw new NotSupportedException();
-        public WorkbookInfo Edit(CellEdit edit,CancellationToken t=default)=>throw new NotSupportedException();
-        public SaveReceipt SaveAsNew(string path,int rev,CancellationToken t=default)=>throw new NotSupportedException();
         public void Dispose(){}
     }
 }

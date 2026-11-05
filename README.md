@@ -42,6 +42,10 @@ PDF / photo / scan
 
 Key principles:
 
+The workbook viewer provides read-only inspection. Use **Insert into Excel** or the receipt
+queue to add verified rows, then review and save explicitly in Excel. Working-copy editing,
+candidate generation, Merge and the legacy export controls have been removed.
+
 - **Excel does the spreadsheet work.** TsekSheet never rewrites workbook files itself; it drives
   your installed Excel, so formulas, formatting and features behave exactly as in Excel.
 - **Humans verify everything.** OCR output is a proposal. Only verified fields can be inserted.

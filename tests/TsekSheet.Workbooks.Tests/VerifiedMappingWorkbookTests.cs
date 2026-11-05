@@ -45,7 +45,7 @@ public sealed class VerifiedMappingWorkbookTests
         var hash = Hash(fixture.Path);
         using (var session = new WorkbookEngine().Open(fixture.Path))
         {
-            Assert.IsTrue(session.Info.EditingAllowed, string.Join("; ", session.Info.Findings));
+            Assert.IsFalse(session.Info.EditingAllowed, "Mapping reads a workbook without write authority.");
             var review = Review(p);
             var reviewBefore = JsonSerializer.Serialize(review.Snapshot);
             var sessionBefore = session.Info;
@@ -67,19 +67,17 @@ public sealed class VerifiedMappingWorkbookTests
                 Assert.AreEqual("text", main.Fields[1].Value.Kind);
                 Assert.IsFalse(main.CanApply);
 
-                using var copy = session.CreateWorkingCopy(sheet.Id, session.Info.Revision);
+                using var copy = session.CreateSnapshot();
                 var copyTarget = Destination(copy, sheet.Id, p);
                 if (sheetIndex == 1)
                 {
-                    // A deliberate in-memory edit in an artificial copy only.
-                    // The preview must retain dirty state, never integrate or save.
-                    copy.Edit(new(sheet.Id, 3, 5, "text", "Artificial independent note", copy.Info.Revision));
+                    // A deliberately stale destination binding; snapshots stay read-only.
+                    copyTarget = copyTarget with { Revision = copyTarget.Revision + 1 };
                     Assert.AreEqual("STALE_REVISION", Assert.ThrowsExactly<WorkbookException>(() =>
                         VerifiedMapping.Preview(copy, copyTarget, review, review.Snapshot.Version)).Code);
                     copyTarget = Destination(copy, sheet.Id, p);
                 }
                 var copyBefore = copy.Info;
-                var changesBefore = copy.WorkingCopy!.Changes.ToArray();
                 var copyCells = copy.Info.Worksheets.ToDictionary(s => s.Id, s => Capture(copy, s));
                 var independent = VerifiedMapping.Preview(copy, copyTarget, review, review.Snapshot.Version);
                 Assert.AreNotEqual(main.Destination.SessionId, independent.Destination.SessionId);
@@ -87,11 +85,9 @@ public sealed class VerifiedMappingWorkbookTests
                 CollectionAssert.AreEqual(main.Fields.ToArray(), independent.Fields.ToArray());
                 CollectionAssert.AreEqual(main.Sections.ToArray(), independent.Sections.ToArray());
                 Assert.AreEqual(copyBefore, copy.Info);
-                CollectionAssert.AreEqual(changesBefore, copy.WorkingCopy.Changes.ToArray());
                 foreach (var context in copy.Info.Worksheets)
                     CollectionAssert.AreEqual(copyCells[context.Id], Capture(copy, context));
-                Assert.AreEqual(sheetIndex == 1, copy.Info.IsDirty);
-                Assert.AreEqual(sheetIndex == 1 ? 1 : 0, copy.WorkingCopy.Changes.Count);
+                Assert.IsFalse(copy.Info.IsDirty);
             }
             Assert.AreNotEqual(previews[0].Destination.WorksheetId, previews[1].Destination.WorksheetId);
             Assert.AreNotEqual(previews[0].Fields[0].Column, previews[1].Fields[0].Column);
@@ -138,17 +134,16 @@ public sealed class VerifiedMappingWorkbookTests
                 Assert.AreEqual(123.4500m, main.Mapping.Fields[4].Value.DecimalValue);
                 Assert.IsFalse(main.CanApply);
                 Assert.IsFalse(main.Proposal.CanApply);
-                using var copy = session.CreateWorkingCopy(sheet.Id, initial.Revision);
+                using var copy = session.CreateSnapshot();
                 var copyTarget = Destination(copy, sheet.Id, p);
                 if (sheetIndex == 1)
                 {
-                    copy.Edit(new(sheet.Id, 3, 5, "text", "Artificial copy only", copy.Info.Revision));
+                    copyTarget = copyTarget with { Revision = copyTarget.Revision + 1 };
                     Assert.AreEqual("STALE_REVISION", Assert.ThrowsExactly<WorkbookException>(() =>
                         VerifiedPlacement.Preview(copy, copyTarget, review, review.Snapshot.Version, choice)).Code);
                     copyTarget = Destination(copy, sheet.Id, p);
                 }
                 var copyBefore = copy.Info;
-                var changes = copy.WorkingCopy!.Changes.ToArray();
                 var copyCells = copyBefore.Worksheets.ToDictionary(s => s.Id, s => Capture(copy, s));
                 var independent = VerifiedPlacement.Preview(copy, copyTarget, review, review.Snapshot.Version, choice);
                 Assert.AreNotEqual(main.Mapping.Destination.SessionId, independent.Mapping.Destination.SessionId);
@@ -160,11 +155,9 @@ public sealed class VerifiedMappingWorkbookTests
                     VerifiedPlacement.Preview(copy, destination, review, review.Snapshot.Version, choice)).Code);
                 Assert.AreEqual("INVALID_SECTION_CHOICE", Assert.ThrowsExactly<WorkbookException>(() =>
                     VerifiedPlacement.Preview(copy, copyTarget, review, review.Snapshot.Version, new("foreign"))).Code);
-                Assert.AreEqual("ROW_INSERTION_DISABLED", Assert.ThrowsExactly<WorkbookException>(() =>
-                    copy.InsertWorkflowRows(independent.Proposal with { CanApply = true }, true, true)).Code);
+                Assert.IsNull(typeof(IWorkbookSession).GetMethod("InsertWorkflowRows"));
                 Assert.AreEqual(copyBefore, copy.Info);
-                CollectionAssert.AreEqual(changes, copy.WorkingCopy.Changes.ToArray());
-                Assert.AreEqual(sheetIndex == 1, copy.Info.IsDirty);
+                Assert.IsFalse(copy.Info.IsDirty);
                 foreach (var context in copy.Info.Worksheets)
                     CollectionAssert.AreEqual(copyCells[context.Id], Capture(copy, context));
             }
@@ -218,17 +211,16 @@ public sealed class VerifiedMappingWorkbookTests
                     Assert.AreEqual(123.4500m, mapping.Fields[4].Value.DecimalValue);
                     Assert.IsFalse(mapping.CanApply);
                 }
-                using var copy = session.CreateWorkingCopy(sheet.Id, initial.Revision);
+                using var copy = session.CreateSnapshot();
                 var copyTarget = Destination(copy, sheet.Id, p);
                 if (sheetIndex == 1)
                 {
-                    copy.Edit(new(sheet.Id, 3, 5, "text", "Artificial independent copy only", copy.Info.Revision));
+                    copyTarget = copyTarget with { Revision = copyTarget.Revision + 1 };
                     Assert.AreEqual("STALE_REVISION", Assert.ThrowsExactly<WorkbookException>(() =>
                         VerifiedPlacement.PreviewMany(copy, copyTarget, inputs)).Code);
                     copyTarget = Destination(copy, sheet.Id, p);
                 }
                 var copyBefore = copy.Info;
-                var changes = copy.WorkingCopy!.Changes.ToArray();
                 var copyCells = copyBefore.Worksheets.ToDictionary(s => s.Id, s => Capture(copy, s));
                 var independent = VerifiedPlacement.PreviewMany(copy, copyTarget, inputs);
                 Assert.AreNotEqual(main.Mappings[0].Destination.SessionId, independent.Mappings[0].Destination.SessionId);
@@ -257,11 +249,9 @@ public sealed class VerifiedMappingWorkbookTests
                 invalid[2] = inputs[2] with { Choices = new("foreign") };
                 Assert.AreEqual("INVALID_SECTION_CHOICE", Assert.ThrowsExactly<WorkbookException>(() =>
                     VerifiedPlacement.PreviewMany(copy, copyTarget, invalid)).Code);
-                Assert.AreEqual("ROW_INSERTION_DISABLED", Assert.ThrowsExactly<WorkbookException>(() =>
-                    copy.InsertWorkflowRows(independent.Proposal with { CanApply = true }, true, true)).Code);
+                Assert.IsNull(typeof(IWorkbookSession).GetMethod("InsertWorkflowRows"));
                 Assert.AreEqual(copyBefore, copy.Info);
-                CollectionAssert.AreEqual(changes, copy.WorkingCopy.Changes.ToArray());
-                Assert.AreEqual(sheetIndex == 1, copy.Info.IsDirty);
+                Assert.IsFalse(copy.Info.IsDirty);
                 foreach (var context in copy.Info.Worksheets)
                     CollectionAssert.AreEqual(copyCells[context.Id], Capture(copy, context));
             }
@@ -284,7 +274,7 @@ public sealed class VerifiedMappingWorkbookTests
         using var fixture = new MappingFixture(p, scenario);
         var hash = Hash(fixture.Path);
         using (var session = new WorkbookEngine().Open(fixture.Path))
-        using (var copy = session.CreateWorkingCopy(session.Info.Worksheets[0].Id, 0))
+        using (var copy = session.CreateSnapshot())
         {
             var review = Review(p);
             var reviewBefore = JsonSerializer.Serialize(review.Snapshot);
@@ -305,7 +295,7 @@ public sealed class VerifiedMappingWorkbookTests
                 foreach (var sheet in target.Info.Worksheets)
                     CollectionAssert.AreEqual(cells[sheet.Id], Capture(target, sheet));
             }
-            Assert.IsEmpty(copy.WorkingCopy!.Changes);
+            Assert.IsFalse(copy.Info.IsDirty);
             Assert.AreEqual(reviewBefore, JsonSerializer.Serialize(review.Snapshot));
         }
         Assert.AreEqual(hash, Hash(fixture.Path));
@@ -350,17 +340,16 @@ public sealed class VerifiedMappingWorkbookTests
                 Assert.AreEqual(page.Version.Sha256, main.Fields[0].Value.Source!.DocumentSha256);
                 Assert.AreEqual(2, main.Fields[0].Value.Source!.PageNumber);
                 Assert.IsFalse(main.CanApply);
-                using var copy = session.CreateWorkingCopy(sheet.Id, before.Revision);
+                using var copy = session.CreateSnapshot();
                 var target = Destination(copy, sheet.Id, p);
                 if (index == 1)
                 {
-                    copy.Edit(new(sheet.Id, 3, 5, "text", "Artificial independent live-source note", copy.Info.Revision));
+                    target = target with { Revision = target.Revision + 1 };
                     Assert.AreEqual("STALE_REVISION", Assert.ThrowsExactly<WorkbookException>(() =>
                         review.PreviewMapping(copy, target, version)).Code);
                     target = Destination(copy, sheet.Id, p);
                 }
                 var copyBefore = copy.Info;
-                var changes = copy.WorkingCopy!.Changes.ToArray();
                 var copyCells = copyBefore.Worksheets.ToDictionary(s => s.Id, s => Capture(copy, s));
                 var independent = review.PreviewMapping(copy, target, version);
                 var copyPlacement = review.PreviewPlacement(copy, target, version, new(p.Sections[1].Id, true));
@@ -374,10 +363,9 @@ public sealed class VerifiedMappingWorkbookTests
                 Assert.AreEqual("INVALID_MAPPING_DESTINATION", Assert.ThrowsExactly<WorkbookException>(() =>
                     review.PreviewMapping(copy, destination, version)).Code);
                 Assert.AreEqual(copyBefore, copy.Info);
-                CollectionAssert.AreEqual(changes, copy.WorkingCopy.Changes.ToArray());
                 foreach (var context in copyBefore.Worksheets)
                     CollectionAssert.AreEqual(copyCells[context.Id], Capture(copy, context));
-                Assert.AreEqual(index == 1, copy.Info.IsDirty);
+                Assert.IsFalse(copy.Info.IsDirty);
             }
             sources.Release(page.Version);
             Assert.AreEqual("SOURCE_NOT_REGISTERED", Assert.ThrowsExactly<DocumentSourceException>(() =>
@@ -409,7 +397,7 @@ public sealed class VerifiedMappingWorkbookTests
         using var review = LiveReview(p, sources, new(sources.Register(document.Path).Version, 1));
         var beforeReview = JsonSerializer.Serialize(review.Snapshot);
         using (var session = new WorkbookEngine().Open(fixture.Path))
-        using (var copy = session.CreateWorkingCopy(session.Info.Worksheets[0].Id, 0))
+        using (var copy = session.CreateSnapshot())
         {
             foreach (var target in new[] { session, copy })
             {
@@ -421,7 +409,7 @@ public sealed class VerifiedMappingWorkbookTests
                 foreach (var sheet in before.Worksheets)
                     CollectionAssert.AreEqual(cells[sheet.Id], Capture(target, sheet));
             }
-            Assert.IsEmpty(copy.WorkingCopy!.Changes);
+            Assert.IsFalse(copy.Info.IsDirty);
         }
         Assert.AreEqual(beforeReview, JsonSerializer.Serialize(review.Snapshot));
         Assert.AreEqual(workbookHash, Hash(fixture.Path));

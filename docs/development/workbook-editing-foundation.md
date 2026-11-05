@@ -1,8 +1,10 @@
 # Workbook editing foundation
 
+> Historical evidence for the retired write path. Current workbook changes use Excel; see [README](../../README.md).
+
 Current follow-up: [worksheet integration](worksheet-integration.md) adds conservative recorded-cell Merge, and [safe saving](workbook-safe-saving.md) provides new-file-only Save As. Historical verification and remaining-work statements below describe the earlier editing slice; they do not supersede these follow-ups. Phase 2 remains incomplete.
 
-[Step 40](dotnet-10-migration.md) now targets .NET 10 and verifies the existing editing/copy/candidate behavior unchanged. Use that report for current SDK, launch paths and complete regression counts; net8.0 commands below are historical.
+[current build instructions](../../README.md) now targets .NET 10 and verifies the existing editing/copy/candidate behavior unchanged. Use that report for current SDK, launch paths and complete regression counts; the original library target commands below are historical.
 
 Status: implemented for the bounded in-memory scope below. Phase 2 remains incomplete.
 
@@ -17,7 +19,7 @@ Status: implemented for the bounded in-memory scope below. Phase 2 remains incom
 
 ## Supported operations and boundaries
 
-The existing .NET 8 workbook adapter retains an immutable copy of the original workbook bytes and its SHA-256 fingerprint. The mutable session tracks its own revision and dirty state. It can apply a single typed change to an existing populated cell on a supported worksheet. It has no filesystem save operation; neither opening nor editing passes the source file path to a serialization API.
+The existing .NET workbook adapter retains an immutable copy of the original workbook bytes and its SHA-256 fingerprint. The mutable session tracks its own revision and dirty state. It can apply a single typed change to an existing populated cell on a supported worksheet. It has no filesystem save operation; neither opening nor editing passes the source file path to a serialization API.
 
 The accepted value types are:
 
@@ -54,7 +56,7 @@ Unchanged parts are compared by their uncompressed content, not by ZIP container
 
 ## Commands
 
-Run from the repository root in Windows CMD with .NET SDK 8.0.427 and the documented Node/npm/WebView2 prerequisites:
+Run from the repository root in Windows CMD with .NET SDK the historical SDK and the documented Node/npm/WebView2 prerequisites:
 
 ```cmd
 set DOTNET_CLI_TELEMETRY_OPTOUT=1
@@ -63,19 +65,19 @@ dotnet --version
 dotnet restore TsekSheet.sln --locked-mode
 dotnet build TsekSheet.sln -c Release --no-restore
 dotnet test TsekSheet.sln -c Release --no-build --no-restore
-dotnet test tests\WorkbookLibrary.Evaluation\WorkbookLibrary.Evaluation.csproj --no-restore
+dotnet test experiments\archive\WorkbookLibrary.Evaluation\WorkbookLibrary.Evaluation.csproj --no-restore
 cd src\TsekSheet.Frontend
 node "C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js" run typecheck
 node "C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js" run test -- --run
 cd ..\..
-src\TsekSheet.Desktop\bin\Release\net8.0-windows\TsekSheet.Desktop.exe
+src\TsekSheet.Desktop\bin\Release\the original Windows target\TsekSheet.Desktop.exe
 ```
 
 Choose **Open workbook**, select a local `.xlsx`, select its worksheet, then choose **Create working copy**. Select a populated cell, choose its value type, enter the new value and apply it. The view selector switches between the original session and copies. Closing with changes displays a discard confirmation. The native picker still requires an interactive Windows desktop; automated desktop tests inject synthetic fixture paths instead of operating the dialog.
 
 ## Verification performed
 
-On 2026-10-28, SDK **8.0.427** and locked restore succeeded. The Release solution build passed with **0 warnings and 0 errors**. Final automated results were **15 application**, **30 workbook**, **7 desktop**, **14 frontend**, and **13 workbook-evaluation harness** tests passed, with **0 failed and 0 skipped**. The frontend typecheck and production build ran as part of the solution build.
+On 2026-10-28, SDK **the historical SDK** and locked restore succeeded. The Release solution build passed with **0 warnings and 0 errors**. Final automated results were **15 application**, **30 workbook**, **7 desktop**, **14 frontend**, and **13 workbook-evaluation harness** tests passed, with **0 failed and 0 skipped**. The frontend typecheck and production build ran as part of the solution build.
 
 The real WPF/WebView2 smoke test opened both synthetic workbooks, edited a reimbursement working-copy cell, switched back to the unchanged original value, checked the in-page discard confirmation, and verified both fixture hashes. It also exercised the native window's close-cancellation path with an injected confirmation response. The actual interactive file dialog and the real native confirmation dialog were not manually operated. Both retained source fixtures matched their SHA-256 manifest after the final run.
 
@@ -89,4 +91,4 @@ Added this document, `src/TsekSheet.Workbooks/CellCandidate.cs`, and `tests/Tsek
 
 No worksheet merge, replace, create-new integration, structural row insertion, templates, OCR, Save, Save As, or recovery files are implemented. File saving must remain disabled until separately designed and tested external-change detection, destination authorization, serialization validation, fault handling and safe commits are complete. Unsupported features must remain blocked rather than silently dropped.
 
-The compatibility classifier cannot identify every possible Excel construct. Styles on blank cells, arbitrary formatting, rich content, macros, protection, external links, drawings, advanced formulas and complex workbook features are outside this editing contract or rejected. The tests use synthetic `.xlsx` files; native Excel open/repair and recalculation behavior, representative real workbooks, large-workbook peak memory, and installed operation on a separate offline machine remain unverified. The existing .NET 8 support deadline and dependency-review requirements still apply.
+The compatibility classifier cannot identify every possible Excel construct. Styles on blank cells, arbitrary formatting, rich content, macros, protection, external links, drawings, advanced formulas and complex workbook features are outside this editing contract or rejected. The tests use synthetic `.xlsx` files; native Excel open/repair and recalculation behavior, representative real workbooks, large-workbook peak memory, and installed operation on a separate offline machine remain unverified. The existing .NET support deadline and dependency-review requirements still apply.

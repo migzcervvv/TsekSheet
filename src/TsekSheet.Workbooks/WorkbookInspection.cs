@@ -238,7 +238,6 @@ internal sealed class InspectionSession : IWorkbookSession, IInspectionAnalysisS
         return result?.ToString() ?? (nonempty ? "1" : "");
     }
     public WorkbookInfo Info { get { lock (gate) { ObjectDisposedException.ThrowIf(disposed, this); return info; } } }
-    public WorkingCopyInfo? WorkingCopy => null;
     public InspectionRegion CaptureInspectionRegion(InspectionRegionRequest request, CancellationToken token = default)
     {
         lock (gate)
@@ -449,10 +448,7 @@ internal sealed class InspectionSession : IWorkbookSession, IInspectionAnalysisS
         int col = 0, i = 0; while (i < address.Length && address[i] is >= 'A' and <= 'Z') { if (i >= 3) throw WorkbookInspection.Error("Invalid cell address."); col = col * 26 + address[i++] - 'A' + 1; }
         if (col is < 1 or > 16384 || !int.TryParse(address.AsSpan(i), out var row) || row is < 1 or > 1048576) throw WorkbookInspection.Error("Invalid cell address."); return (row, col);
     }
-    private static WorkbookException ReadOnly() => new("READ_ONLY_INSPECTION", "Read-only package inspection cannot authorize copies, edits, integration or export. Reopen and pass full editable validation.");
+    private static WorkbookException ReadOnly() => new("READ_ONLY_INSPECTION", "Read-only package inspection cannot create independent snapshots.");
     public IWorkbookSession CreateSnapshot(CancellationToken cancellationToken = default) => throw ReadOnly();
-    public IWorkbookSession CreateWorkingCopy(Guid worksheetId, int expectedRevision, CancellationToken cancellationToken = default) => throw ReadOnly();
-    public WorkbookInfo Edit(CellEdit edit, CancellationToken cancellationToken = default) => throw ReadOnly();
-    public SaveReceipt SaveAsNew(string destination, int expectedRevision, CancellationToken cancellationToken = default) => throw ReadOnly();
     public void Dispose() { lifetime.Cancel(); lock (gate) { if (disposed) return; disposed = true; cached.Clear(); cachedBytes = 0; numberFormats = null; zip.Dispose(); file.Dispose(); release(); } }
 }

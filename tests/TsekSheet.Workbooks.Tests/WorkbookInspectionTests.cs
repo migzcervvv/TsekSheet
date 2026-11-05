@@ -58,10 +58,9 @@ public sealed partial class WorkbookInspectionTests
         using var session = new WorkbookEngine().Inspect(path); var id = session.Info.Worksheets[0].Id;
         Assert.IsFalse(session.Info.EditingAllowed); Assert.IsFalse(session.Info.IsDirty);
         Assert.AreEqual(3, session.Info.Compatibility!.Capabilities.Count(c => c.Allowed));
-        Assert.ThrowsExactly<WorkbookException>(() => session.CreateSnapshot()); Assert.ThrowsExactly<WorkbookException>(() => session.CreateWorkingCopy(id, 0));
-        Assert.ThrowsExactly<WorkbookException>(() => session.Edit(new(id, 1, 1, "text", "changed", 0)));
-        Assert.ThrowsExactly<WorkbookException>(() => session.SaveAsNew(path, 0));
-        Assert.ThrowsExactly<WorkbookException>(() => session.Integrate(session, new(session.Info.SessionId, id, 0, 0, 0)));
+        Assert.ThrowsExactly<WorkbookException>(() => session.CreateSnapshot());
+        foreach (var operation in new[] { "CreateWorkingCopy", "Edit", "SaveAsNew", "Integrate" })
+            Assert.IsNull(typeof(IWorkbookSession).GetMethod(operation), "Inspection contracts must expose no write operation.");
         var view = session.ReadViewport(id, 1, 1, 20, 6); Assert.IsNotNull(view.Scan); Assert.IsTrue(view.Scan.StoredCells > 0);
         Assert.AreEqual(hash, Hash(path));
     }

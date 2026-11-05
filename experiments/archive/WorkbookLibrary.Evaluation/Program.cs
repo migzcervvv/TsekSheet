@@ -10,7 +10,7 @@ public static class Program
     public static int Main(string[] args)
     {
         var root = FindRoot();
-        var fixtureDir = Path.Combine(root, "tests", "WorkbookLibrary.Evaluation", "Fixtures");
+        var fixtureDir = Path.Combine(root, "experiments", "archive", "WorkbookLibrary.Evaluation", "Fixtures");
         Directory.CreateDirectory(fixtureDir);
         if (args.Length == 2 && args[0] == "--benchmark") return Benchmark(root, args[1]);
         if (args.Contains("--generate"))

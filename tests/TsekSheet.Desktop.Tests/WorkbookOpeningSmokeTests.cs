@@ -19,10 +19,9 @@ public sealed partial class DesktopSmokeTests
         using var ordinary = new AccountingCompatibilityFixture("plain");
         var fixtures = new[] { large.Path, linked.Path, broken.Path, ordinary.Path };
         string Hash(string path) => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path)));
-        var hashes = fixtures.Select(Hash).ToArray(); var selected = large.Path; var saveSelections = 0;
+        var hashes = fixtures.Select(Hash).ToArray(); var selected = large.Path;
         var profile = Path.Combine(Path.GetTempPath(), "TsekSheet-smoke", Guid.NewGuid().ToString("N")); Profiles.Add(profile);
-        var window = new MainWindow(null, profile, null, _ => Task.FromResult<string?>(selected),
-            saveSelector: _ => { saveSelections++; return Task.FromResult<string?>(null); }) { ShowInTaskbar = false, Width = 1366, Height = 768 };
+        var window = new MainWindow(null, profile, null, _ => Task.FromResult<string?>(selected)) { ShowInTaskbar = false, Width = 1366, Height = 768 };
         try
         {
             window.Show(); var web = (WebView2)window.FindName("FrontendWebView");
@@ -57,8 +56,8 @@ public sealed partial class DesktopSmokeTests
                 await Until(async () => await web.ExecuteScriptAsync("!!window.openingIdentity && document.querySelector('caption')?.textContent.startsWith('Ledger 2') && !document.querySelector('select[aria-label=Worksheet]').disabled") == "true", "Hidden worksheet navigation failed");
                 var identity = JsonSerializer.Deserialize<JsonElement>(await web.ExecuteScriptAsync("({sessionId:window.openingIdentity.sessionId,worksheetId:window.openingIdentity.worksheetId,expectedRevision:0})"));
                 await web.ExecuteScriptAsync("chrome.webview.removeEventListener('message',window.openingObserver)");
-                await Reject("workbook.createCopy", identity.GetRawText(), "EDIT_UNSUPPORTED");
-                await Reject("workbook.saveAsNew", JsonSerializer.Serialize(new { sessionId = identity.GetProperty("sessionId").GetString(), expectedRevision = 0 }), "EDIT_UNSUPPORTED");
+                await Reject("workbook.createCopy", identity.GetRawText(), "UNSUPPORTED_COMMAND");
+                await Reject("workbook.saveAsNew", JsonSerializer.Serialize(new { sessionId = identity.GetProperty("sessionId").GetString(), expectedRevision = 0 }), "UNSUPPORTED_COMMAND");
                 foreach (var width in new[] { 1366d, 390d })
                 {
                     window.Width = width;
@@ -74,11 +73,10 @@ public sealed partial class DesktopSmokeTests
             await Until(async () => await web.ExecuteScriptAsync("!!document.querySelector('[role=alert]') && document.body.textContent.includes('INSPECTION_INVALID_XML')") == "true", "Missing structured inspection failure");
             Assert.AreEqual("true", await web.ExecuteScriptAsync("document.querySelector('caption')?.textContent.startsWith('Ledger 2') && !!document.querySelector('.active-project')"), "Failed switch lost previous project");
             selected = ordinary.Path; await Click("Open workbook");
-            await Until(async () => await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).some(b=>b.textContent==='Create working copy'&&!b.disabled)") == "true", "Supported editable project unavailable");
+            await Until(async () => await web.ExecuteScriptAsync("!!document.querySelector('.cell-window:not(.inspection) td') && document.querySelector('caption')?.textContent.startsWith('Ledger 1') && !document.querySelector('select[aria-label=Worksheet]').disabled") == "true", "Replacement read-only project did not finish loading");
             Assert.AreEqual("false", await web.ExecuteScriptAsync("document.body.textContent.includes('EDITABLE_ADMISSION_') || document.body.textContent.includes('Opening failure details')"));
             await Click("Inspect workbook read-only");
             await Until(async () => await web.ExecuteScriptAsync("!!document.querySelector('.cell-window.inspection') && !document.querySelector('select[aria-label=Worksheet]').disabled") == "true", "Explicit inspection failed");
-            Assert.AreEqual(0, saveSelections);
             await Click("Close workbook");
             for (var i = 0; i < fixtures.Length; i++) Assert.AreEqual(hashes[i], Hash(fixtures[i]), "Source changed");
         }
