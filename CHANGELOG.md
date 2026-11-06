@@ -2,6 +2,8 @@
 
 [README](README.md) · **Changelog**
 
+- 2026-11-06 — UX-01: Open an explicit Excel-backed workbook workspace directly into Process Receipts, reuse its identity in the queue, retain legacy tools and advanced inspection findings, and block workspace switches that could lose or redirect pending work.
+
 - 2026-11-06 — T4-FIX: Align product OCR with approved PP-OCRv5 Mobile/no preprocessing, retain Tesseract evaluation support without automatic fallback, and report recoverable local-asset errors.
 
 - 2026-11-06 — T4: Connect supervised local OCR to receipt-queue drafts with source highlighting, cancellable page/region recognition and manual correction; preserve explicit verification, Excel insertion and save safeguards.

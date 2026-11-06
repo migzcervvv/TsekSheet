@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { BridgeClient } from './bridge/client';
 import type { ReceiptQueueState } from './bridge/receipts';
-import type { ExcelCatalog, ExcelChange, ExcelPreview } from './bridge/excel';
+import type { ExcelCatalog, ExcelChange, ExcelPreview, ExcelWorkbook } from './bridge/excel';
 import type { WorkflowProfile } from './bridge/workflows';
 import SourcePreview from './SourcePreview';
 import { Notice } from './ui/Workspace';
@@ -10,7 +10,7 @@ type Destination = {workbookId:string;sheet:string;sectionId:string};
 const emptyDestination:Destination={workbookId:'',sheet:'',sectionId:''};
 function column(n:number){let s='';while(n){n--;s=String.fromCharCode(65+n%26)+s;n=Math.floor(n/26);}return s;}
 
-export default function FastReceiptLoop({bridge,profiles,disabled,renderingAvailable,onActiveChange}:{bridge:BridgeClient;profiles:WorkflowProfile[];disabled:boolean;renderingAvailable:boolean;onActiveChange?:(active:boolean)=>void}) {
+export default function FastReceiptLoop({bridge,profiles,disabled,renderingAvailable,onActiveChange,activeWorkbook,onProtectedChange}:{activeWorkbook?:ExcelWorkbook;onProtectedChange?:(protectedWork:boolean)=>void;bridge:BridgeClient;profiles:WorkflowProfile[];disabled:boolean;renderingAvailable:boolean;onActiveChange?:(active:boolean)=>void}) {
   const [queue,setQueue]=useState<ReceiptQueueState|null>(null);
   const [profileId,setProfileId]=useState(profiles.find(p=>p.id==='exti-liquidation')?.id??profiles[0]?.id??'');
   const [profileChoice,setProfileChoice]=useState(profileId);
@@ -20,7 +20,8 @@ export default function FastReceiptLoop({bridge,profiles,disabled,renderingAvail
   const cache=useRef<Record<string,Record<string,string>>>({});
   const bindings=useRef<Record<string,Destination>>({});
   const [catalog,setCatalog]=useState<ExcelCatalog>({workbooks:[],sections:[],changes:[]});
-  const [choice,setChoice]=useState<Destination>(emptyDestination),[context,setContext]=useState<Destination>(emptyDestination);
+  const initialDestination={...emptyDestination,workbookId:activeWorkbook?.id??''};
+  const [choice,setChoice]=useState<Destination>(initialDestination),[context,setContext]=useState<Destination>(initialDestination);
   const [preview,setPreview]=useState<ExcelPreview|null>(null);
   const [busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
   const lock=useRef(false);
@@ -34,6 +35,13 @@ export default function FastReceiptLoop({bridge,profiles,disabled,renderingAvail
   const requiredMissing=!profile||missingFields.length>0;
   useEffect(()=>{void bridge.request('receipt.queue',{}).promise.then(q=>{setQueue(q);setDrafts(Object.fromEntries(q.receipt.fields.map(f=>[f.key,f.value])));}).catch(e=>setError((e as Error).message));},[bridge]);
   useEffect(()=>{onActiveChange?.(!!receipt?.source);},[!!receipt?.source,onActiveChange]);
+  useEffect(()=>{onProtectedChange?.(busy||!!queue?.items.length);},[busy,queue?.items.length,onProtectedChange]);
+  useEffect(()=>{
+    if(!activeWorkbook||!receipt?.version)return;
+    let current=true;
+    void bridge.request('excel.listWorkbooks',{open:false}).promise.then(c=>{if(current)setCatalog(c);}).catch(e=>{if(current)setError((e as Error).message);});
+    return ()=>{current=false;};
+  },[bridge,activeWorkbook?.id,receipt?.version?.profileId]);
   async function run(action:()=>Promise<void>){
     if(lock.current)return;lock.current=true;setBusy(true);setError('');setPreview(null);
     try{await action();}catch(e){setError((e as Error).message);}finally{lock.current=false;setBusy(false);}
@@ -63,12 +71,12 @@ export default function FastReceiptLoop({bridge,profiles,disabled,renderingAvail
       <nav className="actions" aria-label="Receipt navigation"><button disabled={blocked||index<=0} onClick={()=>move(queue.items[index-1].id)}>Previous receipt</button><span>{index+1} of {queue.items.length} · {active?.displayName} · {active?.status}</span><button disabled={blocked||index>=queue.items.length-1} onClick={()=>move(queue.items[index+1].id)}>Next receipt</button><button disabled={blocked||inserted} onClick={()=>move(pending?.id??queue.activeId!,true)}>Skip receipt</button><label>Review receipt<select aria-label="Review receipt" value={queue.activeId??''} disabled={blocked} onChange={e=>move(e.target.value)}>{queue.items.map(i=><option key={i.id} value={i.id}>{i.displayName} · {i.status}</option>)}</select></label></nav>
       <div className="actions"><label>Workflow profile<select aria-label="Queue profile" value={profileChoice} disabled={blocked||inserted} onChange={e=>{setProfileChoice(e.target.value);if(!receipt?.version)setProfileId(e.target.value);setPreview(null);}}>{profiles.map(p=><option key={p.id} value={p.id}>{p.displayName}</option>)}</select></label>{!receipt?.version?<button disabled={blocked||!profileId} onClick={()=>void run(async()=>{setStarted(true);await adopt(queue,true);})}>Start receipt queue</button>:profileChoice!==receipt.version.profileId&&<button disabled={blocked||inserted} onClick={()=>void run(async()=>{
         const state=await bridge.request('receipt.changeProfile',{expected:receipt.version!,profileId:profileChoice,values:drafts}).promise;
-        setProfileId(profileChoice);setQueue({...queue,receipt:state});const values=Object.fromEntries(state.fields.map(f=>[f.key,f.value]));setDrafts(values);cache.current[queue.activeId!]=values;delete bindings.current[queue.activeId!];setContext(emptyDestination);setChoice(emptyDestination);setCatalog(c=>({...c,sections:[]}));setAccount('');
+        setProfileId(profileChoice);setQueue({...queue,receipt:state});const values=Object.fromEntries(state.fields.map(f=>[f.key,f.value]));setDrafts(values);cache.current[queue.activeId!]=values;delete bindings.current[queue.activeId!];setContext(initialDestination);setChoice(initialDestination);setCatalog(c=>({...c,sections:[]}));setAccount('');
       })}>Change profile for this receipt and new receipts</button>}</div>
       {receipt?.version&&<>
         <section aria-label="Queue destination" className="excel-insertion"><h3>Destination for this receipt</h3><p>{selectedBook?.name??'Choose workbook'} · Identity {destination.workbookId||'not selected'} · {profile?.displayName} · {destination.sheet||'Choose sheet'} · {destination.sectionId||'Choose section'} · Account {drafts.account||'Choose account'}</p>
-          <div className="actions"><button disabled={blocked} onClick={()=>void run(async()=>{const c=await bridge.request('excel.listWorkbooks',{open:true}).promise;setCatalog(c);setChoice({...emptyDestination,workbookId:c.workbooks[0]?.id??''});})}>Open workbook in Excel</button><button disabled={blocked} onClick={()=>void run(async()=>{setCatalog(await bridge.request('excel.listWorkbooks',{open:false}).promise);})}>Refresh Excel workbooks</button>
-            <label>Workbook<select aria-label="Queue workbook" disabled={blocked||inserted} value={choice.workbookId} onChange={e=>{setChoice({...emptyDestination,workbookId:e.target.value});setPreview(null);}}><option value="">Choose workbook</option>{catalog.workbooks.map(w=><option key={w.id} value={w.id}>{w.name} · {w.id.slice(0,8)}</option>)}</select></label>
+          <div className="actions">{!activeWorkbook&&<button disabled={blocked} onClick={()=>void run(async()=>{const c=await bridge.request('excel.listWorkbooks',{open:true}).promise;setCatalog(c);if(c.openedWorkbookId)setChoice({...emptyDestination,workbookId:c.openedWorkbookId});})}>Open workbook in Excel</button>}<button disabled={blocked} onClick={()=>void run(async()=>{setCatalog(await bridge.request('excel.listWorkbooks',{open:false}).promise);})}>Refresh Excel workbooks</button>
+            <label>Workbook<select aria-label="Queue workbook" disabled={blocked||inserted||!!activeWorkbook} value={choice.workbookId} onChange={e=>{setChoice({...emptyDestination,workbookId:e.target.value});setPreview(null);}}><option value="">Choose workbook</option>{catalog.workbooks.map(w=><option key={w.id} value={w.id}>{w.name} · {w.id.slice(0,8)}</option>)}</select></label>
             <label>Sheet<select aria-label="Queue sheet" disabled={blocked||inserted} value={choice.sheet} onChange={e=>{setChoice({...choice,sheet:e.target.value,sectionId:''});setPreview(null);}}><option value="">Choose sheet</option>{book?.sheets.map(s=><option key={s}>{s}</option>)}</select></label>
             <label>Section<select aria-label="Queue section" disabled={blocked||inserted} value={choice.sectionId} onChange={e=>{setChoice({...choice,sectionId:e.target.value});setPreview(null);}}><option value="">Choose section</option>{catalog.sections.filter(s=>!s.sheetName||s.sheetName===choice.sheet).map(s=><option key={s.id} value={s.id}>{s.label}</option>)}</select></label>
             <button disabled={blocked||inserted||!choice.workbookId||!choice.sheet||!choice.sectionId} onClick={()=>{bindings.current[queue.activeId!]={...choice};setContext({...choice});setPreview(null);}}>Use destination for this receipt and new receipts</button>

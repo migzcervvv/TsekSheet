@@ -7,7 +7,7 @@ import type { WorkflowProfile } from './bridge/workflows';
 
 afterEach(cleanup);
 const profile:WorkflowProfile={id:'synthetic-liquidation',displayName:'Synthetic liquidation',revision:1,profileHash:'A'.repeat(64),fields:[{key:'vendor',header:'Vendor',kind:'text',required:false,maxLength:256},{key:'itemNo',header:'Item no.',kind:'text',required:true,maxLength:256},{key:'account',header:'Account',kind:'accountChoice',required:true,maxLength:256},{key:'amount',header:'Amount',kind:'money',required:true,maxLength:256}],accounts:[{code:'FAKE',label:'Travel',column:'J',vatable:true},{code:'FAKE',label:'Travel',column:'Q',vatable:false}]};
-function setup(count=3){
+function setup(count=3,workspace=false){
   const states:Record<string,ReceiptState>={};
   const items=Array.from({length:count},(_,i)=>({id:String(i+1).padStart(32,'a'),displayName:`synthetic-${i}.pdf`,status:'Pending' as const}));
   let active=items[0].id;
@@ -20,7 +20,7 @@ function setup(count=3){
     if(failure&&command==='excel.addRow')throw new Error(failure);
     if(command==='receipt.queue'||command==='receipt.enqueue')return queue();
     if(command==='receipt.start'){states[active]={...states[active],version:{reviewId:`11111111-1111-4111-8111-${active.slice(-12).replace(/a/g,'0')}`,revision:0,profileId:profile.id,profileHash:profile.profileHash},status:'Active',fields:profile.fields.map(f=>({key:f.key,value:'',valueRevision:0,status:'Draft'}))};return structuredClone(states[active]);}
-    if(command==='excel.listWorkbooks')return {workbooks:[{id:'b'.repeat(32),name:'Synthetic.xlsx',sheets:['Person 1','Person 2']}],sections:[{id:'expenses',label:'Expenses',sheetName:''},{id:'credits',label:'Credits',sheetName:''}],changes:[]};
+    if(command==='excel.listWorkbooks')return {openedWorkbookId:'b'.repeat(32),workbooks:[{id:'b'.repeat(32),name:'Synthetic.xlsx',sheets:['Person 1','Person 2']}],sections:[{id:'expenses',label:'Expenses',sheetName:''},{id:'credits',label:'Credits',sheetName:''}],changes:[]};
     if(command==='receipt.changeProfile'){const state=states[active];state.version={...state.version!,profileId:p.profileId,revision:0};state.fields=state.fields.map(f=>({...f,value:p.values[f.key],status:'Draft'}));return structuredClone(state);}
     if(command==='receipt.prepare'){const state=states[active];state.version!.revision++;state.fields=state.fields.map(f=>({...f,value:p.values[f.key],status:'Corrected'}));return structuredClone(state);}
     if(command==='excel.previewDraft')return {token:'c'.repeat(32),workbookId:p.workbookId,sectionId:p.sectionId,sheet:p.sheet,range:'B29:AF29',insertRow:29,values:[{key:'amount',header:'Amount',column:states[active].fields.find(f=>f.key==='account')?.value==='J'?10:17,value:123.5,displayValue:'123.50'}],manualReview:[]};
@@ -28,7 +28,7 @@ function setup(count=3){
     if(command==='receipt.navigate'){if(p.skip)(items.find(i=>i.id===active)! as {status:string}).status='Skipped';active=p.targetId;return queue();}
     throw new Error(command);
   })}));
-  render(<FastReceiptLoop bridge={{request} as unknown as BridgeClient} profiles={[profile,other]} disabled={false} renderingAvailable={false}/>);
+  render(<FastReceiptLoop activeWorkbook={workspace?{id:'b'.repeat(32),name:'Synthetic.xlsx',sheets:['Person 1','Person 2']}:undefined} bridge={{request} as unknown as BridgeClient} profiles={[profile,other]} disabled={false} renderingAvailable={false}/>);
   return {request,items,fail:(message:string)=>{failure=message;}};
 }
 async function start(){fireEvent.click(await screen.findByRole('button',{name:'Start receipt queue'}));await screen.findByLabelText('Queue itemNo');}
@@ -101,4 +101,22 @@ it('changes profile only explicitly, retaining matching unsaved fields as drafts
   expect((screen.getByLabelText('Queue itemNo') as HTMLInputElement).value).toBe('LOOP-1');
   expect((screen.getByLabelText('Queue amount') as HTMLInputElement).value).toBe('123.50');
   expect(screen.getAllByText('Draft — confirmation required')).toHaveLength(4);
+});
+
+it('uses the active workspace without reopening Excel and retains it after an explicit profile change',async()=>{
+ const f=setup(2,true);await start();await screen.findByRole('option',{name:/Synthetic.xlsx/});
+ expect((screen.getByLabelText('Queue workbook') as HTMLSelectElement).value).toBe('b'.repeat(32));
+ expect((screen.getByLabelText('Queue workbook') as HTMLSelectElement).disabled).toBe(true);
+ expect(screen.queryByRole('button',{name:'Open workbook in Excel'})).toBeNull();
+ fireEvent.change(screen.getByLabelText('Queue sheet'),{target:{value:'Person 1'}});
+ fireEvent.change(screen.getByLabelText('Queue section'),{target:{value:'expenses'}});
+ fireEvent.click(screen.getByRole('button',{name:'Use destination for this receipt and new receipts'}));fields();
+ fireEvent.click(screen.getByRole('button',{name:'Preview row'}));await screen.findByLabelText('Queue row preview');
+ expect(f.request.mock.calls.find(c=>c[0]==='excel.previewDraft')?.[1].workbookId).toBe('b'.repeat(32));
+ expect(f.request.mock.calls.filter(c=>c[0]==='excel.listWorkbooks').every(c=>c[1].open===false)).toBe(true);
+ fireEvent.change(screen.getByLabelText('Queue profile'),{target:{value:'other-liquidation'}});
+ fireEvent.click(screen.getByRole('button',{name:'Change profile for this receipt and new receipts'}));
+ await waitFor(()=>expect((screen.getByLabelText('Queue section') as HTMLSelectElement).value).toBe(''));
+ expect((screen.getByLabelText('Queue workbook') as HTMLSelectElement).value).toBe('b'.repeat(32));
+ expect((screen.getByLabelText('Queue itemNo') as HTMLInputElement).value).toBe('LOOP-1');
 });

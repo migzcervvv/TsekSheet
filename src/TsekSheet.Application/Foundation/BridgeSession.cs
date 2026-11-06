@@ -153,7 +153,8 @@ public sealed class BridgeSession : IDisposable
                         finally { lock (gate) selecting = false; }
                     }
                     var profile = receipts.State.Version?.ProfileId;
-                    Success(id!, new { workbooks = await excel.ListAsync(path, profile), sections = profile is null ? [] : excel.Sections(profile),
+                    var openedWorkbookId = path is null ? null : await excel.OpenAsync(path);
+                    Success(id!, new { openedWorkbookId, workbooks = await excel.ListAsync(profileId: profile), sections = profile is null ? [] : excel.Sections(profile),
                         changes = excel.Changes.Select(c => new { c.Workbook, c.Sheet, c.Range, manualReview = c.ManualReview.Select(w => new { w.Cell, w.Reason }) }) });
                     return;
                 }

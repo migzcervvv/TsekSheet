@@ -1,15 +1,29 @@
 # Receipt queue
 
-In **Receipts**, choose **Receipt queue**, then **Add PDFs or images**. Select up to
+Choose **Open workbook** in the sidebar. TsekSheet opens the selected workbook in its
+visible Excel instance, makes that exact workbook the active workspace, and opens
+**Process Receipts** directly. Choose **Add PDFs or images** and select one or up to
 100 synthetic or owner-approved local receipts. Choose a profile and start the queue.
 The source files stay in their original locations; the app keeps only in-memory
 references and review state. Closing the app discards the queue and drafts.
 
-Open a workbook in the app-owned visible Excel instance. Choose the workbook identity,
-matching sheet and section, then explicitly use that destination for this receipt and
+The queue uses the active workbook without opening it again. Choose a matching sheet
+and section, then explicitly use that destination for this receipt and
 new receipts. Previously visited receipts keep their own destination. To change the
 profile, choose it and explicitly apply the change; matching typed fields become
 unverified drafts and a fresh destination selection is required.
+
+Workbook switches are blocked while any queue receipts (including skipped or inserted
+receipts), drafts, or destination reviews remain in memory. Navigation retains those
+drafts and receipt-specific bindings. Finish the current work and save in Excel before
+starting another app session; there is no workspace restoration yet. Failed or cancelled
+opening retains the current workspace and never falls back to inspection.
+
+**Read-only inspection** is a separate secondary tool and never replaces the active
+Excel workspace. Detailed compatibility findings are under **Advanced compatibility
+findings**. **Legacy receipt review** retains the previous single-receipt and placement
+workflow. It remains accessible while no queue work is held; a populated queue blocks
+entry to legacy review because both tools share the session's receipt state.
 
 Read the source beside the fields, enter the required values and choose an account.
 New receipts inherit the active account as a draft. **Preview row** validates the

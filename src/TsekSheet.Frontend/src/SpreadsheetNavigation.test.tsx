@@ -67,7 +67,7 @@ test('direct navigation reaches the final Excel cell without an unbounded reques
  expect(s.messages.filter(m=>m.command==='workbook.readViewport').at(-1)?.payload).toMatchObject({startRow:1048557,startColumn:16379,rows:20,columns:6});
  fireEvent.keyDown(screen.getByLabelText('Worksheet viewport'),{key:'Home',ctrlKey:true});await screen.findByRole('button',{name:'Inspect A1'});
 });
-test.each(['Close workbook','Open workbook','Inspect workbook read-only','worksheet'])('review decisions survive canceled %s and require explicit discard',async action=>{
+test.each(['Close workbook','Open for read-only inspection','Inspect workbook read-only','worksheet'])('review decisions survive canceled %s and require explicit discard',async action=>{
  const s=setup();await open();fireEvent.click(screen.getByRole('button',{name:'Select profile and start review'}));await screen.findByRole('table',{name:'Review coverage'});fireEvent.click(screen.getByRole('button',{name:'Unassigned Rows'}));
  fireEvent.change(screen.getByRole('textbox',{name:'Review reason'}),{target:{value:'Artificial investigation'}});fireEvent.click(screen.getByRole('button',{name:'Confirm read-only assertion'}));await ready();
  const trigger=()=>action==='worksheet'?fireEvent.change(screen.getByRole('combobox',{name:'Worksheet'}),{target:{value:'44444444-4444-4444-4444-444444444444'}}):fireEvent.click(screen.getByRole('button',{name:action}));

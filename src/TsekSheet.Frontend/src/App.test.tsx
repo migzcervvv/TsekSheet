@@ -8,10 +8,10 @@ test('starts in the receipt task and preserves shell navigation', () => {
   render(<App />);
 
   expect(
-    screen.getByRole('heading', { level: 1, name: 'Workbook overview' }).textContent,
-  ).toBe('Workbook overview');
-  expect(screen.getByText('Your active workbook and next steps.').textContent).toBe(
-    'Your active workbook and next steps.',
+    screen.getByRole('heading', { level: 1, name: 'Process Receipts' }).textContent,
+  ).toBe('Process Receipts');
+  expect(screen.getByText('Review receipts and confirm rows in your active workbook.').textContent).toBe(
+    'Review receipts and confirm rows in your active workbook.',
   );
 });
 
@@ -26,7 +26,11 @@ test('header keeps its text fallback when the local logo cannot load', () => {
 
 test('receipt and Excel entry stay available without a legacy workbook project', () => {
  const {container}=render(<App/>);
- expect((screen.getByRole('button',{name:'Receipts'}) as HTMLButtonElement).disabled).toBe(false);
+ expect((screen.getByRole('button',{name:'Process Receipts'}) as HTMLButtonElement).disabled).toBe(false);
+ expect((container.querySelector('.secondary-tools') as HTMLDetailsElement).open).toBe(false);
+ fireEvent.click(screen.getByText('Secondary tools'));
+ expect((screen.getByRole('button',{name:'Read-only inspection'}) as HTMLButtonElement).disabled).toBe(false);
+ expect((screen.getByRole('button',{name:'Legacy receipt review'}) as HTMLButtonElement).disabled).toBe(false);
  expect(screen.queryByRole('button',{name:'Placement'})).toBeNull();
  fireEvent.click(screen.getByRole('button',{name:'Settings'}));
  expect(screen.getByRole('heading',{level:1}).textContent).toBe('Settings');

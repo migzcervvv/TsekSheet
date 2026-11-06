@@ -36,8 +36,8 @@ public sealed partial class DesktopSmokeTests
                 await Until(async () => await web.ExecuteScriptAsync($"Array.from(document.querySelectorAll('button')).some(b=>b.textContent==={label}&&!b.disabled)") == "true", "Button unavailable: " + text);
                 await web.ExecuteScriptAsync($"Array.from(document.querySelectorAll('button')).find(b=>b.textContent==={label}).click()");
             }
-            await Click("Open workbook");
-            await Until(async () => await web.ExecuteScriptAsync("!!document.querySelector('.active-project') && document.body.textContent.includes('Workbook opened in inspection mode')") == "true", "Replica must exercise legacy inspection fallback");
+            await Navigate(web, "workbook"); await Click("Open for read-only inspection");
+            await Until(async () => await web.ExecuteScriptAsync("!!document.querySelector('.reader-file') && document.body.textContent.includes('Workbook opened in inspection mode')") == "true", "Replica must exercise legacy inspection fallback");
             await Navigate(web, "receipts"); await Click("Select receipt PDF or image"); await Click("Start manual receipt review");
             foreach (var field in new[] { ("itemNo", "Item no.", "NEW-29"), ("particulars", "Particulars", "Fake hosted expense"), ("account", "Account", "J"), ("amount", "Amount", "123.50") })
             {

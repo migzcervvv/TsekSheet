@@ -9,7 +9,7 @@ describe('verified Excel insertion',()=>{
   const version={reviewId:'11111111-1111-4111-8111-111111111111',revision:4,profileId:'synthetic-payables',profileHash:'A'.repeat(64)};
   const review:ReceiptState={source:null,version,pageNumber:1,status:'Active',fields:[{key:'vendor',value:'=literal',valueRevision:1,status:'Verified'}]};
   function setup(){
-    const request=vi.fn((command:string)=>({promise:Promise.resolve(command==='excel.listWorkbooks'?{workbooks:[{id:'a'.repeat(32),name:'Synthetic.xlsx',sheets:['Columns']}],sections:[{id:'columns',label:'Columns section',sheetName:'Columns'}],changes:[]}:command==='excel.previewInsert'?{token:'b'.repeat(32),workbookId:'a'.repeat(32),sectionId:'columns',sheet:'Columns',range:'A5:G5',insertRow:5,values:[{key:'vendor',header:'Vendor name',column:1,value:'=literal'}],manualReview:[{cell:'G6:G6',reason:'Formula left unchanged; review subtotal.'}]}:{workbook:'Synthetic.xlsx',sheet:'Columns',range:'A5:G5',manualReview:[]})}));
+    const request=vi.fn((command:string)=>({promise:Promise.resolve(command==='excel.listWorkbooks'?{openedWorkbookId:'a'.repeat(32),workbooks:[{id:'a'.repeat(32),name:'Synthetic.xlsx',sheets:['Columns']}],sections:[{id:'columns',label:'Columns section',sheetName:'Columns'}],changes:[]}:command==='excel.previewInsert'?{token:'b'.repeat(32),workbookId:'a'.repeat(32),sectionId:'columns',sheet:'Columns',range:'A5:G5',insertRow:5,values:[{key:'vendor',header:'Vendor name',column:1,value:'=literal'}],manualReview:[{cell:'G6:G6',reason:'Formula left unchanged; review subtotal.'}]}:{workbook:'Synthetic.xlsx',sheet:'Columns',range:'A5:G5',manualReview:[]})}));
     return {request,bridge:{request} as unknown as BridgeClient};
   }
   it('previews verified values, reports subtotal review and lists highlighted inserts',async()=>{
@@ -38,7 +38,7 @@ describe('verified Excel insertion',()=>{
     await waitFor(()=>expect(screen.queryByLabelText('Excel insertion preview')).toBeNull());
   });
   it('requires an explicit sheet choice when several profile-matching sheets exist',async()=>{
-    const request=vi.fn((command:string)=>({promise:Promise.resolve(command==='excel.listWorkbooks'?{workbooks:[{id:'a'.repeat(32),name:'Replica.xlsx',sheets:['Person 1','Person 2']}],sections:[{id:'expenses',label:'Expenses',sheetName:''},{id:'credits',label:'Credits',sheetName:''}],changes:[]}:{token:'b'.repeat(32),workbookId:'a'.repeat(32),sectionId:'credits',sheet:'Person 2',range:'B35:AF35',insertRow:35,values:[],manualReview:[]})}));
+    const request=vi.fn((command:string)=>({promise:Promise.resolve(command==='excel.listWorkbooks'?{openedWorkbookId:'a'.repeat(32),workbooks:[{id:'a'.repeat(32),name:'Replica.xlsx',sheets:['Person 1','Person 2']}],sections:[{id:'expenses',label:'Expenses',sheetName:''},{id:'credits',label:'Credits',sheetName:''}],changes:[]}:{token:'b'.repeat(32),workbookId:'a'.repeat(32),sectionId:'credits',sheet:'Person 2',range:'B35:AF35',insertRow:35,values:[],manualReview:[]})}));
     render(<ExcelInsertion bridge={{request} as unknown as BridgeClient} review={review} dirty={false} disabled={false}/>);
     fireEvent.click(screen.getByRole('button',{name:'Open workbook in Excel'}));await screen.findByRole('option',{name:'Replica.xlsx'});
     expect((screen.getByRole('button',{name:'Preview Excel insert'}) as HTMLButtonElement).disabled).toBe(true);
@@ -46,5 +46,17 @@ describe('verified Excel insertion',()=>{
     fireEvent.change(screen.getByLabelText('Excel section'),{target:{value:'credits'}});
     fireEvent.click(screen.getByRole('button',{name:'Preview Excel insert'}));
     await waitFor(()=>expect(request).toHaveBeenCalledWith('excel.previewInsert',{expected:version,workbookId:'a'.repeat(32),sectionId:'credits',sheet:'Person 2'}));
+  });
+  it('does not infer a workbook from an ambiguous refresh or cancelled opening',async()=>{
+    const catalog={openedWorkbookId:null,workbooks:[{id:'a'.repeat(32),name:'First.xlsx',sheets:['Columns']},{id:'b'.repeat(32),name:'Second.xlsx',sheets:['Columns']}],sections:[{id:'columns',label:'Columns',sheetName:'Columns'}],changes:[]};
+    const request=vi.fn(()=>({promise:Promise.resolve(catalog)}));
+    render(<ExcelInsertion bridge={{request} as unknown as BridgeClient} review={review} dirty={false} disabled={false}/>);
+    fireEvent.click(screen.getByRole('button',{name:'Refresh Excel workbooks'}));
+    await screen.findByRole('option',{name:'Second.xlsx'});
+    expect((screen.getByLabelText('Excel workbook') as HTMLSelectElement).value).toBe('');
+    fireEvent.click(screen.getByRole('button',{name:'Open workbook in Excel'}));
+    await waitFor(()=>expect(request).toHaveBeenCalledTimes(2));
+    expect((screen.getByLabelText('Excel workbook') as HTMLSelectElement).value).toBe('');
+    expect((screen.getByRole('button',{name:'Preview Excel insert'}) as HTMLButtonElement).disabled).toBe(true);
   });
 });

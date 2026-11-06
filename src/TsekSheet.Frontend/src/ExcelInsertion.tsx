@@ -26,7 +26,7 @@ export default function ExcelInsertion({bridge,review,dirty,disabled}:{bridge:Br
     try{await action();}catch(e){setPreview(null);setError((e as Error).message);}finally{lock.current=false;setBusy(false);}
   }
   useEffect(()=>{setCatalog(c=>({...c,sections:[]}));setSection('');setSheet('');},[review?.version?.profileId]);
-  function refresh(open:boolean){void run(async()=>{const current=await bridge.request('excel.listWorkbooks',{open}).promise;setCatalog(current);setPreview(null);if(!current.workbooks.some(w=>w.id===workbook)){setWorkbook(current.workbooks[0]?.id??'');setSection('');setSheet('');}});}
+  function refresh(open:boolean){void run(async()=>{const current=await bridge.request('excel.listWorkbooks',{open}).promise;setCatalog(current);setPreview(null);if(current.openedWorkbookId||!current.workbooks.some(w=>w.id===workbook)){setWorkbook(current.openedWorkbookId??'');setSection('');setSheet('');}});}
   return <section className="excel-insertion" aria-label="Insert verified receipt into Excel" aria-busy={busy}>
     <div className="reader-heading"><div><h3>Insert into Excel</h3><p>Preview one verified row. Review highlighted changes in Excel, then save there.</p></div></div>
     <div className="actions"><button disabled={disabled||busy} onClick={()=>refresh(true)}>Open workbook in Excel</button><button disabled={disabled||busy} onClick={()=>refresh(false)}>Refresh Excel workbooks</button></div>

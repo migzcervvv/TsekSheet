@@ -124,5 +124,5 @@ public sealed partial class DesktopSmokeTests
             foreach (var book in await host.ListWorkbooksAsync()) await host.CloseAsync(book.Id, discardChanges: true);
             window.Close(); await host.DisposeAsync();
         }
-    });
+    }, TimeSpan.FromMinutes(3));
 }

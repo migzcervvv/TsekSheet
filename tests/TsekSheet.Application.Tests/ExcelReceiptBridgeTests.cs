@@ -32,7 +32,11 @@ public sealed class ExcelReceiptBridgeTests
             await Send("excel.listWorkbooks", new { open = true, path = "untrusted" }, false); Assert.AreEqual(0, host.Opened);
             await Send("receipt.select", new { });
             var state = (await Send("receipt.start", new { profileId = "synthetic-payables", pageNumber = 1 })).Deserialize<ReceiptState>(BridgeSession.JsonOptions)!;
-            await Send("excel.listWorkbooks", new { open = true }); Assert.AreEqual(1, host.Opened);
+            var opened = await Send("excel.listWorkbooks", new { open = true }); Assert.AreEqual(1, host.Opened);
+            Assert.AreEqual(host.Id, opened.GetProperty("openedWorkbookId").GetString());
+            Assert.AreNotEqual(host.Id, opened.GetProperty("workbooks")[0].GetProperty("id").GetString(), "Identity must come from Excel open, not list order.");
+            var refreshed = await Send("excel.listWorkbooks", new { open = false });
+            Assert.AreEqual(JsonValueKind.Null, refreshed.GetProperty("openedWorkbookId").ValueKind);
             await Send("excel.previewInsert", new { expected = state.Version, workbookId = host.Id, sectionId = "columns" }, false); Assert.AreEqual(0, host.Previews);
             foreach (var item in new[] { ("vendor", "=literal vendor"), ("amount", "123.50"), ("rfp", "RFP-verified-1") })
             {
@@ -61,7 +65,7 @@ public sealed class ExcelReceiptBridgeTests
         public string Id { get; } = new('a', 32);
         public int Opened, Previews, Inserts;
         public Task<ExcelHostInfo> StartAsync() => Task.FromResult(new ExcelHostInfo(1, "synthetic"));
-        public Task<IReadOnlyList<ExcelWorkbook>> ListWorkbooksAsync() => Task.FromResult<IReadOnlyList<ExcelWorkbook>>([new(Id, "Synthetic.xlsx", @"C:\native-only\Synthetic.xlsx", ["Columns"])]);
+        public Task<IReadOnlyList<ExcelWorkbook>> ListWorkbooksAsync() => Task.FromResult<IReadOnlyList<ExcelWorkbook>>([new(new string('d', 32), "Other.xlsx", @"C:\native-only\Other.xlsx", ["Columns"]), new(Id, "Synthetic.xlsx", @"C:\native-only\Synthetic.xlsx", ["Columns"])]);
         public Task<ExcelWorkbook> OpenAsync(string path) { Opened++; return Task.FromResult(new ExcelWorkbook(Id, "Synthetic.xlsx", path, ["Columns"])); }
         public Task ActivateAsync(string workbookId, string sheet, CellRange range) => Task.CompletedTask;
         public Task CloseAsync(string workbookId, bool discardChanges = false) => Task.CompletedTask;

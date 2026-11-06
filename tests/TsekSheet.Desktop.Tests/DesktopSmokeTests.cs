@@ -23,17 +23,17 @@ public sealed partial class DesktopSmokeTests
         {
             window.Show();var web=(WebView2)window.FindName("FrontendWebView");
             await Until(async()=>web.CoreWebView2!=null&&await web.ExecuteScriptAsync("document.querySelector('[role=status]')?.textContent")=="\"Connected\"","Host unavailable");
-            await web.ExecuteScriptAsync("document.querySelector('.project-select').click()");
-            await Until(async()=>await web.ExecuteScriptAsync("!!document.querySelector('.active-project') && !document.querySelector('select[aria-label=Worksheet]').disabled")=="true","Workbook unavailable");
+            await Navigate(web,"workbook"); await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Open for read-only inspection'&&b.getClientRects().length).click()");
+            await Until(async()=>await web.ExecuteScriptAsync("!!document.querySelector('.reader-file') && !document.querySelector('select[aria-label=Worksheet]').disabled")=="true","Workbook unavailable");
             foreach(var theme in new[]{"light","dark"})
             {
                 await Navigate(web,"settings");
                 await web.ExecuteScriptAsync($"(()=>{{const s=document.querySelector('[aria-label=Appearance]');s.value='{theme}';s.dispatchEvent(new Event('change',{{bubbles:true}}));}})()");
                 await Navigate(web,"overview");
-                var position=await web.ExecuteScriptAsync("(()=>{const b=Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Open workbook');b.scrollIntoView({block:'center'});const r=b.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()");
+                var position=await web.ExecuteScriptAsync("(()=>{const b=Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Open for read-only inspection');b.scrollIntoView({block:'center'});const r=b.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()");
                 var coordinates=JsonSerializer.Deserialize<JsonElement>(position);
                 await web.CoreWebView2.CallDevToolsProtocolMethodAsync("Input.dispatchMouseEvent",JsonSerializer.Serialize(new{type="mouseMoved",x=coordinates.GetProperty("x").GetDouble(),y=coordinates.GetProperty("y").GetDouble()}));
-                Assert.AreEqual("true",await web.ExecuteScriptAsync("(()=>{const b=Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Open workbook'),s=getComputedStyle(b);const l=c=>c.match(/[\\d.]+/g).slice(0,3).map(Number).map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((a,v,i)=>a+v*[.2126,.7152,.0722][i],0);const a=l(s.color),z=l(s.backgroundColor);return b.matches(':hover')&&(Math.max(a,z)+.05)/(Math.min(a,z)+.05)>=4.5;})()"),"Primary hover contrast failed in "+theme);
+                Assert.AreEqual("true",await web.ExecuteScriptAsync("(()=>{const b=Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Open for read-only inspection'),s=getComputedStyle(b);const l=c=>c.match(/[\\d.]+/g).slice(0,3).map(Number).map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((a,v,i)=>a+v*[.2126,.7152,.0722][i],0);const a=l(s.color),z=l(s.backgroundColor);return b.matches(':hover')&&(Math.max(a,z)+.05)/(Math.min(a,z)+.05)>=4.5;})()"),"Primary hover contrast failed in "+theme);
                 using var hover=File.Create(Path.Combine(AppContext.BaseDirectory,$"primary-hover-{theme}.png"));
                 await web.CoreWebView2.CapturePreviewAsync(Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png,hover);
             }
@@ -62,8 +62,8 @@ public sealed partial class DesktopSmokeTests
         {
             window.Show();var web=(WebView2)window.FindName("FrontendWebView");
             await Until(async()=>web.CoreWebView2!=null&&await web.ExecuteScriptAsync("document.querySelector('[role=status]')?.textContent")=="\"Connected\"","Host unavailable");
-            await web.ExecuteScriptAsync("document.querySelector('.project-select').click()");
-            await Until(async()=>await web.ExecuteScriptAsync("!!document.querySelector('.active-project') && !document.querySelector('select[aria-label=Worksheet]').disabled")=="true","Workbook unavailable");
+            await Navigate(web,"workbook"); await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Open for read-only inspection'&&b.getClientRects().length).click()");
+            await Until(async()=>await web.ExecuteScriptAsync("!!document.querySelector('.reader-file') && !document.querySelector('select[aria-label=Worksheet]').disabled")=="true","Workbook unavailable");
             await Navigate(web,"receipts");
             await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Select receipt PDF or image').click()");
             await Until(async()=>await web.ExecuteScriptAsync("!!document.querySelector('[aria-label=\"Receipt profile\"]')")=="true","Source unavailable");
@@ -102,7 +102,12 @@ public sealed partial class DesktopSmokeTests
             await web.ExecuteScriptAsync("document.querySelector('#main-workspace').scrollTop=0;document.querySelector('#main-workspace').focus()");
             await web.CoreWebView2.CallDevToolsProtocolMethodAsync("Input.dispatchKeyEvent","{\"type\":\"keyDown\",\"key\":\"End\",\"code\":\"End\",\"windowsVirtualKeyCode\":35}");
             await web.CoreWebView2.CallDevToolsProtocolMethodAsync("Input.dispatchKeyEvent","{\"type\":\"keyUp\",\"key\":\"End\",\"code\":\"End\",\"windowsVirtualKeyCode\":35}");
-            await Until(async()=>await web.ExecuteScriptAsync("(()=>{const m=document.querySelector('#main-workspace');return m.scrollTop+m.clientHeight>=m.scrollHeight-2;})()")=="true","End key did not reach canvas bottom");
+            try { await Until(async()=>await web.ExecuteScriptAsync("(()=>{const m=document.querySelector('#main-workspace');return m.scrollTop+m.clientHeight>=m.scrollHeight-2;})()")=="true","End key did not reach canvas bottom"); }
+            catch (Exception error)
+            {
+                var state=await web.ExecuteScriptAsync("(()=>{const m=document.querySelector('#main-workspace');return {top:m.scrollTop,height:m.clientHeight,extent:m.scrollHeight,focus:document.activeElement?.outerHTML.slice(0,240),selection:String(getSelection()),rendering:document.querySelector('.source-preview')?.getAttribute('aria-busy')};})()");
+                Assert.Fail(error.Message+" Canvas state: "+state);
+            }
             using var screenshot=File.Create(Path.Combine(AppContext.BaseDirectory,"scroll-1280-600.png"));
             await web.CoreWebView2.CapturePreviewAsync(Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png,screenshot);
         }
@@ -136,7 +141,7 @@ public sealed partial class DesktopSmokeTests
                 await web.ExecuteScriptAsync($"(()=>{{const el=document.querySelector('#receipt-{key}');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,{JsonSerializer.Serialize(value)});el.dispatchEvent(new Event('input',{{bubbles:true}}));}})()");
             }
             await Until(async () => web.CoreWebView2 != null && await web.ExecuteScriptAsync("document.querySelector('[role=status]')?.textContent") == "\"Connected\"", "Host did not connect");
-            await Navigate(web, "workbook"); await Click("Open workbook"); await Until(async()=>await web.ExecuteScriptAsync("!!document.querySelector('.active-project')")=="true","Project missing"); await Navigate(web, "receipts");
+            await Navigate(web, "workbook"); await Click("Open for read-only inspection"); await Until(async()=>await web.ExecuteScriptAsync("!!document.querySelector('.reader-file')")=="true","Project missing"); await Navigate(web, "receipts");
             await Click("Select receipt PDF or image");
             await Until(async () => await web.ExecuteScriptAsync("!!document.querySelector('[aria-label=\"Receipt profile\"]')") == "true", "Receipt profile missing");
             await web.ExecuteScriptAsync("(()=>{const el=document.querySelector('[aria-label=\"Receipt profile\"]');el.value='synthetic-payables';el.dispatchEvent(new Event('change',{bubbles:true}));})()");
@@ -208,7 +213,7 @@ public sealed partial class DesktopSmokeTests
             await Input("amount", "126.50");
             Assert.AreEqual("true", await web.ExecuteScriptAsync("!document.querySelector('[aria-label=\"Receipt placement preview\"]') && Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Verify Amount').disabled"));
             await Navigate(web, "workbook");
-            await web.ExecuteScriptAsync("document.querySelector('.project-select').click()");
+            await Navigate(web,"workbook"); await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Open for read-only inspection'&&b.getClientRects().length).click()");
             await Until(async()=>await web.ExecuteScriptAsync("document.body.textContent.includes('Close the current receipt before switching workbooks')")=="true","Receipt project guard failed");
             await Navigate(web, "receipts");
             Assert.AreEqual("\"126.50\"", await web.ExecuteScriptAsync("document.querySelector('#receipt-amount').value"), "Task switch lost unsaved draft");
@@ -324,7 +329,7 @@ public sealed partial class DesktopSmokeTests
             await Until(async () => await web.ExecuteScriptAsync("window.brandAssetsLoaded") == "true", "Bundled brand assets did not load.");
             using (var brandingCapture = File.Create(Path.Combine(AppContext.BaseDirectory, "branding-header.png")))
                 await web.CoreWebView2.CapturePreviewAsync(Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png, brandingCapture);
-            await Navigate(web, "workbook"); await Click("Open workbook");
+            await Navigate(web, "workbook"); await Click("Open for read-only inspection");
             await Until(async () => await web.ExecuteScriptAsync("!!document.querySelector('.cell-window td')") == "true", "Read-only workbook did not render.");
             Assert.AreEqual("true", await web.ExecuteScriptAsync("!document.querySelector('#payables-title') && !Array.from(document.querySelectorAll('button')).some(b=>['Create working copy','Save As','Review Merge'].includes(b.textContent))"));
             foreach (var width in new[] { 1366d, 390d })
@@ -403,14 +408,14 @@ public sealed partial class DesktopSmokeTests
     }
     private static async Task Navigate(WebView2 web, string activity)
     {
-        var target = activity switch { "workbook"=>"worksheets", "placement"=>"receipts", "diagnostics"=>"settings", _=>activity };
+        var target = activity switch { "workbook"=>"worksheets", "overview"=>"worksheets", "placement"=>"legacy", "receipts"=>"legacy", "diagnostics"=>"settings", _=>activity };
         await web.ExecuteScriptAsync($"document.querySelector('nav button[data-activity={target}]').click()");
         await Until(async () => await web.ExecuteScriptAsync($"document.querySelector('nav button[data-activity={target}]').getAttribute('aria-current')==='page'") == "true", "Task navigation failed");
-        if(target=="receipts" && activity!="placement" && await web.ExecuteScriptAsync("!!document.querySelector('#receipt-vendor')")=="true") await Step(web,1);
+        if(target=="legacy" && activity!="placement" && await web.ExecuteScriptAsync("!!document.querySelector('#receipt-vendor')")=="true") await Step(web,1);
         if(target=="settings") await web.ExecuteScriptAsync("document.querySelector('.troubleshooting').open=true");
         if(activity=="placement") await Step(web,3);
     }
-    private static async Task OnDesktop(Func<Task> test)
+    private static async Task OnDesktop(Func<Task> test, TimeSpan? timeout = null)
     {
         var finished = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var thread = new Thread(() =>
@@ -425,7 +430,7 @@ public sealed partial class DesktopSmokeTests
             Dispatcher.Run();
         }) { IsBackground = true };
         thread.SetApartmentState(ApartmentState.STA); thread.Start();
-        try { await finished.Task.WaitAsync(TimeSpan.FromSeconds(60)); }
+        try { await finished.Task.WaitAsync(timeout ?? TimeSpan.FromSeconds(60)); }
         finally
         {
             thread.Join(TimeSpan.FromSeconds(2));
@@ -473,7 +478,7 @@ public sealed partial class DesktopSmokeTests
             await Until(async () => web.CoreWebView2 != null && await web.ExecuteScriptAsync("document.querySelector('[role=status]')?.textContent") == "\"Connected\"", "React did not connect to the actual C# host.");
             Assert.AreEqual("https://tseksheet.local/index.html", web.Source.AbsoluteUri);
             var title = await web.ExecuteScriptAsync("document.querySelector('h1').textContent");
-            Assert.AreEqual("Workbook overview", JsonSerializer.Deserialize<string>(title));
+            Assert.AreEqual("Process Receipts", JsonSerializer.Deserialize<string>(title));
             using (var screenshot = File.Create(Path.Combine(AppContext.BaseDirectory, "desktop-smoke.png")))
                 await web.CoreWebView2.CapturePreviewAsync(Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png, screenshot);
             foreach (var width in new[] { 390d, 768d, 1100d })
@@ -577,9 +582,10 @@ public sealed partial class DesktopSmokeTests
         {
             window.Show(); var web = (WebView2)window.FindName("FrontendWebView");
             await Until(async () => web.CoreWebView2 != null && await web.ExecuteScriptAsync("document.querySelector('[role=status]')?.textContent") == "\"Connected\"", "Workbook viewer did not connect.");
+            await Navigate(web,"workbook");
             for (var index = 0; index < paths.Length; index++)
             {
-                await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Open workbook').click()");
+                await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Open for read-only inspection').click()");
                 var file = Path.GetFileName(paths[index]);
                 await Until(async () => await web.ExecuteScriptAsync($"document.body.textContent.includes({JsonSerializer.Serialize(file)}) && !!document.querySelector('.cell-window td')") == "true", "Workbook did not render: " + file);
                 Assert.AreEqual("4", await web.ExecuteScriptAsync("document.querySelector('select[aria-label=Worksheet]').options.length"));

@@ -11,7 +11,7 @@ namespace TsekSheet.Desktop.Tests;
 public sealed partial class DesktopSmokeTests
 {
     [TestMethod, TestCategory("WindowsSmoke")]
-    public Task OpenWorkbookFallsBackToAnActualInspectionProjectAndKeepsAuthorization() => OnDesktop(async () =>
+    public Task SecondaryInspectionKeepsAuthorizationWithoutChangingActiveWorkspace() => OnDesktop(async () =>
     {
         using var large = new AccountingCompatibilityFixture("cells");
         using var linked = new AccountingCompatibilityFixture("external");
@@ -43,10 +43,11 @@ public sealed partial class DesktopSmokeTests
             foreach (var fixture in new[] { (large.Path, "EDITABLE_ADMISSION_LIMIT_EXCEEDED"), (linked.Path, "EDITABLE_ADMISSION_EXTERNAL_RESOURCE") })
             {
                 selected = fixture.Path;
-                await web.ExecuteScriptAsync("document.querySelector('.project-select').click()");
+                await Navigate(web, "workbook"); await Click("Open for read-only inspection");
                 var displayName = JsonSerializer.Serialize(Path.GetFileName(fixture.Path));
-                await Until(async () => await web.ExecuteScriptAsync($"document.querySelector('.active-project strong')?.textContent==={displayName} && document.body.textContent.includes('{fixture.Item2}') && !document.querySelector('select[aria-label=Worksheet]').disabled") == "true", "Inspection project was not adopted");
-                Assert.AreEqual("true", await web.ExecuteScriptAsync("!!document.querySelector('.active-project') && document.body.textContent.includes('Workbook opened in inspection mode')"));
+                await Until(async () => await web.ExecuteScriptAsync($"document.querySelector('.reader-file strong')?.textContent==={displayName} && document.body.textContent.includes('{fixture.Item2}') && !document.querySelector('select[aria-label=Worksheet]').disabled") == "true", "Inspection project was not adopted");
+                Assert.AreEqual("true", await web.ExecuteScriptAsync("!!document.querySelector('.reader-file') && document.body.textContent.includes('Workbook opened in inspection mode')"));
+                Assert.AreEqual("false", await web.ExecuteScriptAsync("!!document.querySelector('.active-project')"), "Secondary inspection must not establish an Excel workspace.");
                 await Navigate(web, "workbook");
                 await Until(async () => await web.ExecuteScriptAsync("!!document.querySelector('.cell-window.inspection table') && !document.querySelector('select[aria-label=Worksheet]').disabled") == "true", "Inspection worksheet did not render");
                 Assert.AreEqual("true", await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).filter(b=>['Create working copy','Save As'].includes(b.textContent)).every(b=>b.disabled)"));
@@ -69,10 +70,10 @@ public sealed partial class DesktopSmokeTests
                 }
                 window.Width = 1366;
             }
-            selected = broken.Path; await Click("Open workbook");
+            selected = broken.Path; await Click("Open for read-only inspection");
             await Until(async () => await web.ExecuteScriptAsync("!!document.querySelector('[role=alert]') && document.body.textContent.includes('INSPECTION_INVALID_XML')") == "true", "Missing structured inspection failure");
-            Assert.AreEqual("true", await web.ExecuteScriptAsync("document.querySelector('caption')?.textContent.startsWith('Ledger 2') && !!document.querySelector('.active-project')"), "Failed switch lost previous project");
-            selected = ordinary.Path; await Click("Open workbook");
+            Assert.AreEqual("true", await web.ExecuteScriptAsync("document.querySelector('caption')?.textContent.startsWith('Ledger 2') && !!document.querySelector('.reader-file')"), "Failed switch lost previous project");
+            selected = ordinary.Path; await Click("Open for read-only inspection");
             await Until(async () => await web.ExecuteScriptAsync("!!document.querySelector('.cell-window:not(.inspection) td') && document.querySelector('caption')?.textContent.startsWith('Ledger 1') && !document.querySelector('select[aria-label=Worksheet]').disabled") == "true", "Replacement read-only project did not finish loading");
             Assert.AreEqual("false", await web.ExecuteScriptAsync("document.body.textContent.includes('EDITABLE_ADMISSION_') || document.body.textContent.includes('Opening failure details')"));
             await Click("Inspect workbook read-only");
