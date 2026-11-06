@@ -258,15 +258,22 @@ the unchanged Excel-test CS0815 recorded under Risks.)
 - Acceptance: both engines complete the synthetic evaluation offline, summary generated,
   model-free unit tests pass. Stop before T3b/T4; no engine decision.
 
-### T3b - Redacted OCR evaluation and engine decision support
+### T3b - Real-document OCR evaluation
 
-Status: TODO (requires redacted documents; not authorized by T3a)
+Status: COMPLETE FOR OWNER-REQUESTED PACKETS 1–17 (T3b-FIX, PR #14; 119 pages × six settings = 714 observations, 102 packet selections, zero runtime errors; 48/0/0 model-free tests, Release harness build 0 warnings/errors. Prior results retained as superseded; early 205-observation attempt retained; partial packet 18 excluded, packets 19–20 not run. Private three-packet review and source-scoped scoring complete; engines/models/UI/Excel unchanged; no engine decision or T4).
 
-- Run the T3a harness unchanged against `fixtures/redacted/docs/` with typed truth and
-  an optional vendor list; retain results per engine/preprocess/variant.
-- Report field accuracy, field CER, seconds/page and peak RAM on the A15 and, if
-  available, a minimum-class machine. Synthetic results do not establish real-scan accuracy.
-- Update `docs/ocr-bakeoff.md`; the planner decides the engine before T4.
+- Extend the harness for BOM/RFC4180 packet truth: page classification/selection,
+  cardinal orientation, own-TIN exclusion, spatial labelled amounts, identifier comparison preserving letters/zeros
+  and report-only invoice/RFP/voucher/2307 cross-checks.
+- Run Tesseract PSM6 (best T3a field accuracy) and Paddle v5 mobile across all three
+  preprocessing profiles; report each field, page pick, correction count, time/memory and
+  notes-based annotation groups separately; rotation correctness remains unverified. No engine decision.
+- T3b-FIX: score page-local fields on annotated pages and packet references only on independently
+  verified, hash-bound source pages. Leave ambiguous/mismatched/unverified expectations unscored;
+  never alter truth to match OCR. Separate voucher/document reference and gross/net amounts;
+  fictional regressions cover table columns, amount-before-label and conflicting totals.
+- Append Real documents tables to `docs/ocr-bakeoff.md`; artifacts contain numeric
+  metrics/fixed categories only. Never commit inputs, OCR text, values or crops. Stop before T4.
 
 ### T4 - OCR in the product
 
@@ -310,6 +317,7 @@ Status: TODO
 | COM writes clear Excel's undo stack                  | Backup before first write + action log of inserts             |
 | Files on OneDrive/network shares                     | Excel handles them; backup folder configurable                |
 | Protected sheets, .xlsm, external links              | Macros disabled on open; protected target -> clear error      |
+| T3b-FIX source coverage and rotation remain incomplete | 63/193 expectations per setting unscored; three packets privately reviewed; notes flag is not handwriting ground truth; partial packet 18 excluded and 19–20 not run |
 | OCR accuracy on poor scans unknown                   | T3 bake-off on real documents before integration              |
 | Interop package license vs AGPL                      | Embed interop types (no redistribution); confirm in T1 report |
 | A15 exact CPU/GPU unknown                            | Record specs; benchmarks in T3                                |

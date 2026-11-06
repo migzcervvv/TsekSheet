@@ -20,11 +20,30 @@ internal static class Worker
         {
             byte[]? profileBytes = await Read(input, default, allowEof: true); if (profileBytes is null) return;
             var profile = System.Text.Encoding.UTF8.GetString(profileBytes);
-            if (profileBytes.Length > 64 || !Imaging.Profiles.Contains(profile)) throw new InvalidDataException("Invalid preprocessing profile.");
+            if (profileBytes.Length > 64 || (!Imaging.Profiles.Contains(profile) && profile != "orientation")) throw new InvalidDataException("Invalid preprocessing profile.");
             byte[] png = (await Read(input, default))!;
             WorkerReply reply;
             try
             {
+                if (profile == "orientation")
+                {
+                    var watchOrientation = Stopwatch.StartNew();
+                    using var source = OpenCvSharp.Cv2.ImDecode(png, OpenCvSharp.ImreadModes.Color);
+                    using var small = new OpenCvSharp.Mat();
+                    var scale = Math.Min(1, 1200d / Math.Max(source.Width, source.Height));
+                    OpenCvSharp.Cv2.Resize(source, small, new((int)(source.Width * scale), (int)(source.Height * scale)));
+                    var best = double.NegativeInfinity; var correction = 0;
+                    foreach (var degrees in new[] { 0, 90, 180, 270 })
+                    {
+                        using var rotated = PacketRules.Rotate(small, degrees);
+                        var probe = await ocr.RecognizeAsync(rotated.ToBytes(".png"), default);
+                        var score = PacketRules.OrientationScore(probe);
+                        if (score > best) { best = score; correction = degrees; }
+                    }
+                    reply = new(new("", []), null, 0, watchOrientation.Elapsed.TotalSeconds, correction);
+                    await Write(output, JsonSerializer.SerializeToUtf8Bytes(reply, Configuration.Json), default);
+                    continue;
+                }
                 var watch = Stopwatch.StartNew(); var prepared = Imaging.Prepare(png, profile); var preprocessSeconds = watch.Elapsed.TotalSeconds;
                 watch.Restart(); var result = await ocr.RecognizeAsync(prepared, default);
                 reply = new(result, null, preprocessSeconds, watch.Elapsed.TotalSeconds);
@@ -91,6 +110,7 @@ internal sealed class OcrJob : SafeHandleZeroOrMinusOneIsInvalid
 
 internal sealed class EngineClient(string configPath, string engine, EvalConfig config) : IAsyncDisposable
 {
+    public int LastRotation { get; private set; }
     private Process? process; private OcrJob? job; private Task<string>? stderr;
     public double InitializationSeconds { get; private set; }
     private async Task Start(CancellationToken token)
@@ -133,6 +153,7 @@ internal sealed class EngineClient(string configPath, string engine, EvalConfig 
             }
             finally { sampling.Cancel(); await sampler; }
             if (reply?.Result is null) throw new InvalidDataException(reply?.Error ?? "No OCR result.");
+            LastRotation = reply.Rotation;
             return (reply.Result, watch.Elapsed.TotalSeconds, peak / 1048576d, reply.PreprocessSeconds, reply.OcrSeconds);
         }
         catch

@@ -126,7 +126,7 @@ public static class Evaluation
         return rows.Any(r => r.Status != "ok") ? 1 : 0;
     }
     public static ReceiptFields Canonical(ReceiptFields fields) => new(Metrics.Normalize(fields.Vendor), Extraction.NormalizeTin(fields.Tin), Metrics.Normalize(fields.Invoice), Extraction.NormalizeDate(fields.Date), Extraction.NormalizeAmount(fields.Amount));
-    private static Dictionary<string, object?> Machine()
+    internal static Dictionary<string, object?> Machine()
     {
         using var cpuQuery = new ManagementObjectSearcher("SELECT Name, NumberOfLogicalProcessors FROM Win32_Processor");
         using var computerQuery = new ManagementObjectSearcher("SELECT TotalPhysicalMemory FROM Win32_ComputerSystem");

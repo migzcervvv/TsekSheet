@@ -185,3 +185,95 @@ retains exact OCR strings.
 
 Synthetic-only results do not decide the engine. T3b redacted evaluation and T4
 product integration remain separate tickets.
+
+## Real-document packets (T3b)
+
+The console detects this exact truth header and uses the metrics-only packet path:
+
+```csv
+file,page,doc_type,vendor,tin,invoice_type,invoice,date,vatable,vat,total,wht,amount_due,rfp_no,voucher_no,notes
+```
+
+UTF-8 BOM and RFC4180 quoted names/fields are supported. Empty trailing records are
+ignored. Each nonempty row labels one primary source page, numbered from 1; multiple
+labelled pages per packet are supported. Every PDF page is rendered/classified, including
+pages without truth. Ground-truth values never influence orientation, OCR, extraction or
+page selection. Notes containing `handwritten` select a notes-flag group, not a measured
+handwriting subset or a claim about every field's ink. Classifications are scored only
+where truth exists. Non-invoice policy/payment/collection sources have explicit classes
+and do not enter invoice-page-pick or invoice-identifier/type denominators.
+
+Use the same run command with `--input fixtures/redacted/docs`; keep output under ignored
+`artifacts/ocr-eval/`. The schema selects packet mode automatically. No OCR text, source
+names, field values, images or crops are persisted by this mode. `results.csv` contains
+anonymous packet ordinals, page indices, fixed label/classification categories and numeric
+metrics only. `machine.json` contains hardware metrics. Never commit private inputs or
+raw derived content. The generated Real documents section preserves the synthetic report.
+
+Set `ownTin` in ignored local configuration; the committed zero-filled example is a
+placeholder and packet mode rejects it. All TINs with that nine-digit taxpayer root are
+excluded, including zero-padded branch variants. Amount categories are separate, with
+spatial labels and no VAT conversion; `total_amount_due`, `amount_due` and `net_amount_due`
+are distinct label matches. Conflicting labels/values produce an ambiguous empty value.
+Identifiers retain letters, separators and leading zeros; SI/OR/INV type aliases
+canonicalize independently. Voucher number and document reference are separate fields.
+Rows/column headers associate amounts using word coordinates, including amount-before-label
+and multiline header layouts. Wide column gaps and exempt/zero-rated labels are boundaries.
+Multiple candidate values without a unique structural association remain ambiguous;
+the first/largest amount is never a fallback.
+
+Cardinal orientation uses four reduced-resolution Tesseract PSM6 text/confidence probes
+at 0/90/180/270, then rotates the full bitmap before final OCR for both engines. The score
+uses English document keywords and confidence-weighted text length. This is a heuristic,
+not a trained orientation classifier. Correction counts are inferred, not verified rotation
+success: the supplied truth schema has no orientation labels. Probe time/memory is charged
+to every engine/profile; initialization stays separate, and peak excludes renderer/parent.
+
+Page selection ranks invoice classifications first, then invoice/receipt keywords and
+extracted invoice/total presence, choosing the earliest tie. Service invoices map to
+sales_invoice; generic invoices to invoice_official_receipt; out-of-taxonomy truth types
+map to other. Report-only cross-check rows compare invoice vs RFP gross totals without
+net fallback, invoice identifier vs voucher document reference (not voucher number),
+and invoice vs 2307 TIN/WHT. Identifiers are not reduced to digits for cross-checks.
+Missing operands are unavailable. These checks do not authorize writes or select an engine.
+
+Summary exact match pools scorable nonempty field instances. Page-local fields use their
+annotated source page unless private review records an ambiguity or key/source mismatch.
+RFP, voucher, WHT and net-payment expectations require independent source verification;
+otherwise they are unscored, even if an OCR string happens to match. Truth values remain
+unchanged. Timing includes full-resolution parent bitmap decode/rotation/re-encoding.
+Anonymous packet ordinals follow first-file appearance in truth.csv. Only applicable rows
+enter accuracy/agreement denominators; page rows carry timing/classification metadata, and
+their exact flag has no scoring meaning.
+
+Private `field-sources.csv` beside truth.csv has columns `file,field,page,status,sha256`.
+Statuses: `verified`, `source_ambiguity`, `answer_key_mismatch`, `unverified_source`.
+Use the original PDF's SHA-256; changed sources become `stale_source` and unscored.
+The sidecar assigns provenance only and cannot override truth values. Verified packet
+fields are evaluated on those actual source pages independently of OCR classification.
+Metrics report expected/scored counts and exclusion reasons per field/profile/group.
+
+For explicit local inspection, use `--inspect 1,2,3` with the normal input/config flags
+and a new `--output fixtures/redacted/ocr-review-local`. Exactly three ordinals are
+required. This separate mode exports private previews and recognized text/word boxes
+only under this checkout's ignored `fixtures/redacted/`, outside the input docs folder;
+linked output folders are rejected. Never force-add these files. Default evaluation
+continues to write metrics only. Optional private `inspection-counts.csv` contains only
+`category,affected_packets` for the six fixed anonymous review categories, each 0–3.
+Counts are reviewer-labelled overlapping affected packets, not an exhaustive error tally.
+Original T3b tables remain marked superseded; corrected runs replace only the corrected
+section. Model/engine settings are unchanged; no engine decision follows automatically.
+
+To summarize a deliberately stopped run without rerunning OCR, retain the original run and
+select only complete packets through an explicit boundary:
+
+```powershell
+dotnet tools/OcrEval/bin/Release/net10.0-windows/OcrEval.dll --summarize artifacts/ocr-eval/<run> --max-packets 17 --input fixtures/redacted/docs --output artifacts/ocr-eval/<new-subset-run> --report docs/ocr-bakeoff.md
+```
+
+The corrected metrics schema is validated against fixed categories/numbers; incomplete
+packet/configuration groups are rejected. The new output contains only the selected metrics
+and machine metadata. No models are loaded. Original partial results remain untouched.
+The owner limited the corrected T3b-FIX study to packets 1–17; partial packet 18 is excluded
+and packets 19–20 were not run. Prior superseded tables are not directly comparable because
+the source/scoring rules and retained packet scope changed.

@@ -13,10 +13,11 @@ public sealed record ReceiptFields(string Vendor, string Tin, string Invoice, st
 public sealed record Vendor(string Name, string Tin);
 public sealed record Truth(string File, ReceiptFields Fields);
 public sealed record EngineRequest(string Engine, byte[] Png);
-public sealed record WorkerReply(OcrResult? Result, string? Error, double PreprocessSeconds = 0, double OcrSeconds = 0);
+public sealed record WorkerReply(OcrResult? Result, string? Error, double PreprocessSeconds = 0, double OcrSeconds = 0, int Rotation = 0);
 
 public sealed record EvalConfig
 {
+    public string OwnTin { get; init; } = "";
     public string Tesseract { get; init; } = "";
     public string Tessdata { get; init; } = "";
     public string DetectionModel { get; init; } = "";
