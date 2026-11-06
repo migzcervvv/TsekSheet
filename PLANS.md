@@ -310,6 +310,10 @@ Status: TODO
 
 Status: IN REVIEW (Excel-backed workspace opens directly into Process Receipts; exact workbook identity reused without reopening; secondary inspection/legacy tools retained; unsafe switches preserve drafts and bindings; synthetic two-workbook hosted review/preview/explicit insertion and 1440/768/390 layout checks passed; final Release Application 499/0/0, Frontend 81/0/0, Desktop 25/0/0 passed/failed/skipped; typecheck/build passed; initial sandbox, selector, focus/timing and dependency-lock reruns retained and resolved)
 
+### UX-02 - Unified Receipt Processing
+
+Status: IN REVIEW (Add receipts uses one Edit/Check queue for single/batch imports; authoritative previews, draft/destination retention, new-only account inheritance and uncertain-submit blocking; legacy verification/page-association/placement retained under advanced tools with parity differences documented; final Application 499/0/0, Frontend 89/0/0, Desktop 26/0/0 passed/failed/skipped; typecheck and Release build passed; synthetic one/three/20-receipt Excel/OCR and two-workbook readback passed, 1366x768/768/390 screenshots retained locally; initial test-fixture/async/focus-check failures corrected; no full Excel regression, mutation/OCR engine changes or persistence)
+
 ## Risks
 
 | Risk                                                 | Mitigation                                                    |

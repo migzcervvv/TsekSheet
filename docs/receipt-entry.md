@@ -2,8 +2,9 @@
 
 Choose **Open workbook** in the sidebar. TsekSheet opens the selected workbook in its
 visible Excel instance, makes that exact workbook the active workspace, and opens
-**Process Receipts** directly. Choose **Add PDFs or images** and select one or up to
-100 synthetic or owner-approved local receipts. Choose a profile and start the queue.
+**Process Receipts** directly. Choose **Add receipts** and select one or up to
+100 synthetic or owner-approved local PDF, PNG or JPEG receipts. One file uses the same
+queue and review experience as a batch; the selected profile starts review automatically.
 The source files stay in their original locations; the app keeps only in-memory
 references and review state. Closing the app discards the queue and drafts.
 
@@ -21,14 +22,22 @@ opening retains the current workspace and never falls back to inspection.
 
 **Read-only inspection** is a separate secondary tool and never replaces the active
 Excel workspace. Detailed compatibility findings are under **Advanced compatibility
-findings**. **Legacy receipt review** retains the previous single-receipt and placement
-workflow. It remains accessible while no queue work is held; a populated queue blocks
-entry to legacy review because both tools share the session's receipt state.
+findings**. Legacy tools are under **Settings → Troubleshooting → Advanced review tools**.
+**Legacy receipt review** retains per-field Save/Verify/Retract and initial page association.
+**Legacy placement tools** exposes the read-only placement, entity and duplicate warnings.
+A populated queue blocks entry because these tools share the session's receipt state.
 
-Read the source beside the fields, enter the required values and choose an account.
-New receipts inherit the active account as a draft. **Preview row** validates the
-drafts and shows the actual Excel row, columns and literal values. It does not verify
-or write them. **Add Row — confirm values and destination** is the explicit human
+In **Edit**, read the source beside the profile fields, enter required values and choose
+an account. Expand **Profile and destination** to explicitly change the profile, sheet or
+section. The active workbook is fixed for the queue; it is never reopened or inferred from
+list order. New receipts inherit the active account as a draft; revisiting an existing
+receipt never replaces its account with a later selection.
+
+**Check row** validates the drafts and opens **Check** with the authoritative Excel row,
+range, mapped columns, exact values and applicable warnings. It does not verify or write
+them. **Back to edit** returns to retained drafts. Changing values, profile, destination,
+or the source view invalidates Check and requires another authoritative preview.
+**Add row to Excel** is the explicit human
 confirmation of the displayed values and destination. Only then does the app verify
 the fields and submit the existing Excel insert operation. Amounts are written as
 entered; no VAT conversion is performed.
@@ -46,10 +55,21 @@ order never imply uniqueness. A profile explicitly declaring `entity-and-any-ide
 rejects a matching configured identifier only within the same configured entity.
 Successful or uncertain source/page submissions remain blocked even after restarting
 the review or changing its profile; a known rejection before writing permits a fresh preview.
-After a rejected or uncertain write, inspect Excel and use **Refresh queue** before
+After a rejected or uncertain write, inspect Excel and use **Queue tools → Refresh queue** before
 requesting another preview. A receipt with an uncertain submitted outcome cannot be
 submitted again. The existing backup, formula protection and Excel preservation checks
 remain in force. VENDOR is never written by the receipt queue.
+
+The navigator reports backend Pending, Skipped and Inserted counts. Details and insert
+history are secondary disclosures. OCR fills only empty draft fields, leaving typed
+values intact; its failures leave manual entry available. An unknown insertion response
+blocks resubmission for that receipt, including after navigation or refresh.
+
+Legacy parity remains incomplete: normal processing uses consolidated Add Row verification
+rather than individual verification/retraction, keeps its initial review page association,
+and uses Excel section/row checks rather than the older read-only entity-placement proposal.
+Legacy subtotal warnings remain visible; the normal Excel draft path blocks ambiguous
+subtotals before insertion.
 
 ## T2e measurement
 

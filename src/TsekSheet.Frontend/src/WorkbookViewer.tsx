@@ -10,7 +10,7 @@ import type { BridgeClient, Workbook, Viewport, Cell, CompatibilityFinding } fro
 
 const columnLabel = (column: number): string => { let label = ''; for (let n = column; n > 0; n = Math.floor((n - 1) / 26)) label = String.fromCharCode(65 + (n - 1) % 26) + label; return label; };
 
-export default function WorkbookViewer({ bridge, available, receiptsAvailable = false, renderingAvailable = false, activity, onActivityChange, openRequest = 0, onContextChange, onProtectedChange }: { bridge: BridgeClient | null; available: boolean; receiptsAvailable?: boolean; renderingAvailable?: boolean; activity?: Activity; onActivityChange?: (activity: Activity) => void; openRequest?: number; onProtectedChange?:(protectedWork:boolean)=>void; onContextChange?: (context:{name:string;sheet:string;copy:string;pending:boolean;inspection:boolean}|null)=>void }) {
+export default function WorkbookViewer({ bridge, available, receiptsAvailable = false, renderingAvailable = false, activity, onActivityChange, openRequest = 0, onContextChange, onProtectedChange, legacyView = 'workflow' }: { bridge: BridgeClient | null; available: boolean; receiptsAvailable?: boolean; renderingAvailable?: boolean; activity?: Activity; onActivityChange?: (activity: Activity) => void; openRequest?: number; legacyView?:'workflow'|'all'; onProtectedChange?:(protectedWork:boolean)=>void; onContextChange?: (context:{name:string;sheet:string;copy:string;pending:boolean;inspection:boolean}|null)=>void }) {
   const [receiptActive, setReceiptActive] = useState(false);
   const [receiptStep, setReceiptStep] = useState(0);
   const seenOpenRequest = useRef(0);
@@ -112,7 +112,7 @@ export default function WorkbookViewer({ bridge, available, receiptsAvailable = 
 
     {error && activity==='receipts' && <Notice kind="error" title="Workbook action blocked">{error}</Notice>}
     <div className="receipt-task" hidden={!!activity && activity!=='receipts'}>
-    {bridge && receiptsAvailable && <ReceiptReview bridge={bridge} renderingAvailable={renderingAvailable} view={activity?'workflow':'all'} onActiveChange={setReceiptActive} onStepChange={setReceiptStep} onNavigate={onActivityChange} disabled={false} destination={book && !book.compatibility && activeId && activeRevision !== undefined ? {sessionId:activeId,worksheetId:sheetId,revision:activeRevision,sourceSha256:book.sourceSha256} : null}/>}
+    {bridge && receiptsAvailable && <ReceiptReview bridge={bridge} renderingAvailable={renderingAvailable} view={activity?legacyView:'all'} onActiveChange={setReceiptActive} onStepChange={setReceiptStep} onNavigate={onActivityChange} disabled={false} destination={book && !book.compatibility && activeId && activeRevision !== undefined ? {sessionId:activeId,worksheetId:sheetId,revision:activeRevision,sourceSha256:book.sourceSha256} : null}/>}
 
     {(!bridge || !receiptsAvailable) && <EmptyState title="Receipt review unavailable">Connect to the Windows desktop host to register a local PDF or image. OCR and rendering are unavailable.</EmptyState>}
     </div>

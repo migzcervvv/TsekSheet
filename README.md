@@ -43,8 +43,9 @@ PDF / photo / scan
 Key principles:
 
 Choose **Open workbook** to establish an Excel-backed workspace and enter **Process
-Receipts**. Add one or multiple PDFs/images, select a sheet and section, preview, then
-confirm **Add Row**. The queue uses the active workbook without reopening it. Review and
+Receipts**. Choose **Add receipts** for one or multiple PDFs/images, edit the fields,
+select a sheet and section, **Check row**, then explicitly **Add row to Excel**.
+The queue uses the active workbook without reopening it. Review and
 save explicitly in Excel. **Read-only inspection** is a secondary tool with advanced
 compatibility findings. Pending receipt work blocks workspace switches. Working-copy
 editing, candidate generation, Merge and the legacy export controls have been removed.
