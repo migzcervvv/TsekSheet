@@ -13,7 +13,7 @@ public sealed class ProductOcrTests
         new OcrRegion(.1,.1,.5,.5).Validate();
     }
     [TestMethod]
-    public async Task SyntheticProductWorkerRecognizesRegionsCancelsAndRecovers()
+    public async Task SyntheticPaddleProductWorkerRecognizesRegionsCancelsAndRecovers()
     {
         var config=Environment.GetEnvironmentVariable("TSEK_TEST_OCR_CONFIG");
         if(string.IsNullOrEmpty(config)){Assert.Inconclusive("Local OCR assets not configured.");return;}
@@ -29,5 +29,23 @@ public sealed class ProductOcrTests
         using var cancel=new CancellationTokenSource();cancel.CancelAfter(10);
         await Assert.ThrowsAsync<OperationCanceledException>(()=>ocr.RecognizeAsync(page,null,cancel.Token));
         Assert.IsTrue((await ocr.RecognizeAsync(page,null,default)).Words.Count>0);
+        // A broken Paddle model must reject recognition even when Tesseract assets are valid.
+        var configured=Configuration.Load(config);
+        var localConfig=Path.Combine(folder,"ocr.json");
+        File.WriteAllText(localConfig,System.Text.Json.JsonSerializer.Serialize(configured with {RecognitionModel=Path.Combine(folder,"missing.onnx")},Configuration.Json));
+        await using var repaired=new ProductOcr(localConfig);
+        var failure=await Assert.ThrowsAsync<DocumentSourceException>(()=>repaired.RecognizeAsync(page,null,default));
+        Assert.AreEqual("OCR_ASSETS_UNAVAILABLE",failure.Code);
+        File.WriteAllText(localConfig,System.Text.Json.JsonSerializer.Serialize(configured,Configuration.Json));
+        Assert.IsTrue((await repaired.RecognizeAsync(page,null,default)).Words.Count>0);
+    }
+    [TestMethod]
+    public async Task MissingConfigurationIsRecoverableWithoutExposingNativePaths()
+    {
+        var missing=Path.Combine(Path.GetTempPath(),Guid.NewGuid()+".json");
+        await using var ocr=new ProductOcr(missing);
+        var failure=await Assert.ThrowsAsync<DocumentSourceException>(()=>ocr.RecognizeAsync(new(1,1,1,1,""),null,default));
+        Assert.AreEqual("OCR_ASSETS_UNAVAILABLE",failure.Code);
+        Assert.IsFalse(failure.Message.Contains(missing));
     }
 }

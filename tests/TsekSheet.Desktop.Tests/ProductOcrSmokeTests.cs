@@ -7,7 +7,7 @@ namespace TsekSheet.Desktop.Tests;
 public sealed partial class DesktopSmokeTests
 {
     [TestMethod,TestCategory("WindowsSmoke"),TestCategory("Excel")]
-    public Task SyntheticOcrDraftCanBeCorrectedAndExplicitlyInserted()=>OnDesktop(async()=>
+    public Task SyntheticPaddleOcrDraftCanBeCorrectedAndExplicitlyInserted()=>OnDesktop(async()=>
     {
         var config=Environment.GetEnvironmentVariable("TSEK_TEST_OCR_CONFIG");
         if(string.IsNullOrEmpty(config)){Assert.Inconclusive("Local OCR assets not configured.");return;}

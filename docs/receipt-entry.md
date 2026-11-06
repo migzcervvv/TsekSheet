@@ -154,8 +154,12 @@ Preservation checks remain unchanged, with failure-only diagnostics added to the
 Provision the hash-checked local assets described in `ocr-setup.md`, then place a local
 configuration at `%LOCALAPPDATA%\TsekSheet\ocr.json`. Asset paths resolve relative to that
 configuration; use absolute paths when copying the example. Models and binaries are not
-bundled or downloaded. The initial product adapter uses the existing Tesseract PSM6 / no
-preprocessing configuration; this is an operational default, not a comparative engine decision.
+bundled or downloaded. The initial product engine is the existing PP-OCRv5 Mobile CPU worker
+with no preprocessing. The existing Tesseract evaluator support remains available; the product
+does not fall back or switch engines automatically. Missing or invalid local configuration/models
+produce a recoverable OCR asset error: restore the configured assets and retry, or enter manually.
+The shared configuration schema and hash checks are unchanged, including the retained Tesseract
+assets; use the complete provisioned configuration described in `ocr-setup.md`.
 
 Start a queued receipt and choose **Recognize page**. OCR fills only empty draft fields;
 typed values and the account choice are retained. Inspect the word boxes, focus a field to

@@ -16,8 +16,13 @@ public sealed class ProductOcr(string configPath) : IProductOcr, ILocalDocumentR
         await serial.WaitAsync(token);
         try
         {
-            var config=Configuration.Load(configPath);
-            client ??= new EngineClient(configPath,"tesseract-psm6",config);
+            EvalConfig config;
+            try { config=Configuration.Load(configPath); }
+            catch(Exception error) when(error is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+            {
+                throw new DocumentSourceException("OCR_ASSETS_UNAVAILABLE","Local OCR configuration or assets are missing or invalid. Restore the configured assets and retry, or enter values manually.");
+            }
+            client ??= new EngineClient(configPath,"paddle-v5-mobile",config);
             var png=Convert.FromBase64String(page.PngBase64);
             var r=region??new OcrRegion(0,0,1,1);
             using var image=OpenCvSharp.Cv2.ImDecode(png,OpenCvSharp.ImreadModes.Color);

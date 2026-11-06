@@ -190,7 +190,7 @@ docs/                      Architecture, decisions, history
 | UI                  | React 19, TypeScript, Vite, hosted in WebView2 at `https://tseksheet.local`     |
 | Spreadsheet engine  | Microsoft Excel via COM automation                                              |
 | Workbook inspection | ClosedXML, Open XML SDK (read-only)                                             |
-| OCR                 | Local engine, selected by benchmark (Tesseract 5 or PaddleOCR via ONNX Runtime) |
+| OCR                 | PP-OCRv5 Mobile CPU via ONNX Runtime, no preprocessing (Tesseract retained for evaluation) |
 | Tests               | MSTest, Vitest, React Testing Library                                           |
 
 ## Data and privacy
