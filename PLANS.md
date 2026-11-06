@@ -277,7 +277,7 @@ Status: COMPLETE FOR OWNER-REQUESTED PACKETS 1–17 (T3b-FIX, PR #14; 119 pages 
 
 ### T4 - OCR in the product
 
-Status: IN PROGRESS (T4 product OCR authorized; supervised local worker, unverified queue proposals, source boxes and region re-OCR implemented; Release solution builds; synthetic worker/frontend/bridge checks pass; hosted end-to-end verification running. No Excel mutation, persistence, vendor or section-creation changes.)
+Status: IN REVIEW (PR #15; supervised cancellable local OCR, unverified receipt-queue drafts, source word highlighting and region re-OCR; synthetic hosted OCR/manual correction/explicit Excel insertion passed. Release solution build 0 warnings/errors; final Application 499/0/0, Workbooks 188/0/0, Desktop 24/0/0, Excel 25/0/0, OcrEval 50/0/0, Frontend 74/0/0 passed/failed/skipped. Excel census 0 before, 1 immediately after, 0 on follow-up without intervention; 32 completed exit diagnostics met D11. Initial worker-packaging and hosted-test-navigation failures corrected, artifacts retained. Initial adapter: Tesseract PSM6/no preprocessing; no comparative engine decision, Excel mutation, persistence, vendor or section-creation changes.)
 
 - Long-lived supervised OCR worker; renderer raised to 300 DPI for OCR (keep preview size
   separate); one page at a time; cancellation.
