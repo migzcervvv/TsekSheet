@@ -43,6 +43,7 @@ public sealed class BridgeSession : IDisposable
     private readonly Func<CancellationToken, Task<string?>>? selectExcelWorkbook;
     private CancellationTokenSource? renderOperation;
     private TaskCompletionSource? renderFinished;
+    private readonly IProductOcr? ocr;
     public bool HasPendingWorkbookChanges => workbooks?.HasPendingChanges == true;
     public int ReviewDecisionCount => workbooks?.ReviewDecisionCount ?? 0;
 
@@ -50,9 +51,9 @@ public sealed class BridgeSession : IDisposable
         Func<int, CancellationToken, Task>? delay = null, WorkbookWorkspace? workbooks = null,
         Func<CancellationToken, Task<string?>>? selectDocument = null, ILocalDocumentRenderer? renderer = null,
         ExcelReceiptInsertion? excel = null, Func<CancellationToken, Task<string?>>? selectExcelWorkbook = null,
-        IReadOnlyList<WorkflowProfile>? profiles = null, Func<CancellationToken, Task<IReadOnlyList<string>>>? selectDocuments = null)
+        IReadOnlyList<WorkflowProfile>? profiles = null, Func<CancellationToken, Task<IReadOnlyList<string>>>? selectDocuments = null, IProductOcr? ocr = null)
     {
-        this.send = send;
+        this.ocr = ocr; this.send = send;
         this.selectFile = selectFile;
         this.delay = delay ?? ((ms, token) => Task.Delay(ms, token));
         this.workbooks = workbooks;
@@ -108,10 +109,10 @@ public sealed class BridgeSession : IDisposable
                 { Error(id!, "INVALID_REQUEST", "Invalid supported versions."); return; }
                 if (!versions.EnumerateArray().Any(v => v.GetInt32() == 1)) { Error(id!, "UNSUPPORTED_VERSION", "No compatible version."); return; }
                 ready = true;
-                Success(id!, new { selectedVersion = 1, applicationName = new ApplicationMetadataService().ApplicationName, version = "0.1.0", capabilities = new { sourceRendering = renderer != null, receipts = selectDocument != null, diagnostics = true, fileSelection = true, workbooks = workbooks != null, templates = false, ocr = false } });
+                Success(id!, new { selectedVersion = 1, applicationName = new ApplicationMetadataService().ApplicationName, version = "0.1.0", capabilities = new { sourceRendering = renderer != null, receipts = selectDocument != null, diagnostics = true, fileSelection = true, workbooks = workbooks != null, templates = false, ocr = ocr != null } });
                 return;
             }
-            if (command is not ("receipt.changeProfile" or "receipt.queue" or "receipt.enqueue" or "receipt.navigate" or "receipt.prepare" or "excel.previewDraft" or "excel.addRow" or "excel.listWorkbooks" or "excel.previewInsert" or "excel.insert" or "receipt.render" or "receipt.cancelRender" or "receipt.select" or "receipt.state" or "receipt.start" or "receipt.correct" or "receipt.verify" or "receipt.retract" or "receipt.close" or "receipt.preview" or "sectionReview.start" or "sectionReview.decide" or "sectionReview.retract" or "sectionReview.cancel" or "foundation.getInfo" or "foundation.selectFile" or "diagnostics.run" or "diagnostics.cancel" or "workbook.open" or "workbook.inspect" or "workbook.readViewport" or "workbook.close" or "workflow.profiles" or "workbook.planRecords"))
+            if (command is not ("receipt.changeProfile" or "receipt.queue" or "receipt.enqueue" or "receipt.navigate" or "receipt.prepare" or "excel.previewDraft" or "excel.addRow" or "excel.listWorkbooks" or "excel.previewInsert" or "excel.insert" or "receipt.ocr" or "receipt.render" or "receipt.cancelRender" or "receipt.select" or "receipt.state" or "receipt.start" or "receipt.correct" or "receipt.verify" or "receipt.retract" or "receipt.close" or "receipt.preview" or "sectionReview.start" or "sectionReview.decide" or "sectionReview.retract" or "sectionReview.cancel" or "foundation.getInfo" or "foundation.selectFile" or "diagnostics.run" or "diagnostics.cancel" or "workbook.open" or "workbook.inspect" or "workbook.readViewport" or "workbook.close" or "workflow.profiles" or "workbook.planRecords"))
             { Error(id!, "UNSUPPORTED_COMMAND", "Command is unavailable."); return; }
             if (!ready) { Error(id!, "NOT_READY", "Handshake is required."); return; }
             if (command == "receipt.queue")
@@ -191,10 +192,10 @@ public sealed class BridgeSession : IDisposable
                     if(finished!=null)await finished;
                     Success(id!,new{status="requested"});return;
                 }
-                if(command=="receipt.render")
+                if(command is "receipt.render" or "receipt.ocr")
                 {
                     if(renderer==null){Error(id!,"RENDER_UNAVAILABLE","Local rendering is unavailable in this host.");return;}
-                    if(!HasOnly(payload,"source","pageNumber") || !HasOnly(payload.GetProperty("source"),"documentId","revision","sha256"))throw new JsonException();
+                    if(!(command=="receipt.ocr"?HasOnly(payload,"source","pageNumber","region"):HasOnly(payload,"source","pageNumber")) || !HasOnly(payload.GetProperty("source"),"documentId","revision","sha256"))throw new JsonException();
                     var expectedSource=JsonSerializer.Deserialize<LocalDocumentVersion>(payload.GetProperty("source"),JsonOptions)!;
                     var requestedPage=payload.GetProperty("pageNumber").GetInt32();
                     CancellationTokenSource render;
@@ -203,7 +204,28 @@ public sealed class BridgeSession : IDisposable
                         if(renderOperation!=null){Error(id!,"RENDER_BUSY","Wait for the current render to finish or cancel it.");return;}
                         render=CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);renderOperation=render;renderFinished=new(TaskCreationOptions.RunContinuationsAsynchronously);
                     }
-                    try{Success(id!,await receipts.RenderAsync(renderer,expectedSource,requestedPage,render.Token));}
+                    try
+                    {
+                        var owner=receipts;
+                        var before=owner.State;
+                        if(command=="receipt.ocr")
+                        {
+                            receiptQueue.RequireEditable();
+                            if(ocr==null)throw new InvalidOperationException("Configure local OCR assets before recognition.");
+                            if(before.Version==null)throw new InvalidOperationException("Start receipt review first.");
+                            var regionElement=payload.GetProperty("region");
+                            if(regionElement.ValueKind!=JsonValueKind.Null && !HasOnly(regionElement,"x","y","width","height"))throw new JsonException();
+                            OcrRegion? region=regionElement.ValueKind==JsonValueKind.Null?null:JsonSerializer.Deserialize<OcrRegion>(regionElement,JsonOptions);
+                            region?.Validate();
+                            var page=await owner.RenderAsync(ocr.Renderer,expectedSource,requestedPage,render.Token);
+                            var proposals=await Task.Run(()=>ocr.RecognizeAsync(page.Page,region,render.Token),render.Token);
+                            // Source and review must still match after the asynchronous worker finishes.
+                            await owner.RenderAsync(new OcrIdentityRenderer(page.Page),expectedSource,requestedPage,render.Token);
+                            if(!ReferenceEquals(owner,receipts)||owner.State.Version!=before.Version)throw new InvalidOperationException("Receipt changed during OCR. Run recognition again.");
+                            Success(id!,proposals);
+                        }
+                        else Success(id!,await owner.RenderAsync(renderer,expectedSource,requestedPage,render.Token));
+                    }
                     finally{lock(gate){if(ReferenceEquals(renderOperation,render)){renderOperation=null;renderFinished?.TrySetResult();renderFinished=null;}}render.Dispose();}
                     return;
                 }
@@ -388,6 +410,7 @@ public sealed class BridgeSession : IDisposable
     {
         lock (gate) { if (disposed) return; disposed = true; lifetime.Cancel(); lifetime.Dispose(); seen.Clear(); }
         receiptQueue.Dispose();
+        if(ocr is IAsyncDisposable ownedOcr) _ = ownedOcr.DisposeAsync().AsTask();
         workbooks?.Dispose();
         // Active handlers own their linked tokens; cancellation prevents any further sends.
     }

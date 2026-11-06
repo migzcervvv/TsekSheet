@@ -148,3 +148,30 @@ not run; the mandatory capture and layout validation still run for every preview
 Verification note: the first full Excel run reported a table preservation mismatch.
 The isolated three-mode rerun and final full run passed; the cause was not reproduced.
 Preservation checks remain unchanged, with failure-only diagnostics added to the test.
+
+## Product OCR (T4)
+
+Provision the hash-checked local assets described in `ocr-setup.md`, then place a local
+configuration at `%LOCALAPPDATA%\TsekSheet\ocr.json`. Asset paths resolve relative to that
+configuration; use absolute paths when copying the example. Models and binaries are not
+bundled or downloaded. The initial product adapter uses the existing Tesseract PSM6 / no
+preprocessing configuration; this is an operational default, not a comparative engine decision.
+
+Start a queued receipt and choose **Recognize page**. OCR fills only empty draft fields;
+typed values and the account choice are retained. Inspect the word boxes, focus a field to
+highlight matching source words, or click a matching word to focus its field. Drag a rectangle
+on the page and choose **Recognize selected region** for another proposal. Clear a draft
+value before requesting its replacement. Manually correct any missing or incorrect value.
+OCR supports the existing extractor field keys (including amount, vendor, TIN, invoice and
+date); custom profile keys remain manual. No OCR field is automatically verified.
+
+**Cancel OCR**, source-page navigation and leaving a document cancel pending recognition;
+late responses from a different source/page are ignored. Worker failure leaves manual entry
+available. Recognition processes one page at a time at 300 DPI; preview sizing is unchanged.
+Draft preview, explicit Add Row confirmation, backup, preservation checks and explicit Excel
+save remain required. There is no automatic insertion or saving, vendor lookup or persistence.
+
+Tests with provisioned assets use `TSEK_TEST_OCR_CONFIG` pointing to the local JSON config.
+Without that variable, the two real-worker/hosted OCR tests report the missing assets as
+unexecuted; model-free extraction and UI tests still run. Never use original owner documents
+as synthetic test inputs.

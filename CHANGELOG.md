@@ -2,6 +2,8 @@
 
 [README](README.md) · **Changelog**
 
+- 2026-11-06 — T4: Connect supervised local OCR to receipt-queue drafts with source highlighting, cancellable page/region recognition and manual correction; preserve explicit verification, Excel insertion and save safeguards.
+
 - 2026-11-05 — T3b-FIX: Separate page-local and independently verified packet expectations, preserve identifier letters/zeros, associate table amounts spatially without gross/net guessing, separate voucher/document references, correct notes/source cohorts and pipeline timing; retain superseded results, publish anonymous review counts, and report the owner-limited packets 1–17 with metrics-only subset summaries.
 - 2026-11-05 — T3b: Evaluate private multi-page packets offline with page selection, cardinal orientation, own-TIN exclusion, separate labelled amounts and report-only cross-checks; persist metrics only and separate handwritten annotations; no engine decision or product UI changes.
 - 2026-11-05 — Build hotfix: Restore the Excel test diagnostic writer's snapshot path and ListObject range details lost in merge 17eb02b; preserve assertions and production behavior.

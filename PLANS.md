@@ -277,7 +277,7 @@ Status: COMPLETE FOR OWNER-REQUESTED PACKETS 1–17 (T3b-FIX, PR #14; 119 pages 
 
 ### T4 - OCR in the product
 
-Status: TODO (after T3 decision)
+Status: IN PROGRESS (T4 product OCR authorized; supervised local worker, unverified queue proposals, source boxes and region re-OCR implemented; Release solution builds; synthetic worker/frontend/bridge checks pass; hosted end-to-end verification running. No Excel mutation, persistence, vendor or section-creation changes.)
 
 - Long-lived supervised OCR worker; renderer raised to 300 DPI for OCR (keep preview size
   separate); one page at a time; cancellation.

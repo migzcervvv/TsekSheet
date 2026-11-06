@@ -13,4 +13,12 @@
     <PackageReference Include="MSTest.TestAdapter" Version="4.5.2" />
     <PackageReference Include="MSTest.TestFramework" Version="4.5.2" />
   </ItemGroup>
+  <Target Name="CopyOcrWorkers" AfterTargets="Build">
+    <ItemGroup>
+      <OcrWorker Include="../../tools/OcrEval/bin/$(Configuration)/net10.0-windows/OcrEval.*" />
+      <OcrRenderer Include="../../tools/OcrEval/bin/$(Configuration)/net10.0-windows/renderer/**/*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(OcrWorker)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(OcrRenderer)" DestinationFiles="@(OcrRenderer->'$(OutDir)renderer/%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
 </Project>

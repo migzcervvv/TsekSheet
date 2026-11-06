@@ -21,6 +21,8 @@
     <Content Include="..\..\experiments\archive\WorkbookLibrary.Evaluation\Fixtures\*.xlsx" Link="Fixtures\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <Target Name="CopySmokeAssets" AfterTargets="Build">
+    <ItemGroup><OcrWorker Include="../../tools/OcrEval/bin/$(Configuration)/net10.0-windows/OcrEval.*" /></ItemGroup>
+    <Copy SourceFiles="@(OcrWorker)" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
     <ItemGroup><SmokeAsset Include="..\..\src\TsekSheet.Frontend\dist\**\*" /></ItemGroup>
     <Copy SourceFiles="@(SmokeAsset)" DestinationFiles="@(SmokeAsset->'$(TargetDir)frontend\%(RecursiveDir)%(Filename)%(Extension)')" />
     <ItemGroup><RenderAsset Include="..\..\src\TsekSheet.Desktop\bin\$(Configuration)\net10.0-windows\renderer\**\*" /></ItemGroup>
