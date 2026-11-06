@@ -46,7 +46,7 @@ function setup(inspect = false, unsafeCapability = false, fallback = false) {
 
 test('opens a read-only workbook, renders literal text and formulas, pages, switches hidden sheets and closes', async () => {
   const { client } = setup(); render(<WorkbookViewer bridge={client} available />);
-  fireEvent.click(screen.getByRole('button', { name: 'Open workbook' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Open for read-only inspection' }));
   await screen.findByRole('table');
   expect(screen.getByText('<b>synthetic.xlsx').tagName).toBe('STRONG');
   expect(screen.getByText('<img src=x>').tagName).toBe('TD');
@@ -65,14 +65,14 @@ test('opens a read-only workbook, renders literal text and formulas, pages, swit
 
 test('selection cancellation and rejected opening retain the current view; unavailable host disables opening', async () => {
   const fake = setup(); const view = render(<WorkbookViewer bridge={fake.client} available />);
-  fireEvent.click(screen.getByRole('button', { name: 'Open workbook' })); await screen.findByRole('table');
-  await waitFor(() => expect((screen.getByRole('button', { name: 'Open workbook' }) as HTMLButtonElement).disabled).toBe(false));
-  fake.mode('cancelled'); fireEvent.click(screen.getByRole('button', { name: 'Open workbook' })); await screen.findByText('Workbook selection cancelled.');
+  fireEvent.click(screen.getByRole('button', { name: 'Open for read-only inspection' })); await screen.findByRole('table');
+  await waitFor(() => expect((screen.getByRole('button', { name: 'Open for read-only inspection' }) as HTMLButtonElement).disabled).toBe(false));
+  fake.mode('cancelled'); fireEvent.click(screen.getByRole('button', { name: 'Open for read-only inspection' })); await screen.findByText('Workbook selection cancelled.');
   expect(screen.getByRole('table')).toBeDefined();
-  fake.mode('error'); fireEvent.click(screen.getByRole('button', { name: 'Open workbook' })); await screen.findByRole('alert');
+  fake.mode('error'); fireEvent.click(screen.getByRole('button', { name: 'Open for read-only inspection' })); await screen.findByRole('alert');
   expect(screen.getByRole('alert').textContent).toBe('Unsupported workbook.'); expect(screen.getByRole('table')).toBeDefined();
   view.rerender(<WorkbookViewer bridge={null} available={false} />);
-  expect((screen.getByRole('button', { name: 'Open workbook' }) as HTMLButtonElement).disabled).toBe(true);
+  expect((screen.getByRole('button', { name: 'Open for read-only inspection' }) as HTMLButtonElement).disabled).toBe(true);
 }, 15000);
 
 test('malformed and duplicate-cell viewport responses cannot resolve a pending request', async () => {
@@ -112,7 +112,7 @@ test('inspection reports measured limits, prevents mutation and navigates 250 sh
 test('Open workbook adopts inspection as a restricted project and retains the rejection', async () => {
   const { client } = setup(true, false, true); const contexts: unknown[]=[];
   render(<WorkbookViewer bridge={client} available onContextChange={c=>contexts.push(c)} />);
-  fireEvent.click(screen.getByRole('button', {name:'Open workbook'}));
+  fireEvent.click(screen.getByRole('button', {name:'Open for read-only inspection'}));
   await screen.findByRole('table');
   expect(screen.getByText('Workbook opened in inspection mode')).toBeDefined();
   expect(screen.getByText('EDITABLE_ADMISSION_LIMIT_EXCEEDED')).toBeDefined();
@@ -133,7 +133,7 @@ test('failed opening displays structured blockers without claiming inspection su
     const r=m as {requestId:string}; queueMicrotask(()=>listeners.forEach(l=>l({data:{protocolVersion:1,type:'response',requestId:r.requestId,ok:false,error:{code:'INSPECTION_INVALID_XML',message:'Workbook could not be opened for inspection.',details:[{code:'EDITABLE_ADMISSION_INVALID_PACKAGE',message:'Editable structural validation failed.'},{code:'INSPECTION_INVALID_XML',message:'Malformed relationship XML.'}]}}})));
   }});clients.push(client);
   render(<WorkbookViewer bridge={client} available />);
-  fireEvent.click(screen.getByRole('button',{name:'Open workbook'}));
+  fireEvent.click(screen.getByRole('button',{name:'Open for read-only inspection'}));
   await screen.findByRole('alert');
   expect(screen.getByText('Opening failure details')).toBeDefined();
   expect(screen.getByText('EDITABLE_ADMISSION_INVALID_PACKAGE')).toBeDefined();

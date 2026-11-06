@@ -10,7 +10,7 @@ import type { BridgeClient, Workbook, Viewport, Cell, CompatibilityFinding } fro
 
 const columnLabel = (column: number): string => { let label = ''; for (let n = column; n > 0; n = Math.floor((n - 1) / 26)) label = String.fromCharCode(65 + (n - 1) % 26) + label; return label; };
 
-export default function WorkbookViewer({ bridge, available, receiptsAvailable = false, renderingAvailable = false, activity, onActivityChange, openRequest = 0, onContextChange }: { bridge: BridgeClient | null; available: boolean; receiptsAvailable?: boolean; renderingAvailable?: boolean; activity?: Activity; onActivityChange?: (activity: Activity) => void; openRequest?: number; onContextChange?: (context:{name:string;sheet:string;copy:string;pending:boolean;inspection:boolean}|null)=>void }) {
+export default function WorkbookViewer({ bridge, available, receiptsAvailable = false, renderingAvailable = false, activity, onActivityChange, openRequest = 0, onContextChange, onProtectedChange }: { bridge: BridgeClient | null; available: boolean; receiptsAvailable?: boolean; renderingAvailable?: boolean; activity?: Activity; onActivityChange?: (activity: Activity) => void; openRequest?: number; onProtectedChange?:(protectedWork:boolean)=>void; onContextChange?: (context:{name:string;sheet:string;copy:string;pending:boolean;inspection:boolean}|null)=>void }) {
   const [receiptActive, setReceiptActive] = useState(false);
   const [receiptStep, setReceiptStep] = useState(0);
   const seenOpenRequest = useRef(0);
@@ -25,6 +25,7 @@ export default function WorkbookViewer({ bridge, available, receiptsAvailable = 
   const [reviewCount,setReviewCount]=useState(0),[reviewBusy,setReviewBusy]=useState(false);
   const [reviewUncertain,setReviewUncertain]=useState(false);
   const reviewStatus=useCallback((count:number,working:boolean,unknown:boolean)=>{setReviewCount(count);setReviewBusy(working);setReviewUncertain(unknown);},[]);
+  useEffect(()=>{onProtectedChange?.(receiptActive||reviewCount>0||reviewBusy||reviewUncertain||busy);},[receiptActive,reviewCount,reviewBusy,reviewUncertain,busy,onProtectedChange]);
   const discardReview=useReviewDiscard(reviewCount,reviewUncertain);
   const [goTo,setGoTo]=useState(''),[fullRange,setFullRange]=useState(false);
   const [explicitExtent,setExplicitExtent]=useState({row:1,column:1});
@@ -116,18 +117,18 @@ export default function WorkbookViewer({ bridge, available, receiptsAvailable = 
     {(!bridge || !receiptsAvailable) && <EmptyState title="Receipt review unavailable">Connect to the Windows desktop host to register a local PDF or image. OCR and rendering are unavailable.</EmptyState>}
     </div>
     <section hidden={!!activity && activity!=='worksheets' && activity!=='overview' && !(activity==='receipts' && receiptStep===2)} className="reader" aria-labelledby="workbook-title">
-    <div className="reader-heading"><div><h2 id="workbook-title">Workbook viewer</h2><p className="workbook-guidance">{book?.compatibility ? 'Read-only package inspection. Source unchanged; editing and export unavailable.' : 'Read-only workbook view. Use Insert into Excel to add verified receipt rows.'}</p></div><button className="primary" disabled={!enabled || interactionBusy || loading} onClick={() => discardReview.guard(()=>void open())}>{busy ? 'Working…' : 'Open workbook'}</button><button disabled={!enabled || interactionBusy || loading} onClick={() => discardReview.guard(()=>void open(true))}>Inspect workbook read-only</button></div>
+    <div className="reader-heading"><div><h2 id="workbook-title">Workbook viewer</h2><p className="workbook-guidance">{book?.compatibility ? 'Read-only package inspection. Source unchanged; editing and export unavailable.' : 'Read-only workbook view. Use Insert into Excel to add verified receipt rows.'}</p></div><button className="primary" disabled={!enabled || interactionBusy || loading} onClick={() => discardReview.guard(()=>void open())}>{busy ? 'Working…' : 'Open for read-only inspection'}</button><button disabled={!enabled || interactionBusy || loading} onClick={() => discardReview.guard(()=>void open(true))}>Inspect workbook read-only</button></div>
     {discardReview.dialog}
     {!enabled && <p>Connect to the Windows desktop host to inspect a local .xlsx workbook.</p>}
     {notice && <p aria-live="polite">{notice}</p>}
     {error && <p role="alert" className="error">{error}</p>}
     {openingDetails.length > 0 && <details className="workbook-report"><summary>Opening failure details</summary><ul>{openingDetails.map((f,i)=><li key={i}><strong>{f.code}</strong>: {f.message}</li>)}</ul></details>}
-    {book && !book.editingAllowed && <Notice kind="warning" title="Workbook opened in inspection mode">
+    {book && !book.editingAllowed && <details className="technical-details"><summary>Advanced compatibility findings</summary><Notice kind="warning" title="Workbook opened in inspection mode">
       <p>{book.compatibility ? book.findings.some(f=>f.code.startsWith('EDITABLE_ADMISSION_')) ? 'Editable admission was rejected. The workbook is available for safe inspection.' : 'Opened for read-only inspection. Editing eligibility was not evaluated.' : 'This workbook view is read-only; insertion uses the Excel workflow below.'} Open the workbook under Insert into Excel to use profile sections.</p>
       <details className="workbook-report"><summary>Details</summary><ul>{book.findings.map((f,i)=><li key={i}><strong>{f.code}</strong>: {f.message}</li>)}</ul>
         {book.compatibility && <><p>Metadata inspection succeeded. Each worksheet is checked separately when viewed; some tabs or formats may be unavailable. No external links are followed. Editable admission stops at its first rejection; package categories are not preservation certification.</p><ul>{book.compatibility.categories.map(c=><li key={c.category}>{c.category}: {c.count}</li>)}</ul></>}
       </details>
-    </Notice>}
+    </Notice></details>}
     {!book && activity!=='overview' && <EmptyState title="No workbook open">Open a local .xlsx file or inspect its package read-only. Source files remain unchanged.</EmptyState>}
     {book && <>
       <div className="reader-file"><strong>{book.displayName}</strong><span>Read-only inspection</span><button disabled={interactionBusy || loading} onClick={() => discardReview.guard(()=>void close())}>Close workbook</button></div>

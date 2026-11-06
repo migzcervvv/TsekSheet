@@ -21,6 +21,13 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
     public Action<PreviewStageTiming>? PreviewTiming { get; set; }
     private void Measure(string stage, Stopwatch watch) => PreviewTiming?.Invoke(new(stage, watch.Elapsed.TotalMilliseconds));
 
+    public async Task<string> OpenAsync(string path)
+    {
+        await commands.WaitAsync();
+        try { return (await host.OpenAsync(path)).Id; }
+        finally { commands.Release(); }
+    }
+
     public async Task<IReadOnlyList<ExcelWorkbookChoice>> ListAsync(string? path = null, string? profileId = null)
     {
         await commands.WaitAsync();

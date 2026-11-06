@@ -32,6 +32,8 @@ p { color:var(--muted); font-size:13px; line-height:1.6; margin-top:8px; }
 .sidebar nav button span { font-weight:600; }
 .sidebar nav small { color:var(--muted); font-size:11px; }
 .sidebar nav button[aria-current=page] { background:var(--selected); }
+.secondary-tools summary { padding:10px 12px; font-size:12px; color:var(--muted); cursor:pointer; }
+.sidebar nav .secondary-tools button { width:100%; }
 .sidebar-bottom { margin-top:auto; padding:24px 12px 0; display:grid; gap:16px; }
 .theme-control { display:grid; font-size:12px; color:var(--muted); gap:8px; }
 .theme-control select { margin:0; width:100%; }

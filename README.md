@@ -42,9 +42,12 @@ PDF / photo / scan
 
 Key principles:
 
-The workbook viewer provides read-only inspection. Use **Insert into Excel** or the receipt
-queue to add verified rows, then review and save explicitly in Excel. Working-copy editing,
-candidate generation, Merge and the legacy export controls have been removed.
+Choose **Open workbook** to establish an Excel-backed workspace and enter **Process
+Receipts**. Add one or multiple PDFs/images, select a sheet and section, preview, then
+confirm **Add Row**. The queue uses the active workbook without reopening it. Review and
+save explicitly in Excel. **Read-only inspection** is a secondary tool with advanced
+compatibility findings. Pending receipt work blocks workspace switches. Working-copy
+editing, candidate generation, Merge and the legacy export controls have been removed.
 
 - **Excel does the spreadsheet work.** TsekSheet never rewrites workbook files itself; it drives
   your installed Excel, so formulas, formatting and features behave exactly as in Excel.
@@ -67,7 +70,8 @@ Details and tickets: [PLANS.md](PLANS.md). Product goals: [GOALS.md](GOALS.md).
 
 ### Works today
 
-- Open and inspect `.xlsx` workbooks read-only (sheets, values, formulas, number formats).
+- Open an active workbook in Excel and enter its receipt queue directly; inspect workbooks
+  separately with the read-only tool (sheets, values, formulas, number formats).
 - Load local PDF, PNG and JPEG documents and page through them.
 - Enter, correct, verify and retract document fields against a workflow profile.
 - Read-only section analysis and placement preview for the sample Payables and Laboratory

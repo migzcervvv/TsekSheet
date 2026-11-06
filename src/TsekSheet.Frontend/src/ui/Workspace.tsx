@@ -1,14 +1,17 @@
 import type { ReactNode } from 'react';
 
-export type Activity = 'overview' | 'receipts' | 'worksheets' | 'settings';
+export type Activity = 'overview' | 'receipts' | 'worksheets' | 'settings' | 'legacy';
 export function Navigation({ activity, onSelect, active = true }: { activity: Activity; active?: boolean; onSelect: (activity: Activity) => void }) {
   const items: { id: Activity; label: string; detail: string }[] = [
     {id:'overview',label:'Overview',detail:'Workbook status'},
-    {id:'receipts',label:'Receipts',detail:'Import & verify'},
-    {id:'worksheets',label:'Worksheets',detail:'Explore & inspect'},
+    {id:'receipts',label:'Process Receipts',detail:'Queue, review & add rows'},
+    {id:'worksheets',label:'Read-only inspection',detail:'Secondary workbook tool'},
+    {id:'legacy',label:'Legacy receipt review',detail:'Previous review tools'},
     {id:'settings',label:'Settings',detail:'Appearance & troubleshooting'},
   ];
-  return <nav aria-label="Workspace navigation">{items.map(item => <button disabled={!active && item.id!=='settings' && item.id!=='worksheets' && item.id!=='receipts'} aria-label={item.label} aria-description={item.detail} data-activity={item.id} key={item.id} aria-current={activity === item.id ? 'page' : undefined} onClick={() => onSelect(item.id)}><span>{item.label}</span><small>{item.detail}</small></button>)}</nav>;
+  const button = (item:typeof items[number]) => <button disabled={!active&&item.id==='overview'} aria-label={item.label} aria-description={item.detail} data-activity={item.id} key={item.id} aria-current={activity === item.id ? 'page' : undefined} onClick={() => onSelect(item.id)}><span>{item.label}</span><small>{item.detail}</small></button>;
+  const secondary = (item:typeof items[number]) => item.id==='worksheets'||item.id==='legacy';
+  return <nav aria-label="Workspace navigation">{items.filter(item=>!secondary(item)).map(button)}<details className="secondary-tools" open={activity==='worksheets'||activity==='legacy'}><summary>Secondary tools</summary>{items.filter(secondary).map(button)}</details></nav>;
 }
 export function StatusBadge({ children, tone = 'neutral' }: { children: ReactNode; tone?: 'neutral' | 'success' | 'warning' | 'error' | 'unavailable' }) {
   return <span className={`status-badge ${tone}`}>{children}</span>;
