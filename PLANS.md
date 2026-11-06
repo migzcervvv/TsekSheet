@@ -277,7 +277,7 @@ Status: COMPLETE FOR OWNER-REQUESTED PACKETS 1–17 (T3b-FIX, PR #14; 119 pages 
 
 ### T4 - OCR in the product
 
-Status: TODO (after T3 decision)
+Status: IN REVIEW (PR #15, T4-FIX complete; product engine aligned with approved PP-OCRv5 Mobile CPU/no preprocessing using the evaluated worker; Tesseract evaluation support retained, no automatic fallback. Missing configuration/model assets return a path-free recoverable error; missing-model repair/retry and actual synthetic Paddle OCR/manual correction/explicit Excel insertion passed. Release solution build 0 warnings/errors; final OcrEval 51/0/0, Application 499/0/0, Desktop 24/0/0, Frontend 74/0/0 passed/failed/skipped; typecheck passed; hosted Excel census 0 before/0 after. No failures, skipped tests or environment reruns in T4-FIX; no full Excel regression or bake-off repeated; no Excel mutation, verification, persistence or unrelated feature changes.)
 
 - Long-lived supervised OCR worker; renderer raised to 300 DPI for OCR (keep preview size
   separate); one page at a time; cancellation.

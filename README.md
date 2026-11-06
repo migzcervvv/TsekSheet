@@ -78,9 +78,13 @@ Details and tickets: [PLANS.md](PLANS.md). Product goals: [GOALS.md](GOALS.md).
   draft previews, explicit Add Row confirmation, automatic advance and skip/review.
   See [Receipt entry and measured timing](docs/receipt-entry.md).
 
+- Request local OCR proposals in the receipt queue, inspect source word boxes, select a region
+  for re-OCR, and correct drafts before explicit Add Row confirmation. Local assets require
+  configuration; see [Receipt entry](docs/receipt-entry.md#product-ocr-t4).
+
 ### Not yet
 
-- Owner validation on redacted workbooks (M1), OCR (M2), session recovery (M3), installer (M4).
+- Owner validation on redacted workbooks (M1), broader OCR validation, session recovery (M3), installer (M4).
 - The older built-in cell editing / Merge / Save As path is being retired in favour of Excel.
 
 ## Requirements
@@ -186,7 +190,7 @@ docs/                      Architecture, decisions, history
 | UI                  | React 19, TypeScript, Vite, hosted in WebView2 at `https://tseksheet.local`     |
 | Spreadsheet engine  | Microsoft Excel via COM automation                                              |
 | Workbook inspection | ClosedXML, Open XML SDK (read-only)                                             |
-| OCR                 | Local engine, selected by benchmark (Tesseract 5 or PaddleOCR via ONNX Runtime) |
+| OCR                 | PP-OCRv5 Mobile CPU via ONNX Runtime, no preprocessing (Tesseract retained for evaluation) |
 | Tests               | MSTest, Vitest, React Testing Library                                           |
 
 ## Data and privacy

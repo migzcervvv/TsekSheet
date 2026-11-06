@@ -38,6 +38,7 @@ interface Results {
   'excel.listWorkbooks': ExcelCatalog;
   'excel.previewInsert': ExcelPreview;
   'excel.insert': ExcelChange;
+  'receipt.ocr': {values:Record<string,string>;words:{text:string;confidence:number;x:number;y:number;width:number;height:number}[]};
   'receipt.render': SourceRender;
   'receipt.cancelRender': {status:'requested'};
   'receipt.select': ReceiptState;
@@ -75,6 +76,7 @@ interface Payloads {
   'excel.listWorkbooks': {open:boolean};
   'excel.previewInsert': ExcelPreviewRequest;
   'excel.insert': {expected:ReviewVersion;previewToken:string};
+  'receipt.ocr': {source:NonNullable<ReceiptState['source']>['document']['version'];pageNumber:number;region:{x:number;y:number;width:number;height:number}|null};
   'receipt.render': {source:NonNullable<ReceiptState['source']>['document']['version'];pageNumber:number};
   'receipt.cancelRender': Record<string,never>;
   'receipt.select': Record<string, never>;
@@ -157,6 +159,7 @@ function validResult(command: Command, r: unknown): boolean {
     case 'excel.listWorkbooks': return validExcelCatalog(r);
     case 'excel.previewInsert': return validExcelPreview(r);
     case 'excel.insert': return validExcelChange(r);
+    case 'receipt.ocr': return !!r && typeof r==='object' && 'values' in r && 'words' in r && typeof r.values==='object' && r.values!==null && Object.values(r.values).every(v=>typeof v==='string') && Array.isArray(r.words) && r.words.length<=2000 && r.words.every((w:unknown)=>!!w && typeof w==='object' && 'text' in w && typeof w.text==='string' && ['confidence','x','y','width','height'].every(k=>k in w && typeof (w as Record<string,unknown>)[k]==='number' && Number.isFinite((w as Record<string,unknown>)[k])));
     case 'receipt.render': return validSourceRender(r);
     case 'receipt.cancelRender': return r.status==='requested';
     case 'receipt.select': case 'receipt.state': case 'receipt.close': case 'receipt.start': case 'receipt.correct': case 'receipt.verify': case 'receipt.retract': return validReceiptState(r);
@@ -197,7 +200,7 @@ export class BridgeClient {
     const promise = new Promise<Results[C]>((resolve, reject) => {
       if (this.disposed) { reject(new BridgeTransportError('closed', false, 'Desktop connection closed.')); return; }
       if (this.pending.size >= 16) { reject(new BridgeTransportError('capacity', false, 'Too many pending requests.')); return; }
-      const timer = setTimeout(() => { this.pending.delete(id); reject(new BridgeTransportError('timeout', true, 'Desktop request timed out. Its outcome is unknown.')); }, command === 'foundation.selectFile' || command === 'workbook.open' || command === 'sectionReview.start' ? 120000 : this.timeoutMs);
+      const timer = setTimeout(() => { this.pending.delete(id); reject(new BridgeTransportError('timeout', true, 'Desktop request timed out. Its outcome is unknown.')); }, command === 'receipt.ocr' ? 180000 : command === 'foundation.selectFile' || command === 'workbook.open' || command === 'sectionReview.start' ? 120000 : this.timeoutMs);
       this.pending.set(id, { command, resolve: value => resolve(value as Results[C]), reject, timer });
       try { this.transport.postMessage({ protocolVersion: 1, requestId: id, command, payload }); }
       catch { this.finish(id); reject(new BridgeTransportError('unavailable', true, 'Desktop connection is unavailable.')); }

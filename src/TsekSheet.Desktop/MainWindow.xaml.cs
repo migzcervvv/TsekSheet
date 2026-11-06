@@ -25,13 +25,15 @@ public partial class MainWindow : Window
     private readonly Func<CancellationToken, Task<string?>>? documentSelector;
     private readonly Func<CancellationToken, Task<IReadOnlyList<string>>>? documentQueueSelector;
     private TsekSheet.Excel.ExcelHost? excelHost;
+    private readonly TsekSheet.Application.Documents.IProductOcr? productOcr;
     private readonly IReadOnlyList<TsekSheet.Application.Workflows.WorkflowProfile>? workflowProfiles;
 
     public MainWindow() : this(null, null, null) { }
 
     internal MainWindow(string? assetDirectory, string? profileDirectory, string? browserExecutableFolder, Func<CancellationToken, Task<string?>>? workbookSelector = null, Func<bool>? confirmDiscard = null, Func<CancellationToken, Task<string?>>? sectionProfileSelector = null, Func<CancellationToken, Task<string?>>? documentSelector = null,
         IReadOnlyList<TsekSheet.Application.Workflows.WorkflowProfile>? workflowProfiles = null, TsekSheet.Excel.ExcelHost? ownedExcelHost = null,
-        Func<CancellationToken, Task<IReadOnlyList<string>>>? documentQueueSelector = null)
+        Func<CancellationToken, Task<IReadOnlyList<string>>>? documentQueueSelector = null,
+        TsekSheet.Application.Documents.IProductOcr? productOcr = null)
     {
         assets = assetDirectory ?? Path.Combine(AppContext.BaseDirectory, "frontend");
         profile = profileDirectory ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TsekSheet", "WebView2");
@@ -41,6 +43,7 @@ public partial class MainWindow : Window
         this.sectionProfileSelector = sectionProfileSelector;
         this.documentSelector = documentSelector;
         this.documentQueueSelector = documentQueueSelector;
+        this.productOcr = productOcr;
         this.workflowProfiles = workflowProfiles;
         excelHost = ownedExcelHost;
         InitializeComponent();
@@ -124,7 +127,8 @@ public partial class MainWindow : Window
         excelHost ??= new TsekSheet.Excel.ExcelHost();
         var profiles = workflowProfiles ?? TsekSheet.Application.Workflows.WorkflowProfiles.All;
         session = new BridgeSession(Send, SelectFileAsync, workbooks: new WorkbookWorkspace(workbookEngine, SelectWorkbookAsync, SelectSectionProfileAsync), selectDocument: SelectDocumentAsync, renderer: new TsekSheet.Application.Documents.LocalDocumentRenderer(Path.Combine(AppContext.BaseDirectory,"renderer","TsekSheet.Renderer.exe")),
-            excel: new TsekSheet.Application.Excel.ExcelReceiptInsertion(excelHost, excelHost, id => profiles.Single(p => p.Id == id)), selectExcelWorkbook: SelectExcelWorkbookAsync, profiles: profiles, selectDocuments: SelectDocumentsAsync);
+            excel: new TsekSheet.Application.Excel.ExcelReceiptInsertion(excelHost, excelHost, id => profiles.Single(p => p.Id == id)), selectExcelWorkbook: SelectExcelWorkbookAsync, profiles: profiles, selectDocuments: SelectDocumentsAsync,
+            ocr: productOcr ?? new TsekSheet.OcrEval.ProductOcr(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"TsekSheet","ocr.json")));
     }
 
     internal static void ValidateAssets(string directory)

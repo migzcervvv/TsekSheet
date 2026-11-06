@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="../../tools/OcrEval/OcrEval.csproj" />
     <ProjectReference Include="..\TsekSheet.Excel\TsekSheet.Excel.csproj" />
     <ProjectReference Include="..\TsekSheet.Renderer\TsekSheet.Renderer.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" />
     <ProjectReference Include="..\TsekSheet.Application\TsekSheet.Application.csproj" />
@@ -40,6 +41,8 @@
   </Target>
 
   <Target Name="CopyRenderer" AfterTargets="Build">
+    <ItemGroup><OcrFiles Include="../../tools/OcrEval/bin/$(Configuration)/net10.0-windows/OcrEval.*" /></ItemGroup>
+    <Copy SourceFiles="@(OcrFiles)" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
     <ItemGroup><RendererFiles Include="$(MSBuildThisFileDirectory)..\TsekSheet.Renderer\bin\$(Configuration)\net10.0-windows10.0.19041.0\**\*" Exclude="**\*.pdb" /></ItemGroup>
     <Copy SourceFiles="@(RendererFiles)" DestinationFiles="@(RendererFiles->'$(TargetDir)renderer\%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>
