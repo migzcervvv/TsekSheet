@@ -33,6 +33,10 @@ section. The active workbook is fixed for the queue; it is never reopened or inf
 list order. New receipts inherit the active account as a draft; revisiting an existing
 receipt never replaces its account with a later selection.
 
+**Check row** remains available during optional rendering or OCR when manual fields and
+destination are ready. OCR proposals from a request started before Check are ignored after
+Check begins; source navigation still invalidates the preview.
+
 **Check row** validates the drafts and opens **Check** with the authoritative Excel row,
 range, mapped columns, exact values and applicable warnings. It does not verify or write
 them. **Back to edit** returns to retained drafts. Changing values, profile, destination,

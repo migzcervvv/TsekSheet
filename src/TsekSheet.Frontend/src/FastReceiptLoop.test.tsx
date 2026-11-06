@@ -210,3 +210,17 @@ it('ignores a late Excel preview when the source page changes during Check',asyn
  await waitFor(()=>expect((screen.getByLabelText('Queue amount') as HTMLInputElement).disabled).toBe(false));
  expect(screen.queryByLabelText('Queue row preview')).toBeNull();expect(screen.queryByRole('button',{name:'Add row to Excel'})).toBeNull();
 });
+
+it('checks manual values during pending OCR and ignores its late proposals after Check',async()=>{
+ const f=setup(1,false,{render:true});await start();await destination();fields();await screen.findByAltText('Rendered source page 1');
+ fireEvent.click(screen.getByRole('button',{name:'Recognize page'}));await waitFor(()=>expect(f.request.mock.calls.some(c=>c[0]==='receipt.ocr')).toBe(true));
+ expect((screen.getByRole('button',{name:'Check row'}) as HTMLButtonElement).disabled).toBe(false);
+ fireEvent.click(screen.getByRole('button',{name:'Check row'}));await screen.findByLabelText('Queue row preview');
+ f.ocr({vendor:'Late vendor',amount:'999'});await screen.findByLabelText('Source word 123.50');
+ expect(screen.getByLabelText('Queue row preview')).toBeTruthy();
+ fireEvent.click(screen.getByRole('button',{name:'Back to edit'}));
+ expect((screen.getByLabelText('Queue vendor') as HTMLInputElement).value).toBe('');
+ expect((screen.getByLabelText('Queue amount') as HTMLInputElement).value).toBe('123.50');
+ expect(f.request.mock.calls.filter(c=>c[0]==='excel.addRow')).toHaveLength(0);
+ expect(f.request.mock.calls.filter(c=>c[0]==='excel.previewDraft')).toHaveLength(1);
+});

@@ -3,7 +3,7 @@ import type { BridgeClient } from './bridge/client';
 import type { ReceiptState } from './bridge/receipts';
 import { Notice } from './ui/Workspace';
 
-export default function SourcePreview({bridge, source, association,onProposals,activeValue,onWord,onBusyChange,onSourceChange}: {onBusyChange?:(busy:boolean)=>void;onSourceChange?:()=>void;activeValue?:string;onWord?:(text:string)=>void;onProposals?:(values:Record<string,string>)=>void;bridge:BridgeClient;source:NonNullable<ReceiptState['source']>;association:number}) {
+export default function SourcePreview({bridge, source, association,onProposals,activeValue,onWord,onBusyChange,onSourceChange,getProposalEpoch}: {getProposalEpoch?:()=>number;onBusyChange?:(busy:boolean)=>void;onSourceChange?:()=>void;activeValue?:string;onWord?:(text:string)=>void;onProposals?:(values:Record<string,string>)=>void;bridge:BridgeClient;source:NonNullable<ReceiptState['source']>;association:number}) {
   const proposalCallback=useRef(onProposals);proposalCallback.current=onProposals;
   const [page,setPage]=useState(1),[count,setCount]=useState<number|null>(null),[url,setUrl]=useState('');
   const [busy,setBusy]=useState(false),[error,setError]=useState(''),[attempt,setAttempt]=useState(0);
@@ -15,9 +15,9 @@ export default function SourcePreview({bridge, source, association,onProposals,a
   const anchor=useRef<{x:number;y:number}|null>(null);
   useEffect(()=>{setWords([]);setRegion(null);setOcrError('');setOcrBusy(false);},[versionKey(source),page]);
   async function recognize(){
-    onSourceChange?.();const current=generation.current;setOcrBusy(true);setOcrError('');
+    onSourceChange?.();const epoch=getProposalEpoch?.();const current=generation.current;setOcrBusy(true);setOcrError('');
     try{const result=await bridge.request('receipt.ocr',{source:version,pageNumber:page,region}).promise;
-      if(current!==generation.current)return;setWords(result.words);proposalCallback.current?.(result.values);
+      if(current!==generation.current)return;setWords(result.words);if(epoch===getProposalEpoch?.())proposalCallback.current?.(result.values);
     }catch(e){if(current===generation.current)setOcrError((e as Error).message);}
     finally{if(current===generation.current)setOcrBusy(false);}
   }

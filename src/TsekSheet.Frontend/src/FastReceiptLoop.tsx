@@ -28,7 +28,8 @@ export default function FastReceiptLoop({bridge,profiles,disabled,renderingAvail
   const initialDestination = {...emptyDestination,workbookId:activeWorkbook?.id??''};
   const [choice,setChoice] = useState<Destination>(initialDestination), [context,setContext] = useState<Destination>(initialDestination);
   const [preview,setPreview] = useState<ExcelPreview|null>(null);
-  const [busy,setBusy] = useState(true), [sourceBusy,setSourceBusy] = useState(false);
+  const [busy,setBusy] = useState(true);
+  const proposalEpoch = useRef(0);
   const [error,setError] = useState(''), [errorDetails,setErrorDetails] = useState(''), [notice,setNotice] = useState('');
   const lock = useRef(true), editRevision = useRef(0);
   const invalidate = useCallback(()=>{editRevision.current++;setPreview(null);},[]);
@@ -44,7 +45,6 @@ export default function FastReceiptLoop({bridge,profiles,disabled,renderingAvail
   const reason = inserted ? 'This receipt is already inserted. Review its highlighted row in Excel.'
     : uncertain ? 'The insertion result is unknown. Check Excel and refresh the queue. Do not submit this receipt again.'
     : busy ? 'Finishing the current receipt action…' : disabled ? 'Receipt processing is temporarily unavailable.'
-    : sourceBusy ? 'Wait for source rendering or OCR to finish; you can still edit the fields.'
     : !profile ? 'Choose a workflow profile.' : profileChoice!==receipt?.version?.profileId ? 'Apply the profile change before checking the row.'
     : !destination.workbookId||!destination.sheet||!destination.sectionId||changedDestination ? 'Choose a sheet and section, then use that destination for this receipt.'
     : missingFields.length ? 'Complete: '+missingFields.map(f=>f.header).join(', ')+'.' : '';
@@ -96,6 +96,7 @@ export default function FastReceiptLoop({bridge,profiles,disabled,renderingAvail
   function move(targetId:string,skip=false){if(!queue?.activeId)return;void run(async()=>adopt(await bridge.request('receipt.navigate',{expectedId:queue.activeId!,targetId,skip}).promise));}
   async function check(){
     if(reason||!receipt?.version||!queue)return;
+    proposalEpoch.current++;
     await run(async()=>{
       const generation=editRevision.current;
       const state=await bridge.request('receipt.prepare',{expected:receipt.version!,values:drafts}).promise;
@@ -163,7 +164,7 @@ export default function FastReceiptLoop({bridge,profiles,disabled,renderingAvail
       </section>
       {!receipt?.version&&<div className="actions"><button className="primary" disabled={blocked||!profileId} onClick={()=>void run(async()=>adopt(queue))}>Start receipt review</button><p>Choose a profile, then start this receipt. Existing drafts are retained.</p></div>}
       {receipt?.version&&<div className="receipt-layout">
-        <aside className="source-inspector"><h3>{receipt.source?.displayName}</h3>{receipt.source&&renderingAvailable?<SourcePreview key={queue.activeId} bridge={bridge} source={receipt.source} association={receipt.pageNumber} activeValue={drafts[focusedField]} onWord={text=>{const match=profile?.fields.find(f=>drafts[f.key]?.toLowerCase().includes(text.toLowerCase()));if(match){invalidate();setFocusedField(match.key);setTimeout(()=>document.getElementById(`queue-${match.key}`)?.focus(),0);}}} onBusyChange={setSourceBusy} onSourceChange={invalidate} onProposals={inserted?undefined:values=>{
+        <aside className="source-inspector"><h3>{receipt.source?.displayName}</h3>{receipt.source&&renderingAvailable?<SourcePreview key={queue.activeId} bridge={bridge} source={receipt.source} association={receipt.pageNumber} activeValue={drafts[focusedField]} onWord={text=>{const match=profile?.fields.find(f=>drafts[f.key]?.toLowerCase().includes(text.toLowerCase()));if(match){invalidate();setFocusedField(match.key);setTimeout(()=>document.getElementById(`queue-${match.key}`)?.focus(),0);}}} getProposalEpoch={()=>proposalEpoch.current} onSourceChange={invalidate} onProposals={inserted?undefined:values=>{
           const next={...drafts};for(const f of profile?.fields??[]){if(!next[f.key]&&values[f.key])next[f.key]=values[f.key].slice(0,f.maxLength);}
           setDrafts(next);if(queue.activeId)cache.current[queue.activeId]=next;invalidate();
         }}/>:<p>Source rendering unavailable. Review the original locally and enter the fields.</p>}</aside>
