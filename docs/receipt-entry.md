@@ -223,7 +223,7 @@ Previous/Next buttons identify the OCR target; scrolling does not change the rec
 page association. Only the current page and its neighbors are retained as images (up to three).
 Unloaded pages have placeholders; failed pages offer retry while manual entry stays available.
 Zoom defaults to Fit Width. Fit Page fits the current page; Actual Size uses native rendered
-pixels, not physical print size. Plus/minus zoom in 25 percentage point steps (50–400%).
+pixels, not physical print size. Plus/minus zoom in 25 percentage point steps (50-400%).
 Horizontal zoom overflow stays inside the viewport. Fit modes adapt when the panel resizes.
 Mouse drags select a region on one page; touch gestures scroll. The OCR target page is shown
 above the viewport. Recognition waits for the active local render, and background rendering

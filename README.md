@@ -73,7 +73,11 @@ Details and tickets: [PLANS.md](PLANS.md). Product goals: [GOALS.md](GOALS.md).
 
 - Open an active workbook in Excel and enter its receipt queue directly; inspect workbooks
   separately with the read-only tool (sheets, values, formulas, number formats).
-- Load local PDF, PNG and JPEG documents and page through them.
+- Read local PDFs with continuous vertical scrolling, page indicators and Previous/Next
+  navigation; view PNG and JPEG documents in the same source panel.
+- Zoom with Fit Width, Fit Page, Actual Size (native rendered pixels) or manual 50-400%
+  controls. Document scrolling and zoom overflow stay inside the viewer; narrow windows
+  stack the source and field panels.
 - Enter, correct, verify and retract document fields against a workflow profile.
 - Read-only section analysis and placement preview for the sample Payables and Laboratory
   profiles.
@@ -84,8 +88,24 @@ Details and tickets: [PLANS.md](PLANS.md). Product goals: [GOALS.md](GOALS.md).
   See [Receipt entry and measured timing](docs/receipt-entry.md).
 
 - Request local OCR proposals in the receipt queue, inspect source word boxes, select a region
-  for re-OCR, and correct drafts before explicit Add Row confirmation. Local assets require
-  configuration; see [Receipt entry](docs/receipt-entry.md#product-ocr-t4).
+  for recognition on the displayed target page, and correct drafts before explicit Add Row
+  confirmation. Typed values are retained, and manual **Check row** remains available during
+  optional rendering or OCR. Late OCR proposals cannot change an already checked receipt.
+  Local assets require configuration; see [Receipt entry](docs/receipt-entry.md#product-ocr-t4).
+
+### Inspecting documents
+
+The viewer opens in **Fit Width**. Use **Fit Page** to see the current page within the
+viewport, or **Actual Size (100%)** for the rendered image's native pixel dimensions;
+this does not represent physical PDF print size. Scroll through PDF pages or use the page
+buttons. The page indicator identifies the viewing page, and the OCR controls identify the
+page that will be recognized. Scrolling does not change the receipt's review page association.
+
+Drag with a mouse to select a region on one page, then choose **Recognize selected region**;
+touch gestures scroll the document. Regions and word highlights scale with the page. Pages
+load on demand with at most three rendered images retained. If rendering fails, retry the
+failed pages or continue entering fields manually. Viewing and zooming never trigger OCR,
+verify fields or insert rows. See [Receipt entry](docs/receipt-entry.md) for the full workflow.
 
 ### Not yet
 

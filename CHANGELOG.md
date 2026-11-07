@@ -2,7 +2,7 @@
 
 [README](README.md) · **Changelog**
 
-- 2026-11-07 � UX-03: Add continuous, bounded local document pages, fit/native zoom and page-specific OCR region selection with contained scrolling.
+- 2026-11-07 — UX-03: Add continuous, bounded local document pages, fit/native zoom and page-specific OCR region selection with contained scrolling.
 
 - 2026-11-06 — UX-02-FIX: Keep manual Check independent of rendering/OCR and ignore late proposals from recognition started before Check; retain source-navigation invalidation and explicit insertion.
 
