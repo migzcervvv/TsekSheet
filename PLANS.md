@@ -336,3 +336,7 @@ Status: IN REVIEW (PR #17; UX-02-FIX keeps manual Check independent of optional 
   `fixtures/redacted/` plus a section map per sheet.
 - 20-30 redacted documents with typed ground-truth field values in `fixtures/redacted/docs/`.
 - A15 CPU/GPU model; office machines' Excel version and bitness.
+
+### UX-03 - Document Viewer Zoom & Continuous Scrolling
+
+Status: IN REVIEW (continuous local pages, three-image cache, zoom and page-specific regions; source association and manual Check safeguards preserved; Frontend 98/0/0 and targeted Desktop Release 10/0/0 passed/failed/skipped; typecheck/build passed; 1366/768/390 screenshots retained locally; PR pending planner review)

@@ -20,7 +20,7 @@ public sealed partial class DesktopSmokeTests
         var other = await host.OpenAsync(otherPath);
         var otherBefore = await host.CaptureAsync(other.Id);
         var sources = Enumerable.Range(0,count).Select(i=>Path.Combine(Path.GetDirectoryName(path)!, $"workspace-receipt-{i}.pdf")).ToArray();
-        for(var i=0;i<count;i++)File.WriteAllBytes(sources[i],DocumentRenderingTests.Pdf().Concat(System.Text.Encoding.ASCII.GetBytes($"\n% UX02 receipt {i}\n")).ToArray());
+        for(var i=0;i<count;i++)File.WriteAllBytes(sources[i],DocumentRenderingTests.Pdf(5).Concat(System.Text.Encoding.ASCII.GetBytes($"\n% UX02 receipt {i}\n")).ToArray());
         var profile = Path.Combine(Path.GetTempPath(), "TsekSheet-smoke", Guid.NewGuid().ToString("N")); Profiles.Add(profile);
         var opens = 0;
         var window = new MainWindow(null, profile, null, _ => { opens++; return Task.FromResult<string?>(path); },
@@ -54,6 +54,17 @@ public sealed partial class DesktopSmokeTests
                         await web.ExecuteScriptAsync("document.querySelector('#main-workspace').scrollTop=0");
                     }
                     else await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Queue row preview\"]').scrollIntoView({block:'start'})");
+                    if(mode=="edit")
+                    {
+                        await Click("Actual Size (100%)");await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Zoom In\"]').click()");
+                        await web.ExecuteScriptAsync("document.querySelector('.document-viewport').scrollIntoView({block:'center'})");
+                        using(var zoom=File.Create(Path.Combine(AppContext.BaseDirectory,$"ux03-{count}-zoom-{width}.png")))
+                            await web.CoreWebView2.CapturePreviewAsync(Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png,zoom);
+                        await web.ExecuteScriptAsync("(()=>{const e=document.querySelector('.rendered-source').parentElement,b=e.getBoundingClientRect();e.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:b.left+b.width*.1,clientY:b.top+b.height*.2,pointerId:1}));e.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,clientX:b.left+b.width*.6,clientY:b.top+b.height*.7,pointerId:1}));})()");
+                        using(var region=File.Create(Path.Combine(AppContext.BaseDirectory,$"ux03-{count}-region-{width}.png")))
+                            await web.CoreWebView2.CapturePreviewAsync(Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png,region);
+                        await Click("Fit Width");
+                    }
                     using(var screenshot=File.Create(Path.Combine(AppContext.BaseDirectory,$"ux02-{count}-{mode}-{width}.png")))
                         await web.CoreWebView2.CapturePreviewAsync(Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png,screenshot);
                     await web.ExecuteScriptAsync($"document.querySelector('#main-workspace').focus();Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='{(mode=="edit"?"Check row":"Add row to Excel")}').focus()");

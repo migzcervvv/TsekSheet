@@ -217,3 +217,14 @@ Tests with provisioned assets use `TSEK_TEST_OCR_CONFIG` pointing to the local J
 Without that variable, the two real-worker/hosted OCR tests report the missing assets as
 unexecuted; model-free extraction and UI tests still run. Never use original owner documents
 as synthetic test inputs.
+
+The source viewer scrolls PDF pages vertically inside its own viewport. The page indicator and
+Previous/Next buttons identify the OCR target; scrolling does not change the receipt's review
+page association. Only the current page and its neighbors are retained as images (up to three).
+Unloaded pages have placeholders; failed pages offer retry while manual entry stays available.
+Zoom defaults to Fit Width. Fit Page fits the current page; Actual Size uses native rendered
+pixels, not physical print size. Plus/minus zoom in 25 percentage point steps (50-400%).
+Horizontal zoom overflow stays inside the viewport. Fit modes adapt when the panel resizes.
+Mouse drags select a region on one page; touch gestures scroll. The OCR target page is shown
+above the viewport. Recognition waits for the active local render, and background rendering
+waits for recognition. Page changes reject late OCR results. Zoom never requests recognition.
