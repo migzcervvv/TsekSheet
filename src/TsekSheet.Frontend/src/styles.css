@@ -371,3 +371,12 @@ button.primary:hover:not(:disabled) { background:var(--accent); color:var(--acce
 .unified-receipts .receipt-configuration[open] { flex-basis:100%; }
 .unified-receipts .mapped-values th:nth-child(2), .unified-receipts .mapped-values td:nth-child(2) { width:78px; white-space:nowrap; }
 @media(max-width:520px) { .unified-receipts .queue-navigation label { order:-1; flex-basis:100%; } .unified-receipts .queue-navigation button { flex:1 1 70px; } }
+/* The document alone owns zoom overflow and vertical page scrolling. */
+.document-viewport { height:clamp(260px,60vh,720px); overflow:auto; overscroll-behavior:contain; min-width:0; max-width:100%; background:var(--surface-subtle); padding:12px; }
+.document-page { position:relative; margin:0 auto 16px; background:var(--surface); border:1px solid var(--border); box-sizing:content-box; }
+.source-preview .actions { flex-wrap:wrap; }
+.unified-receipts .source-inspector { padding:8px; min-width:0; }
+.fast-receipt-loop .source-inspector { max-height:none; overflow:visible; }
+@media(min-width:801px) { .unified-receipts .receipt-layout { grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); } }
+@media(max-width:800px) { .document-viewport { height:420px; } }
+.document-page .rendered-source { margin:0; border:0; }

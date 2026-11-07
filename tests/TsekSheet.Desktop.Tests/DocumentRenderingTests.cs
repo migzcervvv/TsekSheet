@@ -11,19 +11,23 @@ namespace TsekSheet.Desktop.Tests;
 public sealed class DocumentRenderingTests
 {
     internal static string Worker=>Path.Combine(AppContext.BaseDirectory,"renderer","TsekSheet.Renderer.exe");
-    internal static byte[] Pdf()
+    internal static byte[] Pdf(int pageCount=2)
     {
-        var objects=new[]{"<< /Type /Catalog /Pages 2 0 R >>","<< /Type /Pages /Kids [3 0 R 5 0 R] /Count 2 >>",
-            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Resources << /Font << /F1 7 0 R >> >> /Contents 4 0 R >>",Stream("Synthetic receipt page one"),
-            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Resources << /Font << /F1 7 0 R >> >> /Contents 6 0 R >>",Stream("Different page two - 125.50"),
-            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"};
+        var font=3+pageCount*2;
+        var objects=new List<string>{"<< /Type /Catalog /Pages 2 0 R >>",$"<< /Type /Pages /Kids [{string.Join(" ",Enumerable.Range(0,pageCount).Select(i=>$"{3+i*2} 0 R"))}] /Count {pageCount} >>"};
+        for(var i=0;i<pageCount;i++)
+        {
+            objects.Add($"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Resources << /Font << /F1 {font} 0 R >> >> /Contents {4+i*2} 0 R >>");
+            var content=$"BT /F1 20 Tf 20 120 Td (Synthetic receipt page {i+1} - 125.50) Tj ET\n";
+            objects.Add($"<< /Length {content.Length} >>\nstream\n{content}endstream");
+        }
+        objects.Add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
         var text=new StringBuilder("%PDF-1.7\n");var offsets=new List<int>{0};
-        for(var i=0;i<objects.Length;i++){offsets.Add(text.Length);text.Append($"{i+1} 0 obj\n{objects[i]}\nendobj\n");}
-        var xref=text.Length;text.Append($"xref\n0 {objects.Length+1}\n0000000000 65535 f \n");
+        for(var i=0;i<objects.Count;i++){offsets.Add(text.Length);text.Append($"{i+1} 0 obj\n{objects[i]}\nendobj\n");}
+        var xref=text.Length;text.Append($"xref\n0 {objects.Count+1}\n0000000000 65535 f \n");
         foreach(var offset in offsets.Skip(1))text.Append($"{offset:D10} 00000 n \n");
-        text.Append($"trailer\n<< /Size {objects.Length+1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n");
+        text.Append($"trailer\n<< /Size {objects.Count+1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n");
         return Encoding.ASCII.GetBytes(text.ToString());
-        static string Stream(string label){var content=$"BT /F1 20 Tf 20 120 Td ({label}) Tj ET\n";return $"<< /Length {content.Length} >>\nstream\n{content}endstream";}
     }
     internal static byte[] Image(bool jpeg=false)
     {
@@ -34,6 +38,17 @@ public sealed class DocumentRenderingTests
         using var output=new MemoryStream();encoder.Save(output);return output.ToArray();
     }
 
+    [TestMethod]
+    [DataRow(1)] [DataRow(5)]
+    public async Task SingleAndFivePageSyntheticDocuments(int count)
+    {
+        var renderer=new LocalDocumentRenderer(Worker);
+        for(var page=1;page<=count;page++)
+        {
+            var result=await renderer.RenderAsync(Pdf(count),LocalDocumentKind.Pdf,page,default);
+            Assert.AreEqual(count,result.PageCount);Assert.AreEqual(page,result.PageNumber);
+        }
+    }
     [TestMethod]
     public async Task RealPdfPagesRenderOfflineWithBoundedDifferentPixels()
     {
