@@ -409,11 +409,13 @@ public sealed partial class DesktopSmokeTests
     private static async Task Navigate(WebView2 web, string activity)
     {
         var target = activity switch { "workbook"=>"worksheets", "overview"=>"worksheets", "placement"=>"legacy", "receipts"=>"legacy", "diagnostics"=>"settings", _=>activity };
-        await web.ExecuteScriptAsync($"document.querySelector('nav button[data-activity={target}]').click()");
-        await Until(async () => await web.ExecuteScriptAsync($"document.querySelector('nav button[data-activity={target}]').getAttribute('aria-current')==='page'") == "true", "Task navigation failed");
+        if(target=="legacy") await web.ExecuteScriptAsync("document.querySelector('nav button[data-activity=settings]').click();document.querySelector('.troubleshooting').open=true;document.querySelector('.advanced-review-tools').open=true");
+        if(activity=="placement") await web.ExecuteScriptAsync("document.querySelector('button[aria-label=\"Legacy placement tools\"]').click()");
+        else await web.ExecuteScriptAsync($"document.querySelector('button[data-activity={target}]').click()");
+        await Until(async () => await web.ExecuteScriptAsync($"document.querySelector('button[data-activity={target}]').getAttribute('aria-current')==='page'") == "true", "Task navigation failed");
         if(target=="legacy" && activity!="placement" && await web.ExecuteScriptAsync("!!document.querySelector('#receipt-vendor')")=="true") await Step(web,1);
         if(target=="settings") await web.ExecuteScriptAsync("document.querySelector('.troubleshooting').open=true");
-        if(activity=="placement") await Step(web,3);
+
     }
     private static async Task OnDesktop(Func<Task> test, TimeSpan? timeout = null)
     {

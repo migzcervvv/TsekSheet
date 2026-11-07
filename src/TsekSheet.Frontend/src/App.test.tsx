@@ -30,7 +30,7 @@ test('receipt and Excel entry stay available without a legacy workbook project',
  expect((container.querySelector('.secondary-tools') as HTMLDetailsElement).open).toBe(false);
  fireEvent.click(screen.getByText('Secondary tools'));
  expect((screen.getByRole('button',{name:'Read-only inspection'}) as HTMLButtonElement).disabled).toBe(false);
- expect((screen.getByRole('button',{name:'Legacy receipt review'}) as HTMLButtonElement).disabled).toBe(false);
+ expect(screen.queryByRole('button',{name:'Legacy receipt review'})).toBeNull();
  expect(screen.queryByRole('button',{name:'Placement'})).toBeNull();
  fireEvent.click(screen.getByRole('button',{name:'Settings'}));
  expect(screen.getByRole('heading',{level:1}).textContent).toBe('Settings');

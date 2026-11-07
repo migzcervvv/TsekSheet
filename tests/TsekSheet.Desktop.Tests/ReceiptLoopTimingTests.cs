@@ -52,14 +52,14 @@ public sealed partial class DesktopSmokeTests
         {
             window.Show(); web = (WebView2)window.FindName("FrontendWebView");
             await Ready("document.querySelector('[role=status]')?.textContent==='Connected'");
-            await Navigate(web, "receipts");
+            if(fast) await Click("Open workbook"); else await Navigate(web, "receipts");
             for (var i = 0; i < 20; i++)
             {
                 await Stage(i, "receipt navigation", async () =>
                 {
                     if (fast)
                     {
-                        if (i == 0) { await Click("Receipt queue"); await Click("Add PDFs or images"); await Click("Start receipt queue"); }
+                        if (i == 0) { await Click("Add receipts"); }
                         await Ready("!!document.querySelector('#queue-itemNo')&&!document.querySelector('#queue-itemNo').disabled");
                     }
                     else { await Click("Select receipt PDF or image"); await Click("Start manual receipt review"); await Ready("!!document.querySelector('#receipt-itemNo')&&!document.querySelector('#receipt-itemNo').disabled"); }
@@ -75,8 +75,8 @@ public sealed partial class DesktopSmokeTests
                 });
                 await Stage(i, "workbook opening", async () =>
                 {
-                    if (fast && i > 0) return;
-                    if (!fast) await Step(web, 2);
+                    if (fast) { await Ready("document.querySelector('[aria-label=\"Queue sheet\"]')?.options.length===3"); return; }
+                    await Step(web, 2);
                     await Click("Open workbook in Excel"); await Ready($"document.querySelector('[aria-label=\"{(fast ? "Queue sheet" : "Excel sheet")}\"]').options.length===3");
                 });
                 await Stage(i, "context selection", async () =>
@@ -88,7 +88,7 @@ public sealed partial class DesktopSmokeTests
                 });
                 await Stage(i, "preview", async () =>
                 {
-                    await Click(fast ? "Preview row" : "Preview Excel insert");
+                    await Click(fast ? "Check row" : "Preview Excel insert");
                     var selector = $"[aria-label=\"{(fast ? "Queue row preview" : "Excel insertion preview")}\"]";
                     await Ready($"!!document.querySelector('{selector}') || !!document.querySelector('.fast-receipt-loop > [role=alert]')");
                     Assert.AreEqual("true", await web.ExecuteScriptAsync($"!!document.querySelector('{selector}')"), await web.ExecuteScriptAsync("document.querySelector('.fast-receipt-loop')?.textContent"));
@@ -104,7 +104,7 @@ public sealed partial class DesktopSmokeTests
                     }
                 await Stage(i, "Excel insertion", async () =>
                 {
-                    await Click(fast ? "Add Row — confirm values and destination" : "Insert verified row");
+                    await Click(fast ? "Add row to Excel" : "Insert verified row");
                     await Ready(fast ? $"document.querySelectorAll('[aria-label=\"Inserted queue rows\"] li').length==={i+1}" : "!!document.querySelector('[aria-label=\"Inserted Excel rows\"]')&&!document.querySelector('.excel-insertion').getAttribute('aria-busy').includes('true')");
                 });
                 await Stage(i, "post-insertion navigation", async () =>
