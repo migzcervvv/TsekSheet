@@ -114,3 +114,43 @@ test('recognition waits for a neighboring render and no background render starts
  await waitFor(()=>expect(neighbor).toBeDefined());fireEvent.click(screen.getByText('Recognize page'));expect(ocr).toBeUndefined();neighbor(result(2));await waitFor(()=>expect(ocr).toBeDefined());const renders=request.mock.calls.filter(c=>c[0]==='receipt.render').length;
  expect(request.mock.calls.filter(c=>c[0]==='receipt.render')).toHaveLength(renders);ocr({values:{},words:[]});await waitFor(()=>expect(screen.queryByText('Cancel OCR')).toBeNull());
 });
+const mixedSizes=[{width:800,height:1200},{width:1200,height:800},{width:600,height:1600}];
+function mixedResult(n:number){return {source:source.document.version,page:{pageNumber:n,pageCount:3,...mixedSizes[n-1],pngBase64:png}};}
+function mixedSetup(deferNeighbor=false){
+ vi.stubGlobal('URL',{createObjectURL:()=> 'blob:mixed',revokeObjectURL:vi.fn()});
+ let resize!:()=>void,finish!:(value:unknown)=>void;
+ vi.stubGlobal('ResizeObserver',class {constructor(cb:()=>void){resize=cb;}observe(){}disconnect(){}});
+ const request=vi.fn((command:string,payload:any)=>({promise:command==='receipt.render'?(deferNeighbor&&payload.pageNumber===2?new Promise(resolve=>{finish=resolve;}):Promise.resolve(mixedResult(payload.pageNumber))):Promise.resolve(command==='receipt.ocr'?{values:{},words:[{text:'total',x:.1,y:.2,width:.3,height:.1}]}:{})}));
+ return {bridge:{request} as unknown as BridgeClient,request,resize:()=>resize(),finish:()=>finish(mixedResult(2))};
+}
+function pageNode(n:number){return screen.getByLabelText(`Document page ${n}`);}
+test('mixed page fit sizes are independent of active page; manual zoom uses a common scale',async()=>{
+ const {bridge}=mixedSetup();render(<SourcePreview bridge={bridge} source={source} association={2}/>);await screen.findByAltText('Rendered source page 3');
+ const widths=()=>mixedSizes.map((_,i)=>parseFloat(pageNode(i+1).style.width));
+ widths().forEach(w=>expect(w).toBeCloseTo(574));
+ const viewport=screen.getByLabelText('Scrollable document');viewport.getBoundingClientRect=()=>({top:0} as DOMRect);mixedSizes.forEach((_,i)=>{pageNode(i+1).getBoundingClientRect=()=>({top:i*400,bottom:(i+1)*400} as DOMRect);});fireEvent.scroll(viewport);await screen.findByText('Page 1 of 3');widths().forEach(w=>expect(w).toBeCloseTo(574));
+ fireEvent.click(screen.getByText('Fit Page'));
+ mixedSizes.forEach((d,i)=>{const scale=Math.min(574/d.width,474/d.height);expect(parseFloat(pageNode(i+1).style.width)).toBeCloseTo(d.width*scale);expect(parseFloat(pageNode(i+1).style.minHeight)).toBeLessThanOrEqual(474);});
+ fireEvent.click(screen.getByText('Next source page'));await screen.findByAltText('Rendered source page 3');
+ mixedSizes.forEach((d,i)=>expect(parseFloat(pageNode(i+1).style.width)).toBeCloseTo(d.width*Math.min(574/d.width,474/d.height)));
+ fireEvent.click(screen.getByText('Actual Size (100%)'));mixedSizes.forEach((d,i)=>expect(parseFloat(pageNode(i+1).style.width)).toBe(d.width));
+ fireEvent.click(screen.getByLabelText('Zoom In'));fireEvent.click(screen.getByLabelText('Zoom In'));mixedSizes.forEach((d,i)=>expect(parseFloat(pageNode(i+1).style.width)).toBe(d.width*1.5));
+});
+test('landscape OCR regions and word boxes use the scaled landscape image',async()=>{
+ vi.stubGlobal('PointerEvent',MouseEvent);const {bridge,request}=mixedSetup();render(<SourcePreview bridge={bridge} source={source} association={2} onProposals={vi.fn()}/>);
+ const image=await screen.findByAltText('Rendered source page 2'),canvas=image.parentElement!;canvas.setPointerCapture=vi.fn();canvas.getBoundingClientRect=()=>({left:-30,top:-80,width:574,height:574*800/1200} as DOMRect);
+ const bounds=canvas.getBoundingClientRect();fireEvent.pointerDown(canvas,{clientX:bounds.left+bounds.width*.1,clientY:bounds.top+bounds.height*.2});fireEvent.pointerUp(canvas,{clientX:bounds.left+bounds.width*.6,clientY:bounds.top+bounds.height*.7});fireEvent.click(screen.getByText('Recognize selected region'));
+ await screen.findByLabelText('Source word total');const payload=request.mock.calls.find(c=>c[0]==='receipt.ocr')![1];expect(payload.pageNumber).toBe(2);expect(payload.region.x).toBeCloseTo(.1);expect(payload.region.y).toBeCloseTo(.2);expect(payload.region.width).toBeCloseTo(.5);expect(payload.region.height).toBeCloseTo(.5);
+ fireEvent.click(screen.getByText('Actual Size (100%)'));const word=screen.getByLabelText('Source word total');expect(word.style.left).toBe('10%');expect(word.style.top).toBe('20%');expect(word.style.width).toBe('30%');
+});
+test('neighbor loading, resizing and zoom preserve the visible page reading anchor',async()=>{
+ const setup=mixedSetup(true);render(<SourcePreview bridge={setup.bridge} source={source} association={3}/>);await screen.findByAltText('Rendered source page 3');
+ const root=screen.getByLabelText('Scrollable document');let width=600;Object.defineProperty(root,'clientWidth',{get:()=>width});Object.defineProperty(root,'clientHeight',{value:500});
+ root.getBoundingClientRect=()=>({top:100} as DOMRect);
+ for(let n=1;n<=3;n++){const node=pageNode(n);node.getBoundingClientRect=()=>{const height=parseFloat(node.style.minHeight)+2;let top=112-root.scrollTop;for(let i=1;i<n;i++)top+=parseFloat(pageNode(i).style.minHeight)+18;return {top,bottom:top+height,height,width:parseFloat(node.style.width)} as DOMRect;};}
+ root.scrollTop=parseFloat(pageNode(1).style.minHeight)+parseFloat(pageNode(2).style.minHeight)+36+100;
+ const fraction=()=>{const r=pageNode(3).getBoundingClientRect();return (112-r.top)/r.height;};const before=fraction();
+ setup.finish();await screen.findByAltText('Rendered source page 2');expect(fraction()).toBeCloseTo(before);
+ width=420;fireEvent(root,new Event('resize'));setup.resize();await waitFor(()=>expect(parseFloat(pageNode(3).style.width)).toBeCloseTo(394));expect(fraction()).toBeCloseTo(before);
+ fireEvent.click(screen.getByText('Actual Size (100%)'));expect(fraction()).toBeCloseTo(before);
+});

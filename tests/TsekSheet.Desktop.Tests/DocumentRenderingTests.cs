@@ -11,13 +11,14 @@ namespace TsekSheet.Desktop.Tests;
 public sealed class DocumentRenderingTests
 {
     internal static string Worker=>Path.Combine(AppContext.BaseDirectory,"renderer","TsekSheet.Renderer.exe");
-    internal static byte[] Pdf(int pageCount=2)
+    internal static byte[] Pdf(int pageCount=2,bool mixed=false)
     {
         var font=3+pageCount*2;
         var objects=new List<string>{"<< /Type /Catalog /Pages 2 0 R >>",$"<< /Type /Pages /Kids [{string.Join(" ",Enumerable.Range(0,pageCount).Select(i=>$"{3+i*2} 0 R"))}] /Count {pageCount} >>"};
         for(var i=0;i<pageCount;i++)
         {
-            objects.Add($"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Resources << /Font << /F1 {font} 0 R >> >> /Contents {4+i*2} 0 R >>");
+            var bounds=mixed?new[]{"300 450","450 300","225 600"}[i%3]:"300 200";
+            objects.Add($"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {bounds}] /Resources << /Font << /F1 {font} 0 R >> >> /Contents {4+i*2} 0 R >>");
             var content=$"BT /F1 20 Tf 20 120 Td (Synthetic receipt page {i+1} - 125.50) Tj ET\n";
             objects.Add($"<< /Length {content.Length} >>\nstream\n{content}endstream");
         }
@@ -38,6 +39,17 @@ public sealed class DocumentRenderingTests
         using var output=new MemoryStream();encoder.Save(output);return output.ToArray();
     }
 
+    [TestMethod]
+    public async Task MixedPortraitAndLandscapePagesRetainNativeDimensions()
+    {
+        var renderer=new LocalDocumentRenderer(Worker);var bytes=Pdf(3,mixed:true);
+        var expected=new[]{(800,1200),(1200,800),(600,1600)};
+        for(var page=1;page<=3;page++)
+        {
+            var result=await renderer.RenderAsync(bytes,LocalDocumentKind.Pdf,page,default);
+            Assert.AreEqual(expected[page-1].Item1,result.Width);Assert.AreEqual(expected[page-1].Item2,result.Height);
+        }
+    }
     [TestMethod]
     [DataRow(1)] [DataRow(5)]
     public async Task SingleAndFivePageSyntheticDocuments(int count)
