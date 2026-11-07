@@ -380,3 +380,5 @@ button.primary:hover:not(:disabled) { background:var(--accent); color:var(--acce
 @media(min-width:801px) { .unified-receipts .receipt-layout { grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); } }
 @media(max-width:800px) { .document-viewport { height:420px; } }
 .document-page .rendered-source { margin:0; border:0; }
+
+.document-viewport { overflow-anchor:none; scrollbar-gutter:stable; }

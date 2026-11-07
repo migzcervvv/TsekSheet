@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { BridgeClient } from './bridge/client';
 import type { ReceiptState } from './bridge/receipts';
 import { Notice } from './ui/Workspace';
@@ -19,13 +19,29 @@ export default function SourcePreview({bridge,source,association,onProposals,act
  const anchor=useRef<{x:number;y:number;page:number}|null>(null),viewport=useRef<HTMLDivElement>(null),nodes=useRef(new Map<number,HTMLDivElement>());
  const [mode,setMode]=useState('width'),[zoom,setZoom]=useState(1),[size,setSize]=useState({width:600,height:500});
  const callback=useRef(onProposals);callback.current=onProposals;
- const dimensions=pages[page]??metadata.current[page]??{width:1131,height:1600};
- const scale=Math.max(.05,mode==='width'?(size.width-24)/dimensions.width:mode==='page'?Math.min((size.width-24)/dimensions.width,(size.height-24)/dimensions.height):zoom);
+ const fallback={width:1131,height:1600};
+ function pageDimensions(n:number){return pages[n]??metadata.current[n]??fallback;}
+ function pageScale(n:number){const d=pageDimensions(n);return mode==='width'?Math.max(.001,(size.width-26)/d.width):mode==='page'?Math.max(.001,Math.min((size.width-26)/d.width,(size.height-26)/d.height)):zoom;}
+ const scale=pageScale(page);
+ const readingAnchor=useRef<{page:number;fraction:number;horizontal:number}|null>(null);
+ function capturePosition(){
+  const root=viewport.current;if(!root||readingAnchor.current)return;
+  const top=root.getBoundingClientRect().top+12;
+  for(const [n,node] of nodes.current){const rect=node.getBoundingClientRect();if(rect.bottom>top&&rect.height>0){readingAnchor.current={page:n,fraction:(top-rect.top)/rect.height,horizontal:root.scrollLeft/Math.max(1,rect.width)};break;}}
+ }
+ useLayoutEffect(()=>{
+  const saved=readingAnchor.current,root=viewport.current;readingAnchor.current=null;
+  const node=saved&&nodes.current.get(saved.page);
+  if(!saved||!root||!node)return;
+  const rect=node.getBoundingClientRect();
+  root.scrollTop+=rect.top+saved.fraction*rect.height-root.getBoundingClientRect().top-12;
+  root.scrollLeft=saved.horizontal*rect.width;
+ },[pages,count,size,mode,zoom]);
  useEffect(()=>{onBusyChange?.(busy||ocrBusy);},[busy,ocrBusy,onBusyChange]);
- useEffect(()=>{const element=viewport.current;if(!element||typeof ResizeObserver==='undefined')return;const observer=new ResizeObserver(()=>setSize({width:element.clientWidth,height:element.clientHeight}));observer.observe(element);return()=>observer.disconnect();},[]);
+ useEffect(()=>{const element=viewport.current;if(!element||typeof ResizeObserver==='undefined')return;const observer=new ResizeObserver(()=>{capturePosition();setSize({width:element.clientWidth,height:element.clientHeight});});observer.observe(element);return()=>observer.disconnect();},[]);
  useEffect(()=>{setPage(association);},[association]);
  useEffect(()=>{
-  generation.current++;setPages({});setCount(null);setPage(association);setError('');
+  generation.current++;readingAnchor.current=null;setPages({});setCount(null);setPage(association);setError('');
   return()=>{generation.current++;ocrToken.current++;void bridge.request('receipt.cancelRender',{}).promise.catch(()=>{});Object.values(cache.current).forEach(p=>URL.revokeObjectURL(p.url));cache.current={};metadata.current={};};
  },[bridge,key]);
  useEffect(()=>{ocrToken.current++;if(anchor.current?.page!==page)anchor.current=null;setRegion(null);setWords([]);setSelected(-1);setOcrBusy(false);setOcrError('');},[key,page]);
@@ -45,7 +61,7 @@ export default function SourcePreview({bridge,source,association,onProposals,act
      if(JSON.stringify(result.source)!==key||result.page.pageNumber!==target)throw new Error('Preview does not match the registered source and page.');
      const bytes=Uint8Array.from(atob(result.page.pngBase64),c=>c.charCodeAt(0));
      cache.current[target]={url:URL.createObjectURL(new Blob([bytes],{type:'image/png'})),width:result.page.width,height:result.page.height};
-     metadata.current[target]={width:result.page.width,height:result.page.height};setPages({...cache.current});setCount(result.page.pageCount);
+     capturePosition();metadata.current[target]={width:result.page.width,height:result.page.height};setPages({...cache.current});setCount(result.page.pageCount);
     }catch(e){if(!disposed&&current===generation.current)setError(`Page ${target}: ${(e as Error).message}`);}
    }
    if(!disposed&&current===generation.current)setBusy(false);
@@ -54,7 +70,11 @@ export default function SourcePreview({bridge,source,association,onProposals,act
   return()=>{disposed=true;};
  },[bridge,key,page,count,attempt,ocrBusy]);
  function navigate(target:number,explicit=false){if(ocrBusy){ocrToken.current++;void bridge.request('receipt.cancelRender',{}).promise.catch(()=>{});}if(explicit)onSourceChange?.();setPage(target);if(explicit)nodes.current.get(target)?.scrollIntoView?.({block:'start'});}
- function changeZoom(next:string,value=scale){const element=viewport.current;const ratio=element&&element.scrollHeight?element.scrollTop/element.scrollHeight:0;setMode(next);setZoom(Math.max(.5,Math.min(4,value)));requestAnimationFrame(()=>{if(element){const node=nodes.current.get(page);if(next==='page'&&node)element.scrollTop+=node.getBoundingClientRect().top-element.getBoundingClientRect().top-12;else element.scrollTop=ratio*element.scrollHeight;}});}
+ function changeZoom(next:string,value=scale){
+  capturePosition();
+  if(next==='page')readingAnchor.current={page,fraction:0,horizontal:0};
+  setMode(next);setZoom(Math.max(.5,Math.min(4,value)));setPages(current=>({...current}));
+ }
  async function recognize(){
   onSourceChange?.();const epoch=getProposalEpoch?.(),current=generation.current,token=++ocrToken.current;setOcrBusy(true);setOcrError('');
   try{await flight.current.catch(()=>{});if(token!==ocrToken.current||current!==generation.current)return;
@@ -72,7 +92,7 @@ export default function SourcePreview({bridge,source,association,onProposals,act
  {error&&<Notice kind="error" title="Source preview unavailable"><p>Retry rendering or continue with manual entry.</p><p>{error}</p><button onClick={()=>setAttempt(n=>n+1)}>Retry failed pages</button></Notice>}
  {onProposals&&<><div className="actions"><button disabled={busy||ocrBusy||!pages[page]} onClick={()=>void recognize()}>{region?'Recognize selected region':'Recognize page'}</button>{ocrBusy&&<button onClick={()=>{ocrToken.current++;setOcrBusy(false);void bridge.request('receipt.cancelRender',{}).promise.catch(()=>{});}}>Cancel OCR</button>}<button onClick={()=>{onSourceChange?.();setRegion(null);}}>Clear region</button></div><p>OCR target: Page {page}. Drag with a mouse to select a region. Touch scrolls.</p>{ocrError&&<div role="alert">OCR unavailable. Manual entry remains available. {ocrError}</div>}</>}
  <div className="document-viewport" ref={viewport} tabIndex={0} aria-label="Scrollable document" onScroll={()=>{const root=viewport.current;if(!root)return;const top=root.getBoundingClientRect().top;let nearest=page,distance=Infinity;nodes.current.forEach((node,n)=>{const b=node.getBoundingClientRect(),d=Math.abs(b.top-top);if(b.bottom>top&&d<distance){nearest=n;distance=d;}});if(nearest!==page)navigate(nearest);}}>
- {Array.from({length:count??1},(_,i)=>i+1).map(n=>{const entry=pages[n];return <div key={n} className="document-page" ref={node=>{if(node)nodes.current.set(n,node);else nodes.current.delete(n);}} style={{width:(entry?.width??metadata.current[n]?.width??dimensions.width)*scale,minHeight:(entry?.height??metadata.current[n]?.height??dimensions.height)*scale}} aria-label={`Document page ${n}`}>
+ {Array.from({length:count??1},(_,i)=>i+1).map(n=>{const entry=pages[n];return <div key={n} className="document-page" ref={node=>{if(node)nodes.current.set(n,node);else nodes.current.delete(n);}} style={{width:pageDimensions(n).width*pageScale(n),minHeight:pageDimensions(n).height*pageScale(n)}} aria-label={`Document page ${n}`}>
  {!entry?<p>Page {n} — not loaded</p>:<div style={{position:'relative',touchAction:'pan-x pan-y'}} onPointerDown={e=>{if(e.pointerType==='touch'||!onProposals||(e.target as HTMLElement).closest('button'))return;if(n!==page)navigate(n);anchor.current={...point(e),page:n};e.currentTarget.setPointerCapture(e.pointerId);}} onPointerCancel={()=>{anchor.current=null;}} onPointerUp={e=>{const a=anchor.current;anchor.current=null;if(!a||a.page!==n)return;const p=point(e);if(Math.abs(p.x-a.x)>.01&&Math.abs(p.y-a.y)>.01){onSourceChange?.();setRegion({x:Math.min(p.x,a.x),y:Math.min(p.y,a.y),width:Math.abs(p.x-a.x),height:Math.abs(p.y-a.y)});}}}>
  <img style={{width:'100%',display:'block'}} draggable={false} className="rendered-source" src={entry.url} alt={`Rendered source page ${n}`}/>
  {n===page&&words.map((w,i)=><button key={i} title={w.text} aria-label={`Source word ${w.text}`} onClick={()=>{setSelected(i);onWord?.(w.text);}} style={{position:'absolute',left:`${w.x*100}%`,top:`${w.y*100}%`,width:`${w.width*100}%`,height:`${w.height*100}%`,padding:0,minHeight:0,border:(selected===i||!!activeValue?.toLowerCase().includes(w.text.toLowerCase()))?'2px solid blue':'1px solid transparent',background:selected===i?'#ffff0060':'transparent'}}/>)}

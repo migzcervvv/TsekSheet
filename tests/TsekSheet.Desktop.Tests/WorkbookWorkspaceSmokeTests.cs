@@ -20,7 +20,7 @@ public sealed partial class DesktopSmokeTests
         var other = await host.OpenAsync(otherPath);
         var otherBefore = await host.CaptureAsync(other.Id);
         var sources = Enumerable.Range(0,count).Select(i=>Path.Combine(Path.GetDirectoryName(path)!, $"workspace-receipt-{i}.pdf")).ToArray();
-        for(var i=0;i<count;i++)File.WriteAllBytes(sources[i],DocumentRenderingTests.Pdf(5).Concat(System.Text.Encoding.ASCII.GetBytes($"\n% UX02 receipt {i}\n")).ToArray());
+        for(var i=0;i<count;i++)File.WriteAllBytes(sources[i],DocumentRenderingTests.Pdf(5,mixed:true).Concat(System.Text.Encoding.ASCII.GetBytes($"\n% UX02 receipt {i}\n")).ToArray());
         var profile = Path.Combine(Path.GetTempPath(), "TsekSheet-smoke", Guid.NewGuid().ToString("N")); Profiles.Add(profile);
         var opens = 0;
         var window = new MainWindow(null, profile, null, _ => { opens++; return Task.FromResult<string?>(path); },
@@ -64,6 +64,13 @@ public sealed partial class DesktopSmokeTests
                         using(var region=File.Create(Path.Combine(AppContext.BaseDirectory,$"ux03-{count}-region-{width}.png")))
                             await web.CoreWebView2.CapturePreviewAsync(Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png,region);
                         await Click("Fit Width");
+                        await Ready("Array.from(document.querySelectorAll('.document-page')).every(p=>p.getBoundingClientRect().width<=document.querySelector('.document-viewport').clientWidth-24+.5)");
+                        var firstWidth=await web.ExecuteScriptAsync("document.querySelector('.document-page').style.width");
+                        await Click("Next source page");
+                        await Ready("document.querySelector('.source-preview').textContent.includes('Page 2 of 5')");
+                        Assert.AreEqual(firstWidth,await web.ExecuteScriptAsync("document.querySelector('.document-page').style.width"),"Changing active mixed-size page must not rescale the first page");
+                        await Click("Previous source page");
+
                     }
                     using(var screenshot=File.Create(Path.Combine(AppContext.BaseDirectory,$"ux02-{count}-{mode}-{width}.png")))
                         await web.CoreWebView2.CapturePreviewAsync(Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png,screenshot);
