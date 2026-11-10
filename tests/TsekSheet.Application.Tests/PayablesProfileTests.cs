@@ -25,6 +25,8 @@ public sealed class PayablesProfileTests
         Assert.AreEqual("G", profile.Layout.Section("employee", "Sheet").ColumnMap["amount"]);
         Assert.AreEqual("PAYEE (VENDOR NAME)", profile.Layout.SheetMatch.Anchors.Single(a => a.Column == "C").Text);
         Assert.AreEqual("blank-inputs", profile.Layout.HybridNewRowMode);
+        Assert.IsTrue(profile.Layout.Sections.All(section => section.InsertMode == "entireRow"));
+        Assert.IsFalse(profile.Layout.ProtectedRows.Any(marker => marker.Match == "nonempty-text"));
         CollectionAssert.AreEqual(new[] { "employee", "cash-advance", "dollars", "last-pay", "refund", "member-company-1", "member-company-2",
             "member-company-3", "member-company-4", "member-company-5", "member-company-6", "member-company-7", "member-company-8",
             "member-company-9", "member-company-10", "member-company-11", "member-company-12", "member-company-13", "member-company-14",
@@ -71,6 +73,27 @@ public sealed class PayablesProfileTests
         var values = new object?[,] { { heading } };
         var data = new RangeData(new(1, 2, 1, 1), values, new string?[1, 1], new string[1, 1]);
         var marker = new RowMarker("B", "Employee", ExpectedCount: 1, Match: "year-category");
+        if (matches) Assert.AreEqual(1, ExcelLayoutMatching.Marker(data, marker));
+        else Assert.ThrowsExactly<ExcelInsertRejectedException>(() => ExcelLayoutMatching.Marker(data, marker));
+    }
+
+    [TestMethod, DataRow("2024 INVENTORY", true), DataRow("2026 inventory", true), DataRow("Inventory", false),
+        DataRow("2024 INVENTORY notes", false)]
+    public void InventoryContractRequiresYearAndExactHeading(string text, bool matches)
+    {
+        var data = new RangeData(new(1, 2, 1, 1), new object?[,] { { text } }, new string?[1, 1], new string[1, 1]);
+        var marker = new RowMarker("B", "Inventory", ExpectedCount: 1, Match: "year-heading");
+        if (matches) Assert.AreEqual(1, ExcelLayoutMatching.Marker(data, marker));
+        else Assert.ThrowsExactly<ExcelInsertRejectedException>(() => ExcelLayoutMatching.Marker(data, marker));
+        if (text == "Inventory") Assert.AreEqual(1, ExcelLayoutMatching.Marker(data, new("B", "Inventory", ExpectedCount: 1)));
+    }
+
+    [TestMethod, DataRow("TOTAL PAYABLES AS OF DEC 2025", true), DataRow("TOTAL PAYABLES AS OF JAN 2026", true),
+        DataRow("TOTAL EXTERNAL AS OF DEC 2025", false), DataRow("Other text", false), DataRow("TOTAL PAYABLES AS OF BAD 2026", false)]
+    public void OverallTotalContractIsDistinctAndPeriodAware(string text, bool matches)
+    {
+        var data = new RangeData(new(1, 3, 1, 1), new object?[,] { { text } }, new string?[1, 1], new string[1, 1]);
+        var marker = new RowMarker("C", "Payables", ExpectedCount: 1, Match: "period-total");
         if (matches) Assert.AreEqual(1, ExcelLayoutMatching.Marker(data, marker));
         else Assert.ThrowsExactly<ExcelInsertRejectedException>(() => ExcelLayoutMatching.Marker(data, marker));
     }

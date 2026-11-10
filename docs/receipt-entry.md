@@ -239,6 +239,9 @@ in the existing Section dropdown. Read the PDF alongside the fields, select
 and leaves Add row available. Formula conflicts and unsafe section markers block
 Check. Blank optional financial inputs preserve existing formulas; Check labels
 those cells explicitly. New rows can use ordinary formula-bearing templates without copying their formulas;
-all new financial inputs are blank until explicitly supplied. Unsafe merged,
+all new financial inputs are blank until explicitly supplied. New Payables rows
+shift the entire worksheet row so status notes in A and Inventory content through P
+remain aligned. Existing blank-row reuse does not shift other records. No status
+text or financial value is copied from the preceding row. Unsafe merged,
 array/spill, protected or table templates remain blocked. The verified structural
 contract and owner-side validation boundary are documented in [Local Excel profiles](profiles.md).

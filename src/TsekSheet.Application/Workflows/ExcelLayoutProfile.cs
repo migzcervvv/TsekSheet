@@ -85,7 +85,7 @@ public sealed record ExcelLayoutProfile(int SchemaVersion, string Id, int Revisi
             if (m.Before is not null) foreach (var child in Expand(m.Before, depth + 1)) yield return child;
         }
         var markers = roots.SelectMany(m => Expand(m)).ToArray();
-        Check(markers.All(m => m is not null && Label(m.Text) && m.Match is "exact" or "year-category" or "nonempty-text" && m.Occurrence is >= 1 and <= 2000 && (m.ExpectedCount is null or >= 1 and <= 2000)));
+        Check(markers.All(m => m is not null && Label(m.Text) && m.Match is "exact" or "year-category" or "year-heading" or "period-total" or "nonempty-text" && m.Occurrence is >= 1 and <= 2000 && (m.ExpectedCount is null or >= 1 and <= 2000)));
         Check(markers.All(m => m.Match != "nonempty-text" || m.After is not null && m.Before is not null && m.ExpectedCount == 1));
         Check(p.SheetMatch!.Anchors.All(a => a is not null && Label(a.Text)));
         try

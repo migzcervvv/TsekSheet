@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "payables-rfp",
-  "revision": 2,
+  "revision": 3,
   "displayName": "Payables — RFP",
   "mappingMode": "fixed",
   "advisoryIdentifier": "rfpNo",
@@ -218,7 +218,7 @@
         },
         "expectedCount": 1
       },
-      "insertMode": "columnsOnly",
+      "insertMode": "entireRow",
       "fillBlankRowsFirst": true
     },
     {
@@ -269,7 +269,7 @@
         },
         "expectedCount": 1
       },
-      "insertMode": "columnsOnly",
+      "insertMode": "entireRow",
       "fillBlankRowsFirst": true
     },
     {
@@ -320,7 +320,7 @@
         },
         "expectedCount": 1
       },
-      "insertMode": "columnsOnly",
+      "insertMode": "entireRow",
       "fillBlankRowsFirst": true
     },
     {
@@ -371,7 +371,7 @@
         },
         "expectedCount": 1
       },
-      "insertMode": "columnsOnly",
+      "insertMode": "entireRow",
       "fillBlankRowsFirst": true
     },
     {
@@ -422,7 +422,7 @@
         },
         "expectedCount": 1
       },
-      "insertMode": "columnsOnly",
+      "insertMode": "entireRow",
       "fillBlankRowsFirst": true
     },
     {
@@ -475,7 +475,7 @@
         },
         "expectedCount": 14
       },
-      "insertMode": "columnsOnly",
+      "insertMode": "entireRow",
       "fillBlankRowsFirst": true
     },
     {
@@ -540,7 +540,7 @@
         },
         "expectedCount": 14
       },
-      "insertMode": "columnsOnly",
+      "insertMode": "entireRow",
       "fillBlankRowsFirst": true
     },
     {
@@ -605,7 +605,7 @@
         },
         "expectedCount": 14
       },
-      "insertMode": "columnsOnly",
+      "insertMode": "entireRow",
       "fillBlankRowsFirst": true
     },
     {
@@ -670,7 +670,7 @@
         },
         "expectedCount": 14
       },
-      "insertMode": "columnsOnly",
+      "insertMode": "entireRow",
       "fillBlankRowsFirst": true
     },
     {
@@ -735,7 +735,7 @@
         },
         "expectedCount": 14
       },
-      "insertMode": "columnsOnly",
+      "insertMode": "entireRow",
       "fillBlankRowsFirst": true
     },
     {
@@ -800,7 +800,7 @@
         },
         "expectedCount": 14
       },
-      "insertMode": "columnsOnly",
+      "insertMode": "entireRow",
       "fillBlankRowsFirst": true
     },
     {
@@ -865,7 +865,7 @@
         },
         "expectedCount": 14
       },
-      "insertMode": "columnsOnly",
+      "insertMode": "entireRow",
       "fillBlankRowsFirst": true
     },
     {
@@ -930,7 +930,7 @@
         },
         "expectedCount": 14
       },
-      "insertMode": "columnsOnly",
+      "insertMode": "entireRow",
       "fillBlankRowsFirst": true
     },
     {
@@ -995,7 +995,7 @@
         },
         "expectedCount": 14
       },
-      "insertMode": "columnsOnly",
+      "insertMode": "entireRow",
       "fillBlankRowsFirst": true
     },
     {
@@ -1060,7 +1060,7 @@
         },
         "expectedCount": 14
       },
-      "insertMode": "columnsOnly",
+      "insertMode": "entireRow",
       "fillBlankRowsFirst": true
     },
     {
@@ -1125,7 +1125,7 @@
         },
         "expectedCount": 14
       },
-      "insertMode": "columnsOnly",
+      "insertMode": "entireRow",
       "fillBlankRowsFirst": true
     },
     {
@@ -1190,7 +1190,7 @@
         },
         "expectedCount": 14
       },
-      "insertMode": "columnsOnly",
+      "insertMode": "entireRow",
       "fillBlankRowsFirst": true
     },
     {
@@ -1255,7 +1255,7 @@
         },
         "expectedCount": 14
       },
-      "insertMode": "columnsOnly",
+      "insertMode": "entireRow",
       "fillBlankRowsFirst": true
     },
     {
@@ -1320,7 +1320,7 @@
         },
         "expectedCount": 14
       },
-      "insertMode": "columnsOnly",
+      "insertMode": "entireRow",
       "fillBlankRowsFirst": true
     },
     {
@@ -1371,7 +1371,7 @@
         },
         "expectedCount": 1
       },
-      "insertMode": "columnsOnly",
+      "insertMode": "entireRow",
       "fillBlankRowsFirst": true
     },
     {
@@ -1422,7 +1422,7 @@
         },
         "expectedCount": 1
       },
-      "insertMode": "columnsOnly",
+      "insertMode": "entireRow",
       "fillBlankRowsFirst": true
     },
     {
@@ -1450,7 +1450,8 @@
           "before": {
             "column": "B",
             "equals": "Inventory",
-            "expectedCount": 1
+            "expectedCount": 1,
+            "match": "year-heading"
           },
           "expectedCount": 1
         }
@@ -1467,11 +1468,12 @@
         "before": {
           "column": "B",
           "equals": "Inventory",
-          "expectedCount": 1
+          "expectedCount": 1,
+          "match": "year-heading"
         },
         "expectedCount": 1
       },
-      "insertMode": "columnsOnly",
+      "insertMode": "entireRow",
       "fillBlankRowsFirst": true
     }
   ],
@@ -1533,8 +1535,8 @@
     },
     {
       "column": "C",
-      "equals": "Overall total heading",
-      "match": "nonempty-text",
+      "equals": "External",
+      "match": "period-total",
       "after": {
         "column": "F",
         "equals": "Sub-Total",
@@ -1547,13 +1549,67 @@
         "before": {
           "column": "B",
           "equals": "Inventory",
+          "expectedCount": 1,
+          "match": "year-heading"
+        },
+        "expectedCount": 1
+      },
+      "before": {
+        "column": "C",
+        "equals": "Payables",
+        "match": "period-total",
+        "after": {
+          "column": "F",
+          "equals": "Sub-Total",
+          "after": {
+            "column": "B",
+            "equals": "External",
+            "match": "year-category",
+            "expectedCount": 1
+          },
+          "before": {
+            "column": "B",
+            "equals": "Inventory",
+            "expectedCount": 1,
+            "match": "year-heading"
+          },
           "expectedCount": 1
+        },
+        "before": {
+          "column": "B",
+          "equals": "Inventory",
+          "match": "year-heading",
+          "expectedCount": 1
+        },
+        "expectedCount": 1
+      },
+      "expectedCount": 1
+    },
+    {
+      "column": "C",
+      "equals": "Payables",
+      "match": "period-total",
+      "after": {
+        "column": "F",
+        "equals": "Sub-Total",
+        "after": {
+          "column": "B",
+          "equals": "External",
+          "match": "year-category",
+          "expectedCount": 1
+        },
+        "before": {
+          "column": "B",
+          "equals": "Inventory",
+          "expectedCount": 1,
+          "match": "year-heading"
         },
         "expectedCount": 1
       },
       "before": {
         "column": "B",
         "equals": "Inventory",
+        "match": "year-heading",
         "expectedCount": 1
       },
       "expectedCount": 1
@@ -1561,6 +1617,7 @@
     {
       "column": "B",
       "equals": "Inventory",
+      "match": "year-heading",
       "expectedCount": 1
     }
   ],

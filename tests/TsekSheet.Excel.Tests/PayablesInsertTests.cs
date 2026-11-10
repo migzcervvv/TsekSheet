@@ -54,7 +54,7 @@ public sealed class PayablesInsertTests
         Assert.AreEqual("=1/0", ExcelLayoutMatching.Formula(after, 8, 10));
         Assert.AreEqual("=1+1", ExcelLayoutMatching.Formula(after, 7, 7));
         Assert.AreEqual("Sub-Total", ExcelLayoutMatching.Value(after, 53, 6));
-        Assert.AreEqual("Inventory", ExcelLayoutMatching.Value(after, 902, 2));
+        Assert.AreEqual("2024 INVENTORY", ExcelLayoutMatching.Value(after, 902, 2));
         Assert.AreEqual("UNRELATED", ExcelLayoutMatching.Value(after, 903, 3));
         Assert.IsNull(ExcelLayoutMatching.Value(after, 52, 10), "No optional calculation may be invented.");
     }
@@ -132,7 +132,7 @@ public sealed class PayablesInsertTests
             Assert.AreEqual(expectedStarts[i], boundary.First, section.Id);
             Assert.AreEqual(expectedEnds[i], boundary.Subtotal, section.Id);
             Assert.AreEqual("F", section.SubtotalColumn);
-            CollectionAssert.IsSubsetOf(new[] { 897, 901 }, boundary.Protected.ToArray());
+            CollectionAssert.IsSubsetOf(new[] { 895, 897, 901 }, boundary.Protected.ToArray());
         }
         Assert.AreEqual("member-company-14", layout.Sections[18].Id);
         Assert.AreEqual("insurance", layout.Sections[19].Id);
@@ -146,9 +146,77 @@ public sealed class PayablesInsertTests
             var boundary = ExcelLayoutMatching.Resolve(after, layout.Section(layout.Sections[i].Id, Sheet));
             Assert.AreEqual(expectedStarts[i] + (i == 0 ? 0 : 1), boundary.First);
             Assert.AreEqual(expectedEnds[i] + 1, boundary.Subtotal);
-            CollectionAssert.IsSubsetOf(new[] { 898, 902 }, boundary.Protected.ToArray());
+            CollectionAssert.IsSubsetOf(new[] { 896, 898, 902 }, boundary.Protected.ToArray());
         }
         Assert.AreEqual("Sub-Total", ExcelLayoutMatching.Value(after, 905, 6), "Inventory subtotals are excluded from Payables marker counts.");
+    }
+
+    [TestMethod]
+    public async Task BlankRowReuseDoesNotShiftStatusOrInventoryAndSkipsOccupiedOffBandRow()
+    {
+        var host = await ExcelTestScope.SharedHostAsync();
+        var path = await CreateAsync(host);
+        await using var scope = new ExcelTestScope();
+        var book = await host.OpenAsync(path);
+        var section = Profile.Layout!.Section("employee", Sheet);
+        var before = (await host.CaptureAsync(book.Id)).Sheets.Single().Data;
+        var preview = await host.PreviewInsertAsync(book.Id, section, Values(section, "REUSE-8"));
+        Assert.AreEqual(8, preview.InsertRow);
+        await host.InsertAsync(preview.Token);
+        var after = (await host.CaptureAsync(book.Id)).Sheets.Single().Data;
+        Assert.AreEqual(before.Range, after.Range);
+        Assert.AreEqual("Sub-Total", ExcelLayoutMatching.Value(after, 52, 6));
+        Assert.AreEqual("Member-status-00196", ExcelLayoutMatching.Value(after, 196, 1));
+        Assert.AreEqual("STATUS-MC-0196", ExcelLayoutMatching.Value(after, 196, 5));
+        Assert.AreEqual("Reserved previous processing note", ExcelLayoutMatching.Value(after, 10, 1));
+        Assert.IsNull(ExcelLayoutMatching.Value(after, 10, 5));
+        Assert.AreEqual("2024 INVENTORY", ExcelLayoutMatching.Value(after, 901, 2));
+        Assert.AreEqual("Synthetic inventory reference", ExcelLayoutMatching.Value(after, 901, 16));
+        Assert.AreEqual("INV-ROW-902", ExcelLayoutMatching.Value(after, 902, 16));
+        Assert.AreEqual("=G903*2", ExcelLayoutMatching.Formula(after, 903, 16));
+    }
+
+    [TestMethod]
+    public async Task RepeatedWholeRowInsertionsKeepStatusAssociationsAndInventoryAligned()
+    {
+        var host = await ExcelTestScope.SharedHostAsync();
+        var path = await CreateAsync(host);
+        await using var scope = new ExcelTestScope();
+        var book = await host.OpenAsync(path);
+        var layout = Profile.Layout!;
+        var section = layout.Section("member-company-1", Sheet);
+        var before = (await host.CaptureAsync(book.Id)).Sheets.Single().Data;
+        for (var i = 0; i < 3; i++)
+        {
+            var preview = await host.PreviewInsertAsync(book.Id, section, Values(section, "NEW-MEMBER-" + i));
+            Assert.AreEqual(197 + i, preview.InsertRow);
+            await host.InsertAsync(preview.Token);
+            var data = (await host.CaptureAsync(book.Id)).Sheets.Single().Data;
+            Assert.AreEqual("Member-status-00196", ExcelLayoutMatching.Value(data, 196, 1));
+            Assert.AreEqual("STATUS-MC-0196", ExcelLayoutMatching.Value(data, 196, 5));
+            Assert.AreEqual("=G196*0.12", ExcelLayoutMatching.Formula(data, 196, 9));
+            Assert.AreEqual("Member-status-00198", ExcelLayoutMatching.Value(data, 199 + i, 1));
+            Assert.AreEqual("STATUS-MC-0198", ExcelLayoutMatching.Value(data, 199 + i, 5));
+            for (var inserted = 0; inserted <= i; inserted++)
+            {
+                Assert.IsNull(ExcelLayoutMatching.Value(data, 197 + inserted, 1));
+                Assert.AreEqual("NEW-MEMBER-" + inserted, ExcelLayoutMatching.Value(data, 197 + inserted, 5));
+                for (var c = 7; c <= 13; c++) Assert.IsNull(ExcelLayoutMatching.Formula(data, 197 + inserted, c));
+            }
+            Assert.AreEqual("External-status-00753", ExcelLayoutMatching.Value(data, 754 + i, 1));
+            Assert.AreEqual("STATUS-EXT-0753", ExcelLayoutMatching.Value(data, 754 + i, 5));
+            Assert.AreEqual("TOTAL EXTERNAL AS OF DEC 2025", ExcelLayoutMatching.Value(data, 896 + i, 3));
+            Assert.AreEqual("TOTAL PAYABLES AS OF DEC 2025", ExcelLayoutMatching.Value(data, 898 + i, 3));
+            Assert.AreEqual(Convert.ToDouble(ExcelLayoutMatching.Value(before, 897, 7)) + (i + 1) * 125.50d, Convert.ToDouble(ExcelLayoutMatching.Value(data, 898 + i, 7)));
+            Assert.AreEqual(ExcelLayoutMatching.Value(before, 904, 7), ExcelLayoutMatching.Value(data, 905 + i, 7));
+            Assert.AreEqual("2024 INVENTORY", ExcelLayoutMatching.Value(data, 902 + i, 2));
+            Assert.AreEqual("Synthetic inventory reference", ExcelLayoutMatching.Value(data, 902 + i, 16));
+            Assert.AreEqual("UNRELATED", ExcelLayoutMatching.Value(data, 903 + i, 3));
+            Assert.AreEqual("INV-ROW-902", ExcelLayoutMatching.Value(data, 903 + i, 16));
+            Assert.AreEqual($"=G{904 + i}*2", ExcelLayoutMatching.Formula(data, 904 + i, 16));
+            Assert.AreEqual($"=SUM(G{903 + i}:G{904 + i})", ExcelLayoutMatching.Formula(data, 905 + i, 7));
+            foreach (var destination in layout.Sections) _ = ExcelLayoutMatching.Resolve(data, layout.Section(destination.Id, Sheet));
+        }
     }
 
     [TestMethod, DataRow(false), DataRow(true)]
@@ -177,10 +245,20 @@ public sealed class PayablesInsertTests
             Assert.AreEqual(125.50d, ExcelLayoutMatching.Value(after, 197, 7));
             Assert.AreEqual("Sub-Total", ExcelLayoutMatching.Value(after, 198, 6));
             Assert.AreEqual("=SUM(G75:G197)", ExcelLayoutMatching.Formula(after, 198, 7));
-            Assert.AreEqual("Synthetic overall total", ExcelLayoutMatching.Value(after, 898, 3));
-            Assert.AreEqual("Inventory", ExcelLayoutMatching.Value(after, 902, 2));
+            Assert.AreEqual("TOTAL PAYABLES AS OF DEC 2025", ExcelLayoutMatching.Value(after, 898, 3));
+            Assert.AreEqual(Convert.ToDouble(ExcelLayoutMatching.Value(before, 897, 7)) + 125.50d, Convert.ToDouble(ExcelLayoutMatching.Value(after, 898, 7)));
+            Assert.AreEqual(ExcelLayoutMatching.Value(before, 904, 7), ExcelLayoutMatching.Value(after, 905, 7));
+            Assert.AreEqual("2024 INVENTORY", ExcelLayoutMatching.Value(after, 902, 2));
             Assert.AreEqual("UNRELATED", ExcelLayoutMatching.Value(after, 903, 3));
-            Assert.AreEqual("Outside Payables columns", ExcelLayoutMatching.Value(after, 902, 16));
+            Assert.AreEqual("Synthetic inventory reference", ExcelLayoutMatching.Value(after, 902, 16));
+            Assert.AreEqual("INV-ROW-902", ExcelLayoutMatching.Value(after, 903, 16));
+            Assert.AreEqual("=G904*2", ExcelLayoutMatching.Formula(after, 904, 16));
+            Assert.AreEqual("Member-status-00196", ExcelLayoutMatching.Value(after, 196, 1));
+            Assert.AreEqual("STATUS-MC-0196", ExcelLayoutMatching.Value(after, 196, 5));
+            Assert.IsNull(ExcelLayoutMatching.Value(after, 197, 1));
+            Assert.AreEqual("MEMBER-0001", ExcelLayoutMatching.Value(after, 197, 5));
+            Assert.AreEqual("Member-status-00198", ExcelLayoutMatching.Value(after, 199, 1));
+            Assert.AreEqual("STATUS-MC-0198", ExcelLayoutMatching.Value(after, 199, 5));
             var restored = await queue.InvokeAsync(() => ((Interop.Application)typeof(ExcelHost).GetField("application", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(host)!).ExtendList);
             Assert.IsTrue(restored);
         }
@@ -190,7 +268,7 @@ public sealed class PayablesInsertTests
         }
     }
 
-    [TestMethod, DataRow("heading"), DataRow("subtotal")]
+    [TestMethod, DataRow("heading"), DataRow("subtotal"), DataRow("missing-overall"), DataRow("extra-overall"), DataRow("missing-external"), DataRow("extra-external")]
     public async Task ChangedStructureRejectsPreviewWithoutFallbackOrWorkbookMutation(string fault)
     {
         var host = await ExcelTestScope.SharedHostAsync();
@@ -207,11 +285,11 @@ public sealed class PayablesInsertTests
         Assert.AreEqual(0, Directory.GetFiles(Path.GetDirectoryName(path)!, "*.tseksheet-*.xlsx").Length);
     }
 
-    [TestMethod]
-    public async Task MergedMemberCompanyTemplateRemainsBlockedBeforeAnyWrite()
+    [TestMethod, DataRow("merge-template"), DataRow("offband-merge")]
+    public async Task MergedMemberCompanyTemplateRemainsBlockedBeforeAnyWrite(string fault)
     {
         var host = await ExcelTestScope.SharedHostAsync();
-        var path = await CreateAsync(host, "merge-template");
+        var path = await CreateAsync(host, fault);
         await using var scope = new ExcelTestScope();
         var book = await host.OpenAsync(path);
         var before = await host.CaptureAsync(book.Id);
@@ -265,17 +343,30 @@ public sealed class PayablesInsertTests
                 {
                     for (var row = starts[i]; row < ends[i]; row++)
                     {
-                        if (i == 0 && row is 7 or 8 or 9) continue;
+                        if (i == 0 && row is 7 or 8 or 9 or 10) continue;
                         data[row - 1, 2] = "Synthetic payee"; data[row - 1, 4] = "'00001"; data[row - 1, 6] = 10d;
                     }
                     data[ends[i] - 1, 5] = "Sub-Total";
                 }
                 foreach (var (row, heading) in headings) data[row - 1, 1] = heading;
-                data[896, 2] = "Synthetic overall total";
-                data[900, 1] = "Inventory"; data[901, 2] = "UNRELATED"; data[903, 5] = "Sub-Total";
-                data[901, 6] = 27d; data[901, 15] = "Outside Payables columns";
+                data[894, 2] = "TOTAL EXTERNAL AS OF DEC 2025";
+                data[896, 2] = "TOTAL PAYABLES AS OF DEC 2025";
+                data[5, 0] = "Employee-status-0006"; data[5, 4] = "'STATUS-EMP-0006";
+                data[9, 0] = "Reserved previous processing note";
+                data[195, 0] = "Member-status-00196"; data[195, 4] = "'STATUS-MC-0196";
+                data[197, 0] = "Member-status-00198"; data[197, 4] = "'STATUS-MC-0198";
+                data[752, 0] = "External-status-00753"; data[752, 4] = "'STATUS-EXT-0753";
+                data[900, 1] = "2024 INVENTORY"; data[901, 2] = "UNRELATED"; data[903, 5] = "Sub-Total";
+                data[901, 1] = "Synthetic inventory item";
+                data[901, 6] = 27d; data[902, 6] = 5d;
+                data[900, 15] = "Synthetic inventory reference"; data[901, 15] = "INV-ROW-902";
                 if (fault == "heading") data[682, 1] = "2024 PAYABLES (UNRECOGNIZED)";
                 if (fault == "subtotal") data[199, 5] = "Sub-Total";
+                if (fault == "missing-overall") data[896, 2] = null;
+                if (fault == "extra-overall") data[898, 2] = "TOTAL PAYABLES AS OF JAN 2026";
+                if (fault == "missing-external") data[894, 2] = null;
+                if (fault == "extra-external") data[895, 2] = "TOTAL EXTERNAL AS OF JAN 2026";
+                if (fault == "offband-merge") data[196, 15] = "Merged insertion boundary";
                 Put(sheet, new(1, 1, 905, 16), r => r.Value2 = data);
                 var financial = new object?[901, 7];
                 for (var row = 5; row <= 905; row++)
@@ -285,10 +376,13 @@ public sealed class PayablesInsertTests
                 financial[58 - 5, 3] = "=G58";
                 financial[196 - 5, 2] = "=G196*0.12"; // Artificial formula; no accounting rule is inferred.
                 for (var i = 0; i < ends.Length; i++) financial[ends[i] - 5, 0] = $"=SUM(G{starts[i]}:G{ends[i] - 1})";
+                financial[895 - 5, 0] = "=G893";
                 financial[897 - 5, 0] = "=SUM(" + string.Join(",", ends.Select(row => "G" + row)) + ")";
                 financial[904 - 5, 0] = "=SUM(G902:G903)";
                 Put(sheet, new(5, 7, 901, 7), r => r.Formula2 = financial);
+                Put(sheet, new(901, 16, 3, 1), r => r.Formula2 = new object[,] { { "Synthetic inventory reference" }, { "INV-ROW-902" }, { "=G903*2" } });
                 if (fault == "merge-template") Put(sheet, new(196, 9, 1, 2), r => r.Merge());
+                if (fault == "offband-merge") Put(sheet, new(197, 16, 2, 1), r => r.Merge());
             }
             finally { app.Calculation = calculation; app.EnableEvents = events; app.ScreenUpdating = screen; }
             book.SaveAs(path, Interop.XlFileFormat.xlOpenXMLWorkbook);

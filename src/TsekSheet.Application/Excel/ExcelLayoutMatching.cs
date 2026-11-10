@@ -22,6 +22,12 @@ public static class ExcelLayoutMatching
             "year-category" => value is string && text is not null && Regex.IsMatch(text,
                 @"^[0-9]{4}\s+PAYABLES\s*\(\s*" + Regex.Escape(marker.Text.Trim()).Replace(@"\ ", @"\s+") + @"\s*\)$",
                 RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(100)),
+            "year-heading" => value is string && text is not null && Regex.IsMatch(text,
+                @"^[0-9]{4}\s+" + Regex.Escape(marker.Text.Trim()).Replace(@"\ ", @"\s+") + @"$",
+                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(100)),
+            "period-total" => value is string && text is not null && Regex.IsMatch(text,
+                @"^TOTAL\s+" + Regex.Escape(marker.Text.Trim()) + @"\s+AS\s+OF\s+(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s+[0-9]{4}$",
+                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(100)),
             "nonempty-text" => value is string && !string.IsNullOrWhiteSpace(text),
             _ => throw new ExcelInsertRejectedException("Unsupported section heading match contract.")
         };
