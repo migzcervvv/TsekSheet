@@ -38,7 +38,7 @@ public sealed class PayablesInsertTests
             Assert.IsTrue(boundary.First > 3 && boundary.Subtotal < 900);
         }
         var section = layout.Section("employee", Sheet);
-        foreach (var expected in new[] { 8, 9, 10 })
+        foreach (var expected in new[] { 8, 9, 52 })
         {
             var inputs = Values(section, "000" + expected).Select(v => expected == 8 && v.Key == "invoice" ? v with { Value = "00042" } : v).ToArray();
             var preview = await host.PreviewInsertAsync(book.Id, section, inputs);
@@ -53,10 +53,10 @@ public sealed class PayablesInsertTests
         Assert.AreEqual("00042", ExcelLayoutMatching.Value(after, 8, 6));
         Assert.AreEqual("=1/0", ExcelLayoutMatching.Formula(after, 8, 10));
         Assert.AreEqual("=1+1", ExcelLayoutMatching.Formula(after, 7, 7));
-        Assert.AreEqual("Sub-Total", ExcelLayoutMatching.Value(after, 11, 2));
-        Assert.AreEqual("Inventory", ExcelLayoutMatching.Value(after, 901, 2));
-        Assert.AreEqual("UNRELATED", ExcelLayoutMatching.Value(after, 902, 3));
-        Assert.IsNull(ExcelLayoutMatching.Value(after, 10, 10), "No optional calculation may be invented.");
+        Assert.AreEqual("Sub-Total", ExcelLayoutMatching.Value(after, 53, 6));
+        Assert.AreEqual("Inventory", ExcelLayoutMatching.Value(after, 902, 2));
+        Assert.AreEqual("UNRELATED", ExcelLayoutMatching.Value(after, 903, 3));
+        Assert.IsNull(ExcelLayoutMatching.Value(after, 52, 10), "No optional calculation may be invented.");
     }
 
     [TestMethod]
@@ -76,7 +76,7 @@ public sealed class PayablesInsertTests
         Assert.AreEqual(42d, read.Values[1, 3]);
         var formulaSection = Profile.Layout.Section("cash-advance", Sheet);
         // Its final template contains a formula; no formula is guessed or copied into a new row.
-        await Assert.ThrowsExactlyAsync<ExcelInsertRejectedException>(() => host.PreviewInsertAsync(book.Id, formulaSection, Values(formulaSection, "00098")));
+        await Assert.ThrowsExactlyAsync<ExcelInsertRejectedException>(() => host.PreviewInsertAsync(book.Id, formulaSection with { BlankHybridNewRows = false }, Values(formulaSection, "00098")));
     }
 
     [TestMethod]
@@ -111,11 +111,124 @@ public sealed class PayablesInsertTests
         await Assert.ThrowsExactlyAsync<FieldReviewException>(() => insertion.PreviewAsync(repeat, restarted.Version!, book.Id, "employee", default, Sheet, draft: true));
     }
 
+    [TestMethod]
+    public async Task AllVerifiedBoundariesResolveAgainAfterAnEarlierSectionInsertion()
+    {
+        var host = await ExcelTestScope.SharedHostAsync();
+        var path = await CreateAsync(host);
+        await using var scope = new ExcelTestScope();
+        var book = await host.OpenAsync(path);
+        var layout = Profile.Layout!;
+        var before = (await host.CaptureAsync(book.Id)).Sheets.Single().Data;
+        Assert.AreEqual("PAYEE (VENDOR NAME)", ExcelLayoutMatching.Value(before, 3, 3));
+        var expectedEnds = new[] { 52, 59, 63, 68, 72, 197, 233, 293, 448, 510, 541, 556, 572, 592, 604, 643, 654, 674, 679, 710, 749, 893 };
+        var expectedStarts = new[] { 5, 55, 62, 66, 71, 75, 198, 234, 294, 449, 511, 542, 557, 573, 593, 605, 644, 655, 675, 684, 713, 753 };
+        var insertion = new ExcelReceiptInsertion(host, host, _ => Profile);
+        Assert.AreEqual(14, insertion.Sections(Profile.Id).Count(s => s.Id.StartsWith("member-company-")));
+        for (var i = 0; i < layout.Sections.Count; i++)
+        {
+            var section = layout.Section(layout.Sections[i].Id, Sheet);
+            var boundary = ExcelLayoutMatching.Resolve(before, section);
+            Assert.AreEqual(expectedStarts[i], boundary.First, section.Id);
+            Assert.AreEqual(expectedEnds[i], boundary.Subtotal, section.Id);
+            Assert.AreEqual("F", section.SubtotalColumn);
+            CollectionAssert.IsSubsetOf(new[] { 897, 901 }, boundary.Protected.ToArray());
+        }
+        Assert.AreEqual("member-company-14", layout.Sections[18].Id);
+        Assert.AreEqual("insurance", layout.Sections[19].Id);
+        var employee = layout.Section("employee", Sheet) with { FillBlankRowsFirst = false };
+        var preview = await host.PreviewInsertAsync(book.Id, employee, Values(employee, "SHIFT-1"));
+        Assert.AreEqual(52, preview.InsertRow);
+        await host.InsertAsync(preview.Token);
+        var after = (await host.CaptureAsync(book.Id)).Sheets.Single().Data;
+        for (var i = 0; i < layout.Sections.Count; i++)
+        {
+            var boundary = ExcelLayoutMatching.Resolve(after, layout.Section(layout.Sections[i].Id, Sheet));
+            Assert.AreEqual(expectedStarts[i] + (i == 0 ? 0 : 1), boundary.First);
+            Assert.AreEqual(expectedEnds[i] + 1, boundary.Subtotal);
+            CollectionAssert.IsSubsetOf(new[] { 898, 902 }, boundary.Protected.ToArray());
+        }
+        Assert.AreEqual("Sub-Total", ExcelLayoutMatching.Value(after, 905, 6), "Inventory subtotals are excluded from Payables marker counts.");
+    }
+
+    [TestMethod, DataRow(false), DataRow(true)]
+    public async Task MemberCompany01InsertsBlankInputsAboveFormulaBearingFinalRow(bool supplyVat)
+    {
+        var host = await ExcelTestScope.SharedHostAsync();
+        var path = await CreateAsync(host);
+        await using var scope = new ExcelTestScope();
+        var book = await host.OpenAsync(path);
+        var section = Profile.Layout!.Section("member-company-1", Sheet);
+        var values = Values(section, "MEMBER-0001").Select(v => v.Key == "vat" && supplyVat ? v with { Value = 7.25d } : v).ToArray();
+        var before = (await host.CaptureAsync(book.Id)).Sheets.Single().Data;
+        Assert.AreEqual("=G196*0.12", ExcelLayoutMatching.Formula(before, 196, 9));
+        var queue = (StaCommandQueue)typeof(ExcelHost).GetField("queue", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(host)!;
+        // Force the Excel setting on, then prove the writer restores it after its bounded batch.
+        var originalExtendList = await queue.InvokeAsync(() => { var app = (Interop.Application)typeof(ExcelHost).GetField("application", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(host)!; var original = app.ExtendList; app.ExtendList = true; return original; });
+        try
+        {
+            var preview = await host.PreviewInsertAsync(book.Id, section, values);
+            Assert.AreEqual(197, preview.InsertRow);
+            await host.InsertAsync(preview.Token); // Full preservation check includes neighbors, totals, inventory and their shifts.
+            var after = (await host.CaptureAsync(book.Id)).Sheets.Single().Data;
+            Assert.AreEqual("=G196*0.12", ExcelLayoutMatching.Formula(after, 196, 9));
+            Assert.IsNull(ExcelLayoutMatching.Formula(after, 197, 9));
+            Assert.AreEqual(supplyVat ? 7.25d : null, ExcelLayoutMatching.Value(after, 197, 9));
+            Assert.AreEqual(125.50d, ExcelLayoutMatching.Value(after, 197, 7));
+            Assert.AreEqual("Sub-Total", ExcelLayoutMatching.Value(after, 198, 6));
+            Assert.AreEqual("=SUM(G75:G197)", ExcelLayoutMatching.Formula(after, 198, 7));
+            Assert.AreEqual("Synthetic overall total", ExcelLayoutMatching.Value(after, 898, 3));
+            Assert.AreEqual("Inventory", ExcelLayoutMatching.Value(after, 902, 2));
+            Assert.AreEqual("UNRELATED", ExcelLayoutMatching.Value(after, 903, 3));
+            Assert.AreEqual("Outside Payables columns", ExcelLayoutMatching.Value(after, 902, 16));
+            var restored = await queue.InvokeAsync(() => ((Interop.Application)typeof(ExcelHost).GetField("application", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(host)!).ExtendList);
+            Assert.IsTrue(restored);
+        }
+        finally
+        {
+            await queue.InvokeAsync(() => { ((Interop.Application)typeof(ExcelHost).GetField("application", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(host)!).ExtendList = originalExtendList; return 0; });
+        }
+    }
+
+    [TestMethod, DataRow("heading"), DataRow("subtotal")]
+    public async Task ChangedStructureRejectsPreviewWithoutFallbackOrWorkbookMutation(string fault)
+    {
+        var host = await ExcelTestScope.SharedHostAsync();
+        var path = await CreateAsync(host, fault);
+        await using var scope = new ExcelTestScope();
+        var book = await host.OpenAsync(path);
+        var before = await host.CaptureAsync(book.Id);
+        // Even an Employee preview validates the Member/Insurance structure; it never selects another destination.
+        var section = Profile.Layout!.Section("employee", Sheet);
+        await Assert.ThrowsExactlyAsync<ExcelInsertRejectedException>(() => host.PreviewInsertAsync(book.Id, section, Values(section, "NO-WRITE")));
+        var after = await host.CaptureAsync(book.Id);
+        CollectionAssert.AreEqual(before.Sheets.Single().Data.Values, after.Sheets.Single().Data.Values);
+        CollectionAssert.AreEqual(before.Sheets.Single().Data.Formulas, after.Sheets.Single().Data.Formulas);
+        Assert.AreEqual(0, Directory.GetFiles(Path.GetDirectoryName(path)!, "*.tseksheet-*.xlsx").Length);
+    }
+
+    [TestMethod]
+    public async Task MergedMemberCompanyTemplateRemainsBlockedBeforeAnyWrite()
+    {
+        var host = await ExcelTestScope.SharedHostAsync();
+        var path = await CreateAsync(host, "merge-template");
+        await using var scope = new ExcelTestScope();
+        var book = await host.OpenAsync(path);
+        var before = await host.CaptureAsync(book.Id);
+        var section = Profile.Layout!.Section("member-company-1", Sheet);
+        await Assert.ThrowsExactlyAsync<ExcelInsertRejectedException>(() => host.PreviewInsertAsync(book.Id, section, Values(section, "BLOCKED")));
+        var after = await host.CaptureAsync(book.Id);
+        CollectionAssert.AreEqual(before.Sheets.Single().Data.Values, after.Sheets.Single().Data.Values);
+        CollectionAssert.AreEqual(before.Sheets.Single().Data.Formulas, after.Sheets.Single().Data.Formulas);
+        CollectionAssert.AreEqual(before.Sheets.Single().MergedAreas.ToArray(), after.Sheets.Single().MergedAreas.ToArray());
+        Assert.AreEqual(0, Directory.GetFiles(Path.GetDirectoryName(path)!, "*.tseksheet-*.xlsx").Length);
+    }
+
     private static InsertValue[] Values(ExcelSectionDefinition section, string rfp) => section.ColumnMap.Select(p =>
         new InsertValue(p.Key, Profile.Fields.Single(f => f.Key == p.Key).Header, A1Formula.ColumnNumber(p.Value),
             p.Key switch { "payee" => "Synthetic vendor", "rfpNo" => rfp, "amount" => 125.50d, _ => null })).ToArray();
 
-    private static async Task<string> CreateAsync(ExcelHost host)
+    private static async Task<string> CreateAsync(ExcelHost host, string fault = "")
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "GOALS.md"))) directory = directory.Parent;
@@ -123,11 +236,11 @@ public sealed class PayablesInsertTests
         Directory.CreateDirectory(root);
         var path = Path.Combine(root, "payables-synthetic.xlsx");
         var queue = (StaCommandQueue)typeof(ExcelHost).GetField("queue", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(host)!;
-        await queue.InvokeAsync(() => Author(host, path));
+        await queue.InvokeAsync(() => Author(host, path, fault));
         return path;
     }
 
-    private static int Author(ExcelHost host, string path)
+    private static int Author(ExcelHost host, string path, string fault)
     {
         var app = (Interop.Application)typeof(ExcelHost).GetField("application", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(host)!;
         Interop.Workbooks? books = null; Interop.Workbook? book = null;
@@ -140,34 +253,42 @@ public sealed class PayablesInsertTests
             try
             {
                 app.ScreenUpdating = false; app.EnableEvents = false; app.Calculation = Interop.XlCalculation.xlCalculationManual;
-                var data = new object?[902, 15];
-                foreach (var field in Profile.Layout!.Fields) data[2, A1Formula.ColumnNumber(field.Column!) - 1] = field.Label;
-                for (var i = 0; i < 22; i++)
+                var data = new object?[905, 16];
+                foreach (var anchor in Profile.Layout!.SheetMatch.Anchors) data[2, A1Formula.ColumnNumber(anchor.Column) - 1] = anchor.Text;
+                var headings = new[] { (4, "2024 PAYABLES (EMPLOYEE)"), (54, "2025 PAYABLES (CASH ADVANCE)"),
+                    (61, "2023 PAYABLES (DOLLARS)"), (65, "2025 PAYABLES (LAST PAY)"), (70, "2024 PAYABLES (REFUND)"),
+                    (74, "2025 PAYABLES (MEMBER COMPANY)"), (683, "2024 PAYABLES (INSURANCE)"),
+                    (712, "2025 PAYABLES (MOBILE SUBSCRIPTION)"), (752, "2023 PAYABLES (EXTERNAL)") };
+                var ends = new[] { 52, 59, 63, 68, 72, 197, 233, 293, 448, 510, 541, 556, 572, 592, 604, 643, 654, 674, 679, 710, 749, 893 };
+                var starts = new[] { 5, 55, 62, 66, 71, 75, 198, 234, 294, 449, 511, 542, 557, 573, 593, 605, 644, 655, 675, 684, 713, 753 };
+                for (var i = 0; i < ends.Length; i++)
                 {
-                    var heading = 5 + i * 7;
-                    if (i <= 8) data[heading - 1, 1] = i < 8 ? Profile.Layout.Sections[i].Label : "Member Company";
-                    for (var r = heading + 1; r <= heading + 4; r++)
+                    for (var row = starts[i]; row < ends[i]; row++)
                     {
-                        if (i == 0 && r > heading + 1) continue;
-                        data[r - 1, 2] = "Synthetic payee"; data[r - 1, 4] = "'00001"; data[r - 1, 6] = 10d;
+                        if (i == 0 && row is 7 or 8 or 9) continue;
+                        data[row - 1, 2] = "Synthetic payee"; data[row - 1, 4] = "'00001"; data[row - 1, 6] = 10d;
                     }
-                    data[heading + 4, 1] = "Sub-Total";
+                    data[ends[i] - 1, 5] = "Sub-Total";
                 }
-                data[160, 1] = "Grand Total"; data[899, 1] = "Inventory"; data[900, 2] = "UNRELATED";
-                Put(sheet, new(1, 1, 902, 15), r => r.Value2 = data);
-                var financial = new object?[156, 7];
-                for (var r = 6; r <= 161; r++)
-                    for (var c = 7; c <= 13; c++) financial[r - 6, c - 7] = data[r - 1, c - 1];
-                financial[1, 0] = "=1+1";
-                financial[2, 3] = "=1/0";
-                financial[10, 3] = "=G16";
-                for (var i = 0; i < 22; i++)
-                {
-                    var subtotal = 10 + i * 7;
-                    financial[subtotal - 6, 0] = $"=SUM(G{subtotal - 4}:G{subtotal - 1})";
-                }
-                financial[155, 0] = "=SUM(G6:G159)";
-                Put(sheet, new(6, 7, 156, 7), r => r.Formula2 = financial);
+                foreach (var (row, heading) in headings) data[row - 1, 1] = heading;
+                data[896, 2] = "Synthetic overall total";
+                data[900, 1] = "Inventory"; data[901, 2] = "UNRELATED"; data[903, 5] = "Sub-Total";
+                data[901, 6] = 27d; data[901, 15] = "Outside Payables columns";
+                if (fault == "heading") data[682, 1] = "2024 PAYABLES (UNRECOGNIZED)";
+                if (fault == "subtotal") data[199, 5] = "Sub-Total";
+                Put(sheet, new(1, 1, 905, 16), r => r.Value2 = data);
+                var financial = new object?[901, 7];
+                for (var row = 5; row <= 905; row++)
+                    for (var c = 7; c <= 13; c++) financial[row - 5, c - 7] = data[row - 1, c - 1];
+                financial[2, 0] = "=1+1";
+                financial[3, 3] = "=1/0";
+                financial[58 - 5, 3] = "=G58";
+                financial[196 - 5, 2] = "=G196*0.12"; // Artificial formula; no accounting rule is inferred.
+                for (var i = 0; i < ends.Length; i++) financial[ends[i] - 5, 0] = $"=SUM(G{starts[i]}:G{ends[i] - 1})";
+                financial[897 - 5, 0] = "=SUM(" + string.Join(",", ends.Select(row => "G" + row)) + ")";
+                financial[904 - 5, 0] = "=SUM(G902:G903)";
+                Put(sheet, new(5, 7, 901, 7), r => r.Formula2 = financial);
+                if (fault == "merge-template") Put(sheet, new(196, 9, 1, 2), r => r.Merge());
             }
             finally { app.Calculation = calculation; app.EnableEvents = events; app.ScreenUpdating = screen; }
             book.SaveAs(path, Interop.XlFileFormat.xlOpenXMLWorkbook);

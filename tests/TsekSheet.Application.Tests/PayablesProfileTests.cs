@@ -23,6 +23,12 @@ public sealed class PayablesProfileTests
         Assert.AreEqual(0, profile.Layout.Accounts.Count);
         Assert.AreEqual("text", profile.Fields.Single(f => f.Key == "dateReceived").Kind);
         Assert.AreEqual("G", profile.Layout.Section("employee", "Sheet").ColumnMap["amount"]);
+        Assert.AreEqual("PAYEE (VENDOR NAME)", profile.Layout.SheetMatch.Anchors.Single(a => a.Column == "C").Text);
+        Assert.AreEqual("blank-inputs", profile.Layout.HybridNewRowMode);
+        CollectionAssert.AreEqual(new[] { "employee", "cash-advance", "dollars", "last-pay", "refund", "member-company-1", "member-company-2",
+            "member-company-3", "member-company-4", "member-company-5", "member-company-6", "member-company-7", "member-company-8",
+            "member-company-9", "member-company-10", "member-company-11", "member-company-12", "member-company-13", "member-company-14",
+            "insurance", "mobile-subscription", "external" }, profile.Layout.Sections.Select(s => s.Id).ToArray());
     }
 
     [TestMethod]
@@ -56,5 +62,16 @@ public sealed class PayablesProfileTests
         Assert.AreEqual(23, ExcelLayoutMatching.Marker(data, marker));
         values[24, 1] = "Sub-Total";
         Assert.ThrowsExactly<ExcelInsertRejectedException>(() => ExcelLayoutMatching.Marker(data, marker));
+    }
+
+    [TestMethod, DataRow("2024 PAYABLES (EMPLOYEE)", true), DataRow("2025 PAYABLES (Employee)", true), DataRow("2024  PAYABLES( EMPLOYEE )", true),
+        DataRow("Employee", false), DataRow("2024 PAYABLES (EMPLOYEE) notes", false), DataRow("2024 PAYABLES (EXTERNAL)", false)]
+    public void YearCategoryContractRequiresTheWholeHeadingAndPermitsDifferentYears(string heading, bool matches)
+    {
+        var values = new object?[,] { { heading } };
+        var data = new RangeData(new(1, 2, 1, 1), values, new string?[1, 1], new string[1, 1]);
+        var marker = new RowMarker("B", "Employee", ExpectedCount: 1, Match: "year-category");
+        if (matches) Assert.AreEqual(1, ExcelLayoutMatching.Marker(data, marker));
+        else Assert.ThrowsExactly<ExcelInsertRejectedException>(() => ExcelLayoutMatching.Marker(data, marker));
     }
 }

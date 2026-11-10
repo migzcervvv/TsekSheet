@@ -54,7 +54,9 @@ public sealed partial class ExcelHost
             foreach (var field in fields)
             {
                 if (section.SheetMatch is null && !Equals(Cell(snapshot.Data, section.HeaderRow, field.Column), field.Header)) throw new ExcelInsertRejectedException("The profile headers do not match this workbook section.");
-                if (Formula(snapshot.Data, insertNew ? row - 1 : row, field.Column) is not null && (!section.HybridInputs || insertNew || field.Value is not null)) throw new ExcelInsertRejectedException($"Column {new CellRange(1, field.Column, 1, 1).Address} contains a formula in the target or new-row template. Choose a compatible subsection or review its template in Excel.");
+                var preserveOptionalFormula = section.HybridInputs && !insertNew && field.Value is null;
+                var createBlankInput = section.HybridInputs && insertNew && section.BlankHybridNewRows;
+                if (Formula(snapshot.Data, insertNew ? row - 1 : row, field.Column) is not null && !preserveOptionalFormula && !createBlankInput) throw new ExcelInsertRejectedException($"Column {new CellRange(1, field.Column, 1, 1).Address} contains a formula in the target or new-row template. Choose a compatible subsection or review its template in Excel.");
             }
             if (section.HybridInputs && !insertNew)
                 fields = fields.Select(field => field.Value is null && Formula(snapshot.Data, row, field.Column) is not null
@@ -98,7 +100,7 @@ public sealed partial class ExcelHost
         var mutationStarted = false;
         try
         {
-            InBatch(() =>
+            InSectionBatch(pending, () =>
             {
                 if (SnapshotIdentity.Hash(ExcelReadback.Capture(workbook)) != SnapshotIdentity.Hash(pending.Before))
                     throw new ExcelInsertRejectedException("The workbook changed after preview. Request a new preview.");
@@ -106,6 +108,12 @@ public sealed partial class ExcelHost
                     pending.Section.InsertMode == "tableRow" ? pending.Section.TableName : null, pending.InsertNew ? pending.Row - 1 : pending.Row);
                 mutationStarted = true;
                 if (pending.InsertNew) InsertRow(sheet, pending);
+                if (pending.InsertNew && pending.Section.BlankHybridNewRows)
+                {
+                    var created = ExcelReadback.Read(sheet, new(pending.Row, pending.Left, 1, pending.Right - pending.Left + 1));
+                    if (created.Formulas.Cast<string?>().Any(formula => formula is not null) || created.Values.Cast<object?>().Any(value => value is not null and not ""))
+                        throw new InvalidOperationException("Excel populated the new manual row unexpectedly. No supplied values were written; review the inserted row in Excel.");
+                }
                 foreach (var group in Groups(pending.InsertNew ? pending.Section.FormulaColumns.Select(A1Formula.ColumnNumber) : []))
                 {
                     Interop.Range? fill = null;
@@ -157,6 +165,14 @@ public sealed partial class ExcelHost
         try { ValidateTarget(sheet, new(row, left, 1, right - left + 1), null, row); return true; }
         catch (InvalidOperationException) { return false; }
     }
+
+    private T InSectionBatch<T>(PendingInsert pending, Func<T> operation) => InBatch(() =>
+    {
+        if (!pending.Section.BlankHybridNewRows) return operation();
+        var extendList = application!.ExtendList;
+        try { application.ExtendList = false; return operation(); }
+        finally { application.ExtendList = extendList; }
+    });
 
     private static void InsertRow(Interop.Worksheet sheet, PendingInsert pending)
     {

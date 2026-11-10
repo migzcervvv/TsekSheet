@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "payables-rfp",
-  "revision": 1,
+  "revision": 2,
   "displayName": "Payables — RFP",
   "mappingMode": "fixed",
   "advisoryIdentifier": "rfpNo",
@@ -15,7 +15,7 @@
       },
       {
         "column": "C",
-        "equals": "Payee"
+        "equals": "PAYEE (VENDOR NAME)"
       },
       {
         "column": "D",
@@ -177,38 +177,43 @@
         "afterRow": {
           "column": "B",
           "equals": "Employee",
+          "match": "year-category",
           "expectedCount": 1
         },
         "offset": 1
       },
       "end": {
         "rowBefore": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "after": {
             "column": "B",
             "equals": "Employee",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
             "equals": "Cash Advance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 1
         }
       },
       "subtotalRow": {
-        "column": "B",
+        "column": "F",
         "equals": "Sub-Total",
         "after": {
           "column": "B",
           "equals": "Employee",
+          "match": "year-category",
           "expectedCount": 1
         },
         "before": {
           "column": "B",
           "equals": "Cash Advance",
+          "match": "year-category",
           "expectedCount": 1
         },
         "expectedCount": 1
@@ -223,38 +228,43 @@
         "afterRow": {
           "column": "B",
           "equals": "Cash Advance",
+          "match": "year-category",
           "expectedCount": 1
         },
         "offset": 1
       },
       "end": {
         "rowBefore": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "after": {
             "column": "B",
             "equals": "Cash Advance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
             "equals": "Dollars",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 1
         }
       },
       "subtotalRow": {
-        "column": "B",
+        "column": "F",
         "equals": "Sub-Total",
         "after": {
           "column": "B",
           "equals": "Cash Advance",
+          "match": "year-category",
           "expectedCount": 1
         },
         "before": {
           "column": "B",
           "equals": "Dollars",
+          "match": "year-category",
           "expectedCount": 1
         },
         "expectedCount": 1
@@ -269,38 +279,43 @@
         "afterRow": {
           "column": "B",
           "equals": "Dollars",
+          "match": "year-category",
           "expectedCount": 1
         },
         "offset": 1
       },
       "end": {
         "rowBefore": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "after": {
             "column": "B",
             "equals": "Dollars",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
             "equals": "Last Pay",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 1
         }
       },
       "subtotalRow": {
-        "column": "B",
+        "column": "F",
         "equals": "Sub-Total",
         "after": {
           "column": "B",
           "equals": "Dollars",
+          "match": "year-category",
           "expectedCount": 1
         },
         "before": {
           "column": "B",
           "equals": "Last Pay",
+          "match": "year-category",
           "expectedCount": 1
         },
         "expectedCount": 1
@@ -315,38 +330,43 @@
         "afterRow": {
           "column": "B",
           "equals": "Last Pay",
+          "match": "year-category",
           "expectedCount": 1
         },
         "offset": 1
       },
       "end": {
         "rowBefore": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "after": {
             "column": "B",
             "equals": "Last Pay",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
             "equals": "Refund",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 1
         }
       },
       "subtotalRow": {
-        "column": "B",
+        "column": "F",
         "equals": "Sub-Total",
         "after": {
           "column": "B",
           "equals": "Last Pay",
+          "match": "year-category",
           "expectedCount": 1
         },
         "before": {
           "column": "B",
           "equals": "Refund",
+          "match": "year-category",
           "expectedCount": 1
         },
         "expectedCount": 1
@@ -361,176 +381,43 @@
         "afterRow": {
           "column": "B",
           "equals": "Refund",
+          "match": "year-category",
           "expectedCount": 1
         },
         "offset": 1
       },
       "end": {
         "rowBefore": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "after": {
             "column": "B",
             "equals": "Refund",
-            "expectedCount": 1
-          },
-          "before": {
-            "column": "B",
-            "equals": "Insurance",
-            "expectedCount": 1
-          },
-          "expectedCount": 1
-        }
-      },
-      "subtotalRow": {
-        "column": "B",
-        "equals": "Sub-Total",
-        "after": {
-          "column": "B",
-          "equals": "Refund",
-          "expectedCount": 1
-        },
-        "before": {
-          "column": "B",
-          "equals": "Insurance",
-          "expectedCount": 1
-        },
-        "expectedCount": 1
-      },
-      "insertMode": "columnsOnly",
-      "fillBlankRowsFirst": true
-    },
-    {
-      "id": "insurance",
-      "label": "Insurance",
-      "start": {
-        "afterRow": {
-          "column": "B",
-          "equals": "Insurance",
-          "expectedCount": 1
-        },
-        "offset": 1
-      },
-      "end": {
-        "rowBefore": {
-          "column": "B",
-          "equals": "Sub-Total",
-          "after": {
-            "column": "B",
-            "equals": "Insurance",
-            "expectedCount": 1
-          },
-          "before": {
-            "column": "B",
-            "equals": "Mobile Subscription",
-            "expectedCount": 1
-          },
-          "expectedCount": 1
-        }
-      },
-      "subtotalRow": {
-        "column": "B",
-        "equals": "Sub-Total",
-        "after": {
-          "column": "B",
-          "equals": "Insurance",
-          "expectedCount": 1
-        },
-        "before": {
-          "column": "B",
-          "equals": "Mobile Subscription",
-          "expectedCount": 1
-        },
-        "expectedCount": 1
-      },
-      "insertMode": "columnsOnly",
-      "fillBlankRowsFirst": true
-    },
-    {
-      "id": "mobile-subscription",
-      "label": "Mobile Subscription",
-      "start": {
-        "afterRow": {
-          "column": "B",
-          "equals": "Mobile Subscription",
-          "expectedCount": 1
-        },
-        "offset": 1
-      },
-      "end": {
-        "rowBefore": {
-          "column": "B",
-          "equals": "Sub-Total",
-          "after": {
-            "column": "B",
-            "equals": "Mobile Subscription",
-            "expectedCount": 1
-          },
-          "before": {
-            "column": "B",
-            "equals": "External",
-            "expectedCount": 1
-          },
-          "expectedCount": 1
-        }
-      },
-      "subtotalRow": {
-        "column": "B",
-        "equals": "Sub-Total",
-        "after": {
-          "column": "B",
-          "equals": "Mobile Subscription",
-          "expectedCount": 1
-        },
-        "before": {
-          "column": "B",
-          "equals": "External",
-          "expectedCount": 1
-        },
-        "expectedCount": 1
-      },
-      "insertMode": "columnsOnly",
-      "fillBlankRowsFirst": true
-    },
-    {
-      "id": "external",
-      "label": "External",
-      "start": {
-        "afterRow": {
-          "column": "B",
-          "equals": "External",
-          "expectedCount": 1
-        },
-        "offset": 1
-      },
-      "end": {
-        "rowBefore": {
-          "column": "B",
-          "equals": "Sub-Total",
-          "after": {
-            "column": "B",
-            "equals": "External",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 1
         }
       },
       "subtotalRow": {
-        "column": "B",
+        "column": "F",
         "equals": "Sub-Total",
         "after": {
           "column": "B",
-          "equals": "External",
+          "equals": "Refund",
+          "match": "year-category",
           "expectedCount": 1
         },
         "before": {
           "column": "B",
           "equals": "Member Company",
+          "match": "year-category",
           "expectedCount": 1
         },
         "expectedCount": 1
@@ -545,40 +432,45 @@
         "afterRow": {
           "column": "B",
           "equals": "Member Company",
+          "match": "year-category",
           "expectedCount": 1
         },
         "offset": 1
       },
       "end": {
         "rowBefore": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "occurrence": 1,
           "after": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
-            "equals": "Grand Total",
+            "equals": "Insurance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 14
         }
       },
       "subtotalRow": {
-        "column": "B",
+        "column": "F",
         "equals": "Sub-Total",
         "occurrence": 1,
         "after": {
           "column": "B",
           "equals": "Member Company",
+          "match": "year-category",
           "expectedCount": 1
         },
         "before": {
           "column": "B",
-          "equals": "Grand Total",
+          "equals": "Insurance",
+          "match": "year-category",
           "expectedCount": 1
         },
         "expectedCount": 14
@@ -591,17 +483,19 @@
       "label": "Member Company 02",
       "start": {
         "afterRow": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "occurrence": 1,
           "after": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
-            "equals": "Grand Total",
+            "equals": "Insurance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 14
@@ -610,34 +504,38 @@
       },
       "end": {
         "rowBefore": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "occurrence": 2,
           "after": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
-            "equals": "Grand Total",
+            "equals": "Insurance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 14
         }
       },
       "subtotalRow": {
-        "column": "B",
+        "column": "F",
         "equals": "Sub-Total",
         "occurrence": 2,
         "after": {
           "column": "B",
           "equals": "Member Company",
+          "match": "year-category",
           "expectedCount": 1
         },
         "before": {
           "column": "B",
-          "equals": "Grand Total",
+          "equals": "Insurance",
+          "match": "year-category",
           "expectedCount": 1
         },
         "expectedCount": 14
@@ -650,17 +548,19 @@
       "label": "Member Company 03",
       "start": {
         "afterRow": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "occurrence": 2,
           "after": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
-            "equals": "Grand Total",
+            "equals": "Insurance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 14
@@ -669,34 +569,38 @@
       },
       "end": {
         "rowBefore": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "occurrence": 3,
           "after": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
-            "equals": "Grand Total",
+            "equals": "Insurance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 14
         }
       },
       "subtotalRow": {
-        "column": "B",
+        "column": "F",
         "equals": "Sub-Total",
         "occurrence": 3,
         "after": {
           "column": "B",
           "equals": "Member Company",
+          "match": "year-category",
           "expectedCount": 1
         },
         "before": {
           "column": "B",
-          "equals": "Grand Total",
+          "equals": "Insurance",
+          "match": "year-category",
           "expectedCount": 1
         },
         "expectedCount": 14
@@ -709,17 +613,19 @@
       "label": "Member Company 04",
       "start": {
         "afterRow": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "occurrence": 3,
           "after": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
-            "equals": "Grand Total",
+            "equals": "Insurance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 14
@@ -728,34 +634,38 @@
       },
       "end": {
         "rowBefore": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "occurrence": 4,
           "after": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
-            "equals": "Grand Total",
+            "equals": "Insurance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 14
         }
       },
       "subtotalRow": {
-        "column": "B",
+        "column": "F",
         "equals": "Sub-Total",
         "occurrence": 4,
         "after": {
           "column": "B",
           "equals": "Member Company",
+          "match": "year-category",
           "expectedCount": 1
         },
         "before": {
           "column": "B",
-          "equals": "Grand Total",
+          "equals": "Insurance",
+          "match": "year-category",
           "expectedCount": 1
         },
         "expectedCount": 14
@@ -768,17 +678,19 @@
       "label": "Member Company 05",
       "start": {
         "afterRow": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "occurrence": 4,
           "after": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
-            "equals": "Grand Total",
+            "equals": "Insurance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 14
@@ -787,34 +699,38 @@
       },
       "end": {
         "rowBefore": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "occurrence": 5,
           "after": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
-            "equals": "Grand Total",
+            "equals": "Insurance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 14
         }
       },
       "subtotalRow": {
-        "column": "B",
+        "column": "F",
         "equals": "Sub-Total",
         "occurrence": 5,
         "after": {
           "column": "B",
           "equals": "Member Company",
+          "match": "year-category",
           "expectedCount": 1
         },
         "before": {
           "column": "B",
-          "equals": "Grand Total",
+          "equals": "Insurance",
+          "match": "year-category",
           "expectedCount": 1
         },
         "expectedCount": 14
@@ -827,17 +743,19 @@
       "label": "Member Company 06",
       "start": {
         "afterRow": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "occurrence": 5,
           "after": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
-            "equals": "Grand Total",
+            "equals": "Insurance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 14
@@ -846,34 +764,38 @@
       },
       "end": {
         "rowBefore": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "occurrence": 6,
           "after": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
-            "equals": "Grand Total",
+            "equals": "Insurance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 14
         }
       },
       "subtotalRow": {
-        "column": "B",
+        "column": "F",
         "equals": "Sub-Total",
         "occurrence": 6,
         "after": {
           "column": "B",
           "equals": "Member Company",
+          "match": "year-category",
           "expectedCount": 1
         },
         "before": {
           "column": "B",
-          "equals": "Grand Total",
+          "equals": "Insurance",
+          "match": "year-category",
           "expectedCount": 1
         },
         "expectedCount": 14
@@ -886,17 +808,19 @@
       "label": "Member Company 07",
       "start": {
         "afterRow": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "occurrence": 6,
           "after": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
-            "equals": "Grand Total",
+            "equals": "Insurance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 14
@@ -905,34 +829,38 @@
       },
       "end": {
         "rowBefore": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "occurrence": 7,
           "after": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
-            "equals": "Grand Total",
+            "equals": "Insurance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 14
         }
       },
       "subtotalRow": {
-        "column": "B",
+        "column": "F",
         "equals": "Sub-Total",
         "occurrence": 7,
         "after": {
           "column": "B",
           "equals": "Member Company",
+          "match": "year-category",
           "expectedCount": 1
         },
         "before": {
           "column": "B",
-          "equals": "Grand Total",
+          "equals": "Insurance",
+          "match": "year-category",
           "expectedCount": 1
         },
         "expectedCount": 14
@@ -945,17 +873,19 @@
       "label": "Member Company 08",
       "start": {
         "afterRow": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "occurrence": 7,
           "after": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
-            "equals": "Grand Total",
+            "equals": "Insurance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 14
@@ -964,34 +894,38 @@
       },
       "end": {
         "rowBefore": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "occurrence": 8,
           "after": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
-            "equals": "Grand Total",
+            "equals": "Insurance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 14
         }
       },
       "subtotalRow": {
-        "column": "B",
+        "column": "F",
         "equals": "Sub-Total",
         "occurrence": 8,
         "after": {
           "column": "B",
           "equals": "Member Company",
+          "match": "year-category",
           "expectedCount": 1
         },
         "before": {
           "column": "B",
-          "equals": "Grand Total",
+          "equals": "Insurance",
+          "match": "year-category",
           "expectedCount": 1
         },
         "expectedCount": 14
@@ -1004,17 +938,19 @@
       "label": "Member Company 09",
       "start": {
         "afterRow": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "occurrence": 8,
           "after": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
-            "equals": "Grand Total",
+            "equals": "Insurance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 14
@@ -1023,34 +959,38 @@
       },
       "end": {
         "rowBefore": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "occurrence": 9,
           "after": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
-            "equals": "Grand Total",
+            "equals": "Insurance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 14
         }
       },
       "subtotalRow": {
-        "column": "B",
+        "column": "F",
         "equals": "Sub-Total",
         "occurrence": 9,
         "after": {
           "column": "B",
           "equals": "Member Company",
+          "match": "year-category",
           "expectedCount": 1
         },
         "before": {
           "column": "B",
-          "equals": "Grand Total",
+          "equals": "Insurance",
+          "match": "year-category",
           "expectedCount": 1
         },
         "expectedCount": 14
@@ -1063,17 +1003,19 @@
       "label": "Member Company 10",
       "start": {
         "afterRow": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "occurrence": 9,
           "after": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
-            "equals": "Grand Total",
+            "equals": "Insurance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 14
@@ -1082,34 +1024,38 @@
       },
       "end": {
         "rowBefore": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "occurrence": 10,
           "after": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
-            "equals": "Grand Total",
+            "equals": "Insurance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 14
         }
       },
       "subtotalRow": {
-        "column": "B",
+        "column": "F",
         "equals": "Sub-Total",
         "occurrence": 10,
         "after": {
           "column": "B",
           "equals": "Member Company",
+          "match": "year-category",
           "expectedCount": 1
         },
         "before": {
           "column": "B",
-          "equals": "Grand Total",
+          "equals": "Insurance",
+          "match": "year-category",
           "expectedCount": 1
         },
         "expectedCount": 14
@@ -1122,17 +1068,19 @@
       "label": "Member Company 11",
       "start": {
         "afterRow": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "occurrence": 10,
           "after": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
-            "equals": "Grand Total",
+            "equals": "Insurance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 14
@@ -1141,34 +1089,38 @@
       },
       "end": {
         "rowBefore": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "occurrence": 11,
           "after": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
-            "equals": "Grand Total",
+            "equals": "Insurance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 14
         }
       },
       "subtotalRow": {
-        "column": "B",
+        "column": "F",
         "equals": "Sub-Total",
         "occurrence": 11,
         "after": {
           "column": "B",
           "equals": "Member Company",
+          "match": "year-category",
           "expectedCount": 1
         },
         "before": {
           "column": "B",
-          "equals": "Grand Total",
+          "equals": "Insurance",
+          "match": "year-category",
           "expectedCount": 1
         },
         "expectedCount": 14
@@ -1181,17 +1133,19 @@
       "label": "Member Company 12",
       "start": {
         "afterRow": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "occurrence": 11,
           "after": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
-            "equals": "Grand Total",
+            "equals": "Insurance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 14
@@ -1200,34 +1154,38 @@
       },
       "end": {
         "rowBefore": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "occurrence": 12,
           "after": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
-            "equals": "Grand Total",
+            "equals": "Insurance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 14
         }
       },
       "subtotalRow": {
-        "column": "B",
+        "column": "F",
         "equals": "Sub-Total",
         "occurrence": 12,
         "after": {
           "column": "B",
           "equals": "Member Company",
+          "match": "year-category",
           "expectedCount": 1
         },
         "before": {
           "column": "B",
-          "equals": "Grand Total",
+          "equals": "Insurance",
+          "match": "year-category",
           "expectedCount": 1
         },
         "expectedCount": 14
@@ -1240,17 +1198,19 @@
       "label": "Member Company 13",
       "start": {
         "afterRow": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "occurrence": 12,
           "after": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
-            "equals": "Grand Total",
+            "equals": "Insurance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 14
@@ -1259,34 +1219,38 @@
       },
       "end": {
         "rowBefore": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "occurrence": 13,
           "after": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
-            "equals": "Grand Total",
+            "equals": "Insurance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 14
         }
       },
       "subtotalRow": {
-        "column": "B",
+        "column": "F",
         "equals": "Sub-Total",
         "occurrence": 13,
         "after": {
           "column": "B",
           "equals": "Member Company",
+          "match": "year-category",
           "expectedCount": 1
         },
         "before": {
           "column": "B",
-          "equals": "Grand Total",
+          "equals": "Insurance",
+          "match": "year-category",
           "expectedCount": 1
         },
         "expectedCount": 14
@@ -1299,17 +1263,19 @@
       "label": "Member Company 14",
       "start": {
         "afterRow": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "occurrence": 13,
           "after": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
-            "equals": "Grand Total",
+            "equals": "Insurance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 14
@@ -1318,37 +1284,192 @@
       },
       "end": {
         "rowBefore": {
-          "column": "B",
+          "column": "F",
           "equals": "Sub-Total",
           "occurrence": 14,
           "after": {
             "column": "B",
             "equals": "Member Company",
+            "match": "year-category",
             "expectedCount": 1
           },
           "before": {
             "column": "B",
-            "equals": "Grand Total",
+            "equals": "Insurance",
+            "match": "year-category",
             "expectedCount": 1
           },
           "expectedCount": 14
         }
       },
       "subtotalRow": {
-        "column": "B",
+        "column": "F",
         "equals": "Sub-Total",
         "occurrence": 14,
         "after": {
           "column": "B",
           "equals": "Member Company",
+          "match": "year-category",
           "expectedCount": 1
         },
         "before": {
           "column": "B",
-          "equals": "Grand Total",
+          "equals": "Insurance",
+          "match": "year-category",
           "expectedCount": 1
         },
         "expectedCount": 14
+      },
+      "insertMode": "columnsOnly",
+      "fillBlankRowsFirst": true
+    },
+    {
+      "id": "insurance",
+      "label": "Insurance",
+      "start": {
+        "afterRow": {
+          "column": "B",
+          "equals": "Insurance",
+          "match": "year-category",
+          "expectedCount": 1
+        },
+        "offset": 1
+      },
+      "end": {
+        "rowBefore": {
+          "column": "F",
+          "equals": "Sub-Total",
+          "after": {
+            "column": "B",
+            "equals": "Insurance",
+            "match": "year-category",
+            "expectedCount": 1
+          },
+          "before": {
+            "column": "B",
+            "equals": "Mobile Subscription",
+            "match": "year-category",
+            "expectedCount": 1
+          },
+          "expectedCount": 1
+        }
+      },
+      "subtotalRow": {
+        "column": "F",
+        "equals": "Sub-Total",
+        "after": {
+          "column": "B",
+          "equals": "Insurance",
+          "match": "year-category",
+          "expectedCount": 1
+        },
+        "before": {
+          "column": "B",
+          "equals": "Mobile Subscription",
+          "match": "year-category",
+          "expectedCount": 1
+        },
+        "expectedCount": 1
+      },
+      "insertMode": "columnsOnly",
+      "fillBlankRowsFirst": true
+    },
+    {
+      "id": "mobile-subscription",
+      "label": "Mobile Subscription",
+      "start": {
+        "afterRow": {
+          "column": "B",
+          "equals": "Mobile Subscription",
+          "match": "year-category",
+          "expectedCount": 1
+        },
+        "offset": 1
+      },
+      "end": {
+        "rowBefore": {
+          "column": "F",
+          "equals": "Sub-Total",
+          "after": {
+            "column": "B",
+            "equals": "Mobile Subscription",
+            "match": "year-category",
+            "expectedCount": 1
+          },
+          "before": {
+            "column": "B",
+            "equals": "External",
+            "match": "year-category",
+            "expectedCount": 1
+          },
+          "expectedCount": 1
+        }
+      },
+      "subtotalRow": {
+        "column": "F",
+        "equals": "Sub-Total",
+        "after": {
+          "column": "B",
+          "equals": "Mobile Subscription",
+          "match": "year-category",
+          "expectedCount": 1
+        },
+        "before": {
+          "column": "B",
+          "equals": "External",
+          "match": "year-category",
+          "expectedCount": 1
+        },
+        "expectedCount": 1
+      },
+      "insertMode": "columnsOnly",
+      "fillBlankRowsFirst": true
+    },
+    {
+      "id": "external",
+      "label": "External",
+      "start": {
+        "afterRow": {
+          "column": "B",
+          "equals": "External",
+          "match": "year-category",
+          "expectedCount": 1
+        },
+        "offset": 1
+      },
+      "end": {
+        "rowBefore": {
+          "column": "F",
+          "equals": "Sub-Total",
+          "after": {
+            "column": "B",
+            "equals": "External",
+            "match": "year-category",
+            "expectedCount": 1
+          },
+          "before": {
+            "column": "B",
+            "equals": "Inventory",
+            "expectedCount": 1
+          },
+          "expectedCount": 1
+        }
+      },
+      "subtotalRow": {
+        "column": "F",
+        "equals": "Sub-Total",
+        "after": {
+          "column": "B",
+          "equals": "External",
+          "match": "year-category",
+          "expectedCount": 1
+        },
+        "before": {
+          "column": "B",
+          "equals": "Inventory",
+          "expectedCount": 1
+        },
+        "expectedCount": 1
       },
       "insertMode": "columnsOnly",
       "fillBlankRowsFirst": true
@@ -1359,51 +1480,82 @@
     {
       "column": "B",
       "equals": "Employee",
+      "match": "year-category",
       "expectedCount": 1
     },
     {
       "column": "B",
       "equals": "Cash Advance",
+      "match": "year-category",
       "expectedCount": 1
     },
     {
       "column": "B",
       "equals": "Dollars",
+      "match": "year-category",
       "expectedCount": 1
     },
     {
       "column": "B",
       "equals": "Last Pay",
+      "match": "year-category",
       "expectedCount": 1
     },
     {
       "column": "B",
       "equals": "Refund",
-      "expectedCount": 1
-    },
-    {
-      "column": "B",
-      "equals": "Insurance",
-      "expectedCount": 1
-    },
-    {
-      "column": "B",
-      "equals": "Mobile Subscription",
-      "expectedCount": 1
-    },
-    {
-      "column": "B",
-      "equals": "External",
+      "match": "year-category",
       "expectedCount": 1
     },
     {
       "column": "B",
       "equals": "Member Company",
+      "match": "year-category",
       "expectedCount": 1
     },
     {
       "column": "B",
-      "equals": "Grand Total",
+      "equals": "Insurance",
+      "match": "year-category",
+      "expectedCount": 1
+    },
+    {
+      "column": "B",
+      "equals": "Mobile Subscription",
+      "match": "year-category",
+      "expectedCount": 1
+    },
+    {
+      "column": "B",
+      "equals": "External",
+      "match": "year-category",
+      "expectedCount": 1
+    },
+    {
+      "column": "C",
+      "equals": "Overall total heading",
+      "match": "nonempty-text",
+      "after": {
+        "column": "F",
+        "equals": "Sub-Total",
+        "after": {
+          "column": "B",
+          "equals": "External",
+          "match": "year-category",
+          "expectedCount": 1
+        },
+        "before": {
+          "column": "B",
+          "equals": "Inventory",
+          "expectedCount": 1
+        },
+        "expectedCount": 1
+      },
+      "before": {
+        "column": "B",
+        "equals": "Inventory",
+        "expectedCount": 1
+      },
       "expectedCount": 1
     },
     {
@@ -1411,5 +1563,6 @@
       "equals": "Inventory",
       "expectedCount": 1
     }
-  ]
+  ],
+  "hybridNewRowMode": "blank-inputs"
 }

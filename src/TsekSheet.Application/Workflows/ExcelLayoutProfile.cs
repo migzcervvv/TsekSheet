@@ -7,7 +7,7 @@ namespace TsekSheet.Application.Workflows;
 public sealed record HeaderAnchor(string Column, [property: JsonPropertyName("equals")] string Text);
 public sealed record SheetMatch(int HeaderRow, IReadOnlyList<HeaderAnchor> Anchors);
 public sealed record RowMarker(string Column, [property: JsonPropertyName("equals")] string Text,
-    int Occurrence = 1, string? Note = null, RowMarker? After = null, RowMarker? Before = null, int? ExpectedCount = null);
+    int Occurrence = 1, string? Note = null, RowMarker? After = null, RowMarker? Before = null, int? ExpectedCount = null, string Match = "exact");
 public sealed record SectionStart(int? HeaderRowOffset = null, RowMarker? AfterRow = null, int Offset = 0);
 public sealed record SectionEnd(RowMarker RowBefore);
 public sealed record LayoutSection(string Id, string Label, SectionStart Start, SectionEnd End,
@@ -19,7 +19,7 @@ public sealed record ExcelLayoutProfile(int SchemaVersion, string Id, int Revisi
     SheetMatch SheetMatch, IReadOnlyList<LayoutField> Fields, IReadOnlyList<ProfileAccount> Accounts,
     IReadOnlyList<string> FormulaColumns, IReadOnlyList<LayoutSection> Sections,
     string BlankRowRule, IReadOnlyList<RowMarker> ProtectedRows,
-    JsonElement? VatRule = null, JsonElement? Lookups = null, string MappingMode = "account", string? AdvisoryIdentifier = null, string SourceScope = "page")
+    JsonElement? VatRule = null, JsonElement? Lookups = null, string MappingMode = "account", string? AdvisoryIdentifier = null, string SourceScope = "page", string HybridNewRowMode = "template")
 {
     public const string FixedBlankRule = "Empty manual inputs; preserve optional formulas; supplied values require editable cells.";
     public const string SupportedBlankRule = "A data row is blank when every mapped input column (B-H and all account columns) is empty. Formula columns are ignored.";
@@ -49,6 +49,8 @@ public sealed record ExcelLayoutProfile(int SchemaVersion, string Id, int Revisi
         Check(p.Fields!.All(f => f is not null && Id(f.Key) && Label(f.Label) && f.Kind is "text" or "money" or "date" or "accountChoice"));
         Check(p.Fields.Select(f => f.Key).Distinct().Count() == p.Fields.Count);
         Check(p.MappingMode is "account" or "fixed" && p.SourceScope is "page" or "document");
+        Check(p.HybridNewRowMode is "template" or "blank-inputs");
+        Check(p.HybridNewRowMode != "blank-inputs" || p.MappingMode == "fixed" && p.FormulaColumns.Count == 0);
         Check(p.AdvisoryIdentifier is null || p.MappingMode == "fixed" && p.Fields.Any(f => f.Key == p.AdvisoryIdentifier && f.Kind == "text" && f.Required));
         if (p.MappingMode == "account")
         {
@@ -66,7 +68,7 @@ public sealed record ExcelLayoutProfile(int SchemaVersion, string Id, int Revisi
         Check(p.Sections!.All(s => s is not null));
         Check(p.Sections.Select(s => s.Id).Distinct().Count() == p.Sections.Count);
         bool SameMarker(RowMarker? a, RowMarker? b) => a is null || b is null ? a == b :
-            a.Column == b.Column && a.Text == b.Text && a.Occurrence == b.Occurrence && a.ExpectedCount == b.ExpectedCount
+            a.Column == b.Column && a.Text == b.Text && a.Occurrence == b.Occurrence && a.ExpectedCount == b.ExpectedCount && a.Match == b.Match
             && SameMarker(a.After, b.After) && SameMarker(a.Before, b.Before);
         Check(p.Sections.All(s => s is not null && Id(s.Id) && Label(s.Label) && s.InsertMode is "entireRow" or "columnsOnly"
             && s.Start is not null && s.End is not null && s.SubtotalRow is not null
@@ -83,7 +85,8 @@ public sealed record ExcelLayoutProfile(int SchemaVersion, string Id, int Revisi
             if (m.Before is not null) foreach (var child in Expand(m.Before, depth + 1)) yield return child;
         }
         var markers = roots.SelectMany(m => Expand(m)).ToArray();
-        Check(markers.All(m => m is not null && Label(m.Text) && m.Occurrence is >= 1 and <= 2000 && (m.ExpectedCount is null or >= 1 and <= 2000)));
+        Check(markers.All(m => m is not null && Label(m.Text) && m.Match is "exact" or "year-category" or "nonempty-text" && m.Occurrence is >= 1 and <= 2000 && (m.ExpectedCount is null or >= 1 and <= 2000)));
+        Check(markers.All(m => m.Match != "nonempty-text" || m.After is not null && m.Before is not null && m.ExpectedCount == 1));
         Check(p.SheetMatch!.Anchors.All(a => a is not null && Label(a.Text)));
         try
         {
@@ -101,6 +104,8 @@ public sealed record ExcelLayoutProfile(int SchemaVersion, string Id, int Revisi
             s.SubtotalRow.Column, s.SubtotalRow.Text, s.InsertMode, SheetMatch: SheetMatch, Start: s.Start,
             SubtotalOccurrence: s.SubtotalRow.Occurrence, FillBlankRowsFirst: s.FillBlankRowsFirst,
             InputColumns: Fields.Where(f => f.Column is not null).Select(f => f.Column!).Concat(Accounts.Select(a => a.Column)).ToArray(), ProtectedRows: ProtectedRows, HybridInputs: MappingMode == "fixed", SubtotalLocator: s.SubtotalRow,
-            HybridFormulaColumns: Fields.Where(f => f.Kind == "money" && !f.Required).Select(f => f.Column!).ToArray());
+            HybridFormulaColumns: Fields.Where(f => f.Kind == "money" && !f.Required).Select(f => f.Column!).ToArray(),
+            StructureMarkers: MappingMode == "fixed" ? Sections.Select(section => section.SubtotalRow).ToArray() : null,
+            BlankHybridNewRows: HybridNewRowMode == "blank-inputs");
     }
 }

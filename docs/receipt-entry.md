@@ -238,5 +238,7 @@ in the existing Section dropdown. Read the PDF alongside the fields, select
 **Add row to Excel**. OCR is optional. A possible duplicate RFP warning is advisory
 and leaves Add row available. Formula conflicts and unsafe section markers block
 Check. Blank optional financial inputs preserve existing formulas; Check labels
-those cells explicitly. The strict marker contract and its current qualification
-limitation are documented in [Local Excel profiles](profiles.md).
+those cells explicitly. New rows can use ordinary formula-bearing templates without copying their formulas;
+all new financial inputs are blank until explicitly supplied. Unsafe merged,
+array/spill, protected or table templates remain blocked. The verified structural
+contract and owner-side validation boundary are documented in [Local Excel profiles](profiles.md).

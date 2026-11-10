@@ -71,18 +71,34 @@ incompatible; the search continues to the next row. Merged/array/spill rows and 
 with foreign content outside the mapped band are excluded. The normal protected
 sheet, stale-preview, backup and full Excel readback checks still apply.
 
-If no compatible row exists, insertion uses the final data row as its formatting
-template. A hybrid input formula in that template causes a pre-write rejection:
-formula applicability has not been established. No hybrid financial formula is
-copied, inferred or repaired. A manual-only template permits insertion above the
-subtotal. Subtotal formula handling retains the existing same-sheet A1 rules.
+If no compatible row exists, the default `hybridNewRowMode: "template"`
+continues to reject financial formulas in the final data-row template. The
+Payables profile explicitly selects `hybridNewRowMode: "blank-inputs"`: Excel
+inserts a row with formatting from above, with ordinary range formula extension
+(`ExtendList`) disabled for the entire write batch and restored in `finally`.
+This mode requires a fixed-column profile with no formula-copy columns. Before
+writing, the adapter reads the inserted band back and requires every cell to be
+empty and formula-free. It never clears an unexpected formula to make room for a
+value. Existing formulas above and below the new row remain protected by the full
+Excel preservation check. No accounting formula is copied or inferred.
+
+Ordinary formula-bearing templates, including the Member Company 01 I196 case,
+can therefore supply formatting for a new manual row. Optional financial inputs
+remain blank unless entered explicitly. Merged, protected, array/spill and table
+templates, foreign content outside the input band, ambiguous structure and stale
+previews remain blocked. An unexpected Excel-populated new row stops before any
+supplied values are written and requires manual review of the unsaved insertion.
+Subtotal formula handling retains the existing same-sheet A1 rules.
 
 Markers may additionally contain `after` and `before` marker objects, and
 `expectedCount`. Occurrence is counted only between those exclusive bounds.
 A count mismatch rejects Check with an instruction to verify section markers.
 Nested bounds are limited to three levels. All bounds resolve again at preview.
+Fixed profiles also validate every section subtotal scope before selecting a row;
+a malformed unrelated category cannot silently redirect the destination.
 
-The built-in **Payables — RFP** maps row-3 headers B–O exactly as listed in T8a.
+The built-in **Payables — RFP**, revision 2, maps row-3 headers B–O. C3 must be
+`PAYEE (VENDOR NAME)`; the displayed field label remains Payee.
 Only Payee, RFP No. and Amount are required. Date Received, RFP No. and Invoice #
 remain text; optional money fields remain independent inputs. No totals, tax or
 alternate Amount values are calculated. `advisoryIdentifier: "rfpNo"` reports a
@@ -90,15 +106,31 @@ possible duplicate on matching worksheets without blocking explicit insertion.
 The Payables profile sets `sourceScope: "document"`, so source guards cover the
 entire PDF packet; the default `"page"` retains existing page-scoped guards.
 
-**Layout qualification remains incomplete.** The ticket supplied no heading-cell
-addresses or verified Member Company boundary map, and the owner's workbook was
-not opened. The synthetic, strictly checked marker contract is: column B contains
-unique Employee, Cash Advance, Dollars, Last Pay, Refund, Insurance, Mobile
-Subscription and External headings, then Member Company; each main category has
-one Sub-Total before the next heading; Member Company has exactly fourteen
-Sub-Total markers before a unique Grand Total. A unique Inventory heading is also
-required outside every destination. Member Company 01–14 are ordinal UI labels,
-not inferred company names. No insertion row numbers are stored. This contract
-must be checked against an Excel-authored redacted structural reference before
-claiming compatibility with the supplied accounting layout. Missing or ambiguous
-markers reject insertion; no fallback destination is selected.
+**T8a-FIX structural coverage:** the Excel-authored synthetic reference reproduces
+the planner-verified headings, subtotal positions and I196 formula-bearing row.
+The category order is Employee, Cash Advance, Dollars, Last Pay, Refund, Member
+Company 01–14, Insurance, Mobile Subscription, External. All subtotals use column F.
+The fourteen Member Company markers are counted exclusively between the Member
+Company and Insurance headings; the fourteenth destination cannot reach Insurance.
+Inventory subtotals are outside every Payables scope.
+
+Column-B category markers use `match: "year-category"`. The entire literal heading
+must follow `YYYY PAYABLES (CATEGORY)`, case insensitive with flexible whitespace;
+the year may differ between categories. Bare category names, extra trailing text
+and a changed category fail. This is a fixed grammar, not a user-supplied regex.
+A missing heading, wrong order or unexpected subtotal count blocks preview without
+fallback. Member Company labels are numbered choices, not inferred company names.
+
+The column-C overall-total heading is protected as the unique nonempty literal
+text between External's subtotal and the unique column-B Inventory heading
+(`match: "nonempty-text"`, with both bounds and count 1 required). This avoids
+inventing the unspecified total caption. Both structures move with Excel insertions
+and are resolved again. Observed heading/subtotal row numbers are fixture assertions,
+never insertion addresses.
+
+Owner-side validation still covers the original workbook's exact heading grammar,
+styles, merged/array/spill regions, validation/conditional formats and accounting
+intent. The original workbook has not been opened by the agent. The tests prove
+structural resolution and preservation on fictional Excel-authored data, including
+both blank VAT and explicitly entered VAT above the I196 template formula. They do
+not certify private workbook content or accounting calculations.

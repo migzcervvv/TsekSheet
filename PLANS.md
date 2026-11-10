@@ -344,4 +344,4 @@ Status: DONE (PR #18 and UX-03-FIX PR #19 merged into main at d4adbc5; existing 
 
 ### T8a - Payables RFP Profile & Safe Excel Entry
 
-Status: PARTIAL / IN REVIEW (fixed-column profile and synthetic Excel insertion implemented; final Application 502/0/0, Frontend 104/0/0, Desktop 28/0/1, targeted Payables Excel 3/0/0 passed/failed/skipped; full Excel regression passed; Desktop skip: local OCR assets absent. Actual heading cells and Member Company boundary map remain unverified; hybrid new-row formula templates are conservatively rejected; see docs/profiles.md).
+Status: IN REVIEW (T8a-FIX structurally covers the planner-verified header/category/column-F subtotal map on Excel-authored synthetic data; all 22 destinations re-resolve after insertion, including Member Company 01 above I196 without copying formulas. Final Application 508/0/0, Frontend 104/0/0, Excel functional 33/0/0, Desktop 28/0/1 passed/failed/skipped; Release build/typecheck pass. Desktop skip: OCR assets absent; unchanged 30-instance lifecycle stress excluded. Original-workbook formatting/content and owner-side insertion validation remain pending; PR #20 stays draft).
