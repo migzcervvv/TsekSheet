@@ -41,15 +41,24 @@ public sealed partial class ExcelHost
             var boundary = ExcelLayoutMatching.Resolve(snapshot.Data, section);
             PreviewTiming?.Invoke(new("excel.layout", watch.Elapsed.TotalMilliseconds));
             var inputColumns = (section.InputColumns ?? section.ColumnMap.Values.ToArray()).Select(A1Formula.ColumnNumber).ToArray();
+            bool Compatible(int r) => inputColumns.All(c =>
+                Formula(snapshot.Data, r, c) is null
+                    ? Cell(snapshot.Data, r, c) is null or ""
+                    : section.HybridInputs && (section.HybridFormulaColumns ?? []).Any(column => A1Formula.ColumnNumber(column) == c) && fields.SingleOrDefault(f => f.Column == c)?.Value is null);
             var blank = section.FillBlankRowsFirst ? Enumerable.Range(boundary.First, boundary.Subtotal - boundary.First)
-                .FirstOrDefault(r => inputColumns.All(c => Formula(snapshot.Data, r, c) is null && Cell(snapshot.Data, r, c) is null or "")) : 0;
+                .FirstOrDefault(r => Compatible(r) && (!section.HybridInputs || SafeHybridRow(sheet, snapshot.Data, r, left, right))) : 0;
             var insertNew = blank == 0;
             var row = insertNew ? boundary.Subtotal : blank;
+            if (section.HybridInputs && insertNew && !SafeHybridRow(sheet, snapshot.Data, row - 1, left, right))
+                throw new ExcelInsertRejectedException("The subsection has no safe row template. Review its final data row in Excel.");
             foreach (var field in fields)
             {
                 if (section.SheetMatch is null && !Equals(Cell(snapshot.Data, section.HeaderRow, field.Column), field.Header)) throw new ExcelInsertRejectedException("The profile headers do not match this workbook section.");
-                if (Formula(snapshot.Data, insertNew ? row - 1 : row, field.Column) is not null) throw new ExcelInsertRejectedException("A mapped input column contains a formula; the profile layout does not match this target.");
+                if (Formula(snapshot.Data, insertNew ? row - 1 : row, field.Column) is not null && (!section.HybridInputs || insertNew || field.Value is not null)) throw new ExcelInsertRejectedException($"Column {new CellRange(1, field.Column, 1, 1).Address} contains a formula in the target or new-row template. Choose a compatible subsection or review its template in Excel.");
             }
+            if (section.HybridInputs && !insertNew)
+                fields = fields.Select(field => field.Value is null && Formula(snapshot.Data, row, field.Column) is not null
+                    ? field with { DisplayValue = "Existing formula preserved" } : field).ToArray();
             foreach (var formulaColumn in section.FormulaColumns.Select(A1Formula.ColumnNumber))
                 if (Formula(snapshot.Data, insertNew ? row - 1 : row, formulaColumn) is null) throw new ExcelInsertRejectedException("A formula column is missing its profile template formula.");
             try { ValidateTarget(sheet, new(insertNew ? row - 1 : row, left, 1, right - left + 1), section.InsertMode == "tableRow" ? section.TableName : null, insertNew ? row - 1 : row); }
@@ -103,7 +112,7 @@ public sealed partial class ExcelHost
                     try { fill = ExcelReadback.Range(sheet, new(pending.Row - 1, group.Left, 2, group.Right - group.Left + 1)); fill.FillDown(); }
                     finally { ComLifetime.Release(fill); }
                 }
-                foreach (var group in Groups(pending.Values.Select(v => v.Column)))
+                foreach (var group in Groups(pending.Values.Where(v => !pending.Section.HybridInputs || v.Value is not null).Select(v => v.Column)))
                 {
                     var bounds = new CellRange(pending.Row, group.Left, 1, group.Right - group.Left + 1);
                     ValidateTarget(sheet, bounds, pending.Section.InsertMode == "tableRow" ? pending.Section.TableName : null, pending.Row);
@@ -138,6 +147,15 @@ public sealed partial class ExcelHost
             return new(pending.WorkbookId, pending.Section.Id, sheet.Name, bounds.Address, pending.Warnings, highlight);
         }
         catch { if (mutationStarted) registration.Faulted = true; throw; }
+    }
+
+    // A merged separator, foreign content or array/spill target is not a data row.
+    private static bool SafeHybridRow(Interop.Worksheet sheet, RangeData data, int row, int left, int right)
+    {
+        for (var c = data.Range.Column; c < data.Range.Column + data.Range.Columns; c++)
+            if ((c < left || c > right) && (Cell(data, row, c) is not null and not "" || Formula(data, row, c) is not null)) return false;
+        try { ValidateTarget(sheet, new(row, left, 1, right - left + 1), null, row); return true; }
+        catch (InvalidOperationException) { return false; }
     }
 
     private static void InsertRow(Interop.Worksheet sheet, PendingInsert pending)

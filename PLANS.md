@@ -308,11 +308,11 @@ Status: TODO
 
 ### UX-01 - Workbook-Centered Workspace and Primary Navigation
 
-Status: IN REVIEW (Excel-backed workspace opens directly into Process Receipts; exact workbook identity reused without reopening; secondary inspection/legacy tools retained; unsafe switches preserve drafts and bindings; synthetic two-workbook hosted review/preview/explicit insertion and 1440/768/390 layout checks passed; final Release Application 499/0/0, Frontend 81/0/0, Desktop 25/0/0 passed/failed/skipped; typecheck/build passed; initial sandbox, selector, focus/timing and dependency-lock reruns retained and resolved)
+Status: DONE (merged PR #16); implementation review record: (Excel-backed workspace opens directly into Process Receipts; exact workbook identity reused without reopening; secondary inspection/legacy tools retained; unsafe switches preserve drafts and bindings; synthetic two-workbook hosted review/preview/explicit insertion and 1440/768/390 layout checks passed; final Release Application 499/0/0, Frontend 81/0/0, Desktop 25/0/0 passed/failed/skipped; typecheck/build passed; initial sandbox, selector, focus/timing and dependency-lock reruns retained and resolved)
 
 ### UX-02 - Unified Receipt Processing
 
-Status: IN REVIEW (PR #17; UX-02-FIX keeps manual Check independent of optional rendering/OCR; pre-Check OCR proposals are rejected by a synchronous proposal epoch; source navigation still invalidates previews; final Frontend 90/0/0 and targeted hosted Desktop Release 3/0/0 passed/failed/skipped, typecheck/build passed; backend verification and Excel safeguards unchanged; no unrelated Excel regressions repeated)
+Status: DONE (merged PR #17); implementation review record: (PR #17; UX-02-FIX keeps manual Check independent of optional rendering/OCR; pre-Check OCR proposals are rejected by a synchronous proposal epoch; source navigation still invalidates previews; final Frontend 90/0/0 and targeted hosted Desktop Release 3/0/0 passed/failed/skipped, typecheck/build passed; backend verification and Excel safeguards unchanged; no unrelated Excel regressions repeated)
 
 ## Risks
 
@@ -339,4 +339,9 @@ Status: IN REVIEW (PR #17; UX-02-FIX keeps manual Check independent of optional 
 
 ### UX-03 - Document Viewer Zoom & Continuous Scrolling
 
-Status: IN REVIEW (PR #18 already merged; UX-03-FIX correction on t/UX03-document-viewer pending planner review; fits mixed-size pages independently and anchors reading position through loading/zoom/resize; continuous local pages, three-image cache, zoom and page-specific regions; source association and manual Check safeguards preserved; Frontend 101/0/0 and targeted Desktop Release 11/0/0 passed/failed/skipped; typecheck/build passed; 1366/768/390 screenshots retained locally; PR pending planner review)
+Status: DONE (PR #18 and UX-03-FIX PR #19 merged into main at d4adbc5; existing viewer regression coverage retained).
+
+
+### T8a - Payables RFP Profile & Safe Excel Entry
+
+Status: PARTIAL / IN REVIEW (fixed-column profile and synthetic Excel insertion implemented; final Application 502/0/0, Frontend 104/0/0, Desktop 28/0/1, targeted Payables Excel 3/0/0 passed/failed/skipped; full Excel regression passed; Desktop skip: local OCR assets absent. Actual heading cells and Member Company boundary map remain unverified; hybrid new-row formula templates are conservatively rejected; see docs/profiles.md).

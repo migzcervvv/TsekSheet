@@ -41,10 +41,12 @@ public sealed partial class DesktopSmokeTests
             await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Select receipt PDF or image').click()");
             await Until(async()=>await web.ExecuteScriptAsync("(()=>{const i=document.querySelector('.rendered-source');return !!i&&i.complete&&i.naturalWidth===800;})()")=="true","Actual PDF page did not render");
             await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Next source page').click()");
-            await Until(async()=>await web.ExecuteScriptAsync("document.querySelector('.rendered-source')?.alt==='Rendered source page 2' && document.querySelector('.rendered-source').complete")=="true","PDF navigation failed");
+            await Until(async()=>await web.ExecuteScriptAsync("document.querySelector('[alt=\"Rendered source page 2\"]')?.complete && document.querySelector('[aria-label=\"Local source preview\"]').textContent.includes('Page 2 of 2')")=="true","PDF navigation failed");
             Assert.AreEqual("true",await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Local source preview\"]').textContent.includes('Page 2 of 2') && !document.body.textContent.includes('Human-verified manual entry') && document.querySelector('.rendered-source').src.startsWith('blob:')"));
-            await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Enlarge source page').click()");
-            await Until(async()=>await web.ExecuteScriptAsync("document.querySelector('.rendered-source').getBoundingClientRect().width>400")=="true","Enlarged page not readable");
+            await web.ExecuteScriptAsync("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Actual Size (100%)').click()");
+            await Until(async()=>await web.ExecuteScriptAsync("document.querySelector('[aria-label=\"Document zoom\"] output').textContent==='100%'")=="true","Actual size zoom did not settle");
+            await web.ExecuteScriptAsync("document.querySelector('button[aria-label=\"Zoom In\"]').click()");
+            await Until(async()=>await web.ExecuteScriptAsync("document.querySelector('[alt=\"Rendered source page 2\"]').getBoundingClientRect().width>800")=="true","Enlarged page not readable");
             using(var rendered=File.Create(Path.Combine(AppContext.BaseDirectory,"actual-source-pdf.png")))await web.CoreWebView2.CapturePreviewAsync(Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png,rendered);
             CollectionAssert.AreEqual(bytes,File.ReadAllBytes(path));
         }

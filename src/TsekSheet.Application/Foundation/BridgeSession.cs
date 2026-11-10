@@ -166,7 +166,7 @@ public sealed class BridgeSession : IDisposable
                 {
                     var preview = await excel.PreviewAsync(receipts, expected, payload.GetProperty("workbookId").GetString()!, payload.GetProperty("sectionId").GetString()!, lifetime.Token,
                         payload.TryGetProperty("sheet", out var sheetValue) ? sheetValue.GetString() : null, draft: command == "excel.previewDraft");
-                    Success(id!, new { preview.Token, preview.WorkbookId, preview.SectionId, preview.Sheet, preview.Range, preview.InsertRow, preview.Values,
+                    Success(id!, new { preview.Token, preview.WorkbookId, preview.SectionId, preview.Sheet, preview.Range, preview.InsertRow, preview.Values, preview.AdvisoryWarnings,
                         manualReview = preview.ManualReview.Select(w => new { w.Cell, w.Reason }) });
                 }
                 else

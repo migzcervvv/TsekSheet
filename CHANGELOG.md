@@ -2,6 +2,8 @@
 
 [README](README.md) · **Changelog**
 
+- 2026-11-10 — T8a: Add fixed-column Payables RFP entry, 22 flat destinations, compatible-row reuse and advisory duplicates; retain Excel safeguards and reject unproven formula templates.
+
 - 2026-11-07 — UX-03-FIX: Fit mixed-size PDF pages independently and preserve the visible reading position during page loading, zoom and viewport resizing.
 
 - 2026-11-07 — UX-03: Add continuous, bounded local document pages, fit/native zoom and page-specific OCR region selection with contained scrolling.

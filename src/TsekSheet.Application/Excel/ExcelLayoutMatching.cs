@@ -14,9 +14,12 @@ public static class ExcelLayoutMatching
 
     public static int Marker(RangeData data, RowMarker marker)
     {
-        var rows = Enumerable.Range(data.Range.Row, data.Range.Rows).Where(r =>
+        var after = marker.After is null ? 0 : Marker(data, marker.After);
+        var before = marker.Before is null ? 1048577 : Marker(data, marker.Before);
+        var rows = Enumerable.Range(data.Range.Row, data.Range.Rows).Where(r => r > after && r < before &&
             Formula(data, r, A1Formula.ColumnNumber(marker.Column)) is null &&
             string.Equals(Convert.ToString(Value(data, r, A1Formula.ColumnNumber(marker.Column)))?.Trim(), marker.Text.Trim(), StringComparison.OrdinalIgnoreCase)).ToArray();
+        if (marker.ExpectedCount is int count && rows.Length != count) throw new ExcelInsertRejectedException("Section markers are ambiguous. Verify the profile headings and subtotal count in Excel.");
         if (rows.Length < marker.Occurrence) throw new ExcelInsertRejectedException("The selected sheet has no matching profile section marker.");
         return rows[marker.Occurrence - 1];
     }
@@ -26,7 +29,8 @@ public static class ExcelLayoutMatching
         if (section.SheetMatch is not null && !Matches(data, section.SheetMatch))
             throw new ExcelInsertRejectedException("The selected sheet does not match the profile headers.");
         int subtotal;
-        if (section.SubtotalOccurrence > 0) subtotal = Marker(data, new(section.SubtotalColumn, section.SubtotalMarker, section.SubtotalOccurrence));
+        if (section.SubtotalLocator is not null) subtotal = Marker(data, section.SubtotalLocator);
+        else if (section.SubtotalOccurrence > 0) subtotal = Marker(data, new(section.SubtotalColumn, section.SubtotalMarker, section.SubtotalOccurrence));
         else
         {
             var rows = Enumerable.Range(data.Range.Row, data.Range.Rows).Where(r => r > section.HeaderRow &&
