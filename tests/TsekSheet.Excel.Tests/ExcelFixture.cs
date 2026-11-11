@@ -10,7 +10,7 @@ internal sealed record ExcelFixture(string Root, string Path)
 {
     internal static int MeasurementCycle { get; set; }
 
-    internal static async Task<ExcelFixture> CreateAsync(bool sections = false, bool unsupportedSubtotal = false, bool date1904 = false)
+    internal static async Task<ExcelFixture> CreateAsync(bool sections = false, bool unsupportedSubtotal = false, bool date1904 = false, bool boundTable = false)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null && !File.Exists(System.IO.Path.Combine(directory.FullName, "GOALS.md"))) directory = directory.Parent;
@@ -22,11 +22,11 @@ internal sealed record ExcelFixture(string Root, string Path)
         // Test-only fixture authoring borrows the adapter's root on its existing STA.
         // No COM reference crosses the command boundary; the host owns root release.
         var queue = (StaCommandQueue)typeof(ExcelHost).GetField("queue", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(host)!;
-        await queue.InvokeAsync(() => Author(host, path, sections, unsupportedSubtotal, date1904));
+        await queue.InvokeAsync(() => Author(host, path, sections, unsupportedSubtotal, date1904, boundTable));
         return new(root, path);
     }
 
-    private static int Author(ExcelHost host, string path, bool sections, bool unsupportedSubtotal, bool date1904)
+    private static int Author(ExcelHost host, string path, bool sections, bool unsupportedSubtotal, bool date1904, bool boundTable)
     {
         var app = (Interop.Application)typeof(ExcelHost).GetField("application", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(host)!;
         Interop.Workbooks? books = null;
@@ -82,6 +82,13 @@ internal sealed record ExcelFixture(string Root, string Path)
                 finally { try { app.EnableEvents = events; } finally { app.ScreenUpdating = screen; } }
             }
             if (sections) AddSectionSheets(app, book);
+            if (boundTable)
+            {
+                Interop.Names? names = null;
+                Interop.Name? identity = null;
+                try { names = book.Names; identity = names.Add("Synthetic_Table_Identity", "=\"synthetic-table\""); }
+                finally { ComLifetime.Release(identity); ComLifetime.Release(names); }
+            }
             if (unsupportedSubtotal)
             {
                 Interop.Worksheet? columns = null;

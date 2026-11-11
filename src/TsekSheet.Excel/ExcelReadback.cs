@@ -120,7 +120,6 @@ internal static class ExcelReadback
     internal static PreservationSnapshot Capture(Interop.Workbook workbook)
     {
         Interop.Sheets? sheets = null;
-        Interop.Names? names = null;
         try
         {
             sheets = workbook.Worksheets;
@@ -131,6 +130,16 @@ internal static class ExcelReadback
                 try { sheet = (Interop.Worksheet)(object)sheets[i]; sheetData.Add(CaptureSheet(sheet)); }
                 finally { ComLifetime.Release(sheet); }
             }
+            return new(sheetData, ReadNames(workbook), workbook.Date1904);
+        }
+        finally { ComLifetime.Release(sheets); }
+    }
+
+    internal static IReadOnlyList<NamedReference> ReadNames(Interop.Workbook workbook)
+    {
+        Interop.Names? names = null;
+        try
+        {
             names = workbook.Names;
             var nameData = new List<NamedReference>();
             for (var i = 1; i <= names.Count; i++)
@@ -139,9 +148,9 @@ internal static class ExcelReadback
                 try { name = names.Item(i); nameData.Add(new(name.Name, (string)(object)name.RefersTo)); }
                 finally { ComLifetime.Release(name); }
             }
-            return new(sheetData, nameData.OrderBy(n => n.Name, StringComparer.Ordinal).ToArray(), workbook.Date1904);
+            return nameData.OrderBy(n => n.Name, StringComparer.Ordinal).ToArray();
         }
-        finally { ComLifetime.Release(names); ComLifetime.Release(sheets); }
+        finally { ComLifetime.Release(names); }
     }
 
     private static SheetSnapshot CaptureSheet(Interop.Worksheet sheet)

@@ -9,13 +9,17 @@ public sealed partial class ExcelHost
 {
     private sealed record PendingInsert(string WorkbookId, ExcelSectionDefinition Section, InsertValue[] Values,
         PreservationSnapshot Before, int Row, int Left, int Right, string?[] Subtotals, string?[] Rewritten,
-        FormulaReview[] Warnings, long AddedValidation, bool InsertNew);
+        FormulaReview[] Warnings, long AddedValidation, bool InsertNew, BoundInsert? Binding);
     private readonly Dictionary<string, PendingInsert> insertPlans = [];
     public Action<PreviewStageTiming>? PreviewTiming { get; set; }
 
     public Task<SectionInsertPreview> PreviewInsertAsync(string workbookId, ExcelSectionDefinition section, IReadOnlyList<InsertValue> values) =>
-        queue.InvokeAsync(() => WithSheet(workbookId, section.SheetName, (workbook, sheet) =>
-        {
+        queue.InvokeAsync(() => WithSheet(workbookId, section.SheetName, (workbook, sheet) => PreviewInsertCore(workbookId, workbook, sheet, section, values)));
+
+    private SectionInsertPreview PreviewInsertCore(string workbookId, Interop.Workbook workbook, Interop.Worksheet sheet,
+        ExcelSectionDefinition section, IReadOnlyList<InsertValue> values, PreservationSnapshot? captured = null,
+        (int First, int Subtotal)? resolved = null, BoundInsert? binding = null)
+    {
             if (books[workbookId].Faulted) throw new ExcelInsertRejectedException("This workbook needs manual review after a readback failure.");
             if (sheet.ProtectContents) throw new ExcelInsertRejectedException("The target worksheet is protected. Unprotect it in Excel before inserting.");
             var fields = values.ToArray();
@@ -35,20 +39,30 @@ public sealed partial class ExcelHost
                 return field with { Value = adjusted };
             }).ToArray();
             var watch = Stopwatch.StartNew();
-            var before = ExcelReadback.Capture(workbook);
+            var before = captured ?? ExcelReadback.Capture(workbook);
             PreviewTiming?.Invoke(new("excel.preservationCapture", watch.Elapsed.TotalMilliseconds)); watch.Restart();
             var snapshot = before.Sheets.Single(s => s.Name == sheet.Name);
-            var boundary = ExcelLayoutMatching.Resolve(snapshot.Data, section);
+            var boundary = resolved ?? LegacyBounds();
+            (int First, int Subtotal) LegacyBounds()
+            {
+                var (first, subtotal, _) = ExcelLayoutMatching.Resolve(snapshot.Data, section);
+                return (first, subtotal);
+            }
             PreviewTiming?.Invoke(new("excel.layout", watch.Elapsed.TotalMilliseconds));
             var inputColumns = (section.InputColumns ?? section.ColumnMap.Values.ToArray()).Select(A1Formula.ColumnNumber).ToArray();
             bool Compatible(int r) => inputColumns.All(c =>
                 Formula(snapshot.Data, r, c) is null
                     ? Cell(snapshot.Data, r, c) is null or ""
                     : section.HybridInputs && (section.HybridFormulaColumns ?? []).Any(column => A1Formula.ColumnNumber(column) == c) && fields.SingleOrDefault(f => f.Column == c)?.Value is null);
+            var formulaColumns = section.FormulaColumns.Select(A1Formula.ColumnNumber).ToArray();
             var blank = section.FillBlankRowsFirst ? Enumerable.Range(boundary.First, boundary.Subtotal - boundary.First)
-                .FirstOrDefault(r => Compatible(r) && (!section.HybridInputs || SafeHybridRow(sheet, snapshot.Data, r, left, right))) : 0;
+                .FirstOrDefault(r => Compatible(r) && (!section.HybridInputs || SafeHybridRow(sheet, snapshot.Data, r, left, right))
+                    && (binding is null || formulaColumns.All(c => Formula(snapshot.Data, r, c) is not null))) : 0;
             var insertNew = blank == 0;
             var row = insertNew ? boundary.Subtotal : blank;
+            if (insertNew && binding?.Target.Type == "table" && Enumerable.Range(left, right - left + 1).Except(formulaColumns)
+                .Any(c => Enumerable.Range(boundary.First, boundary.Subtotal - boundary.First).Any(r => Formula(snapshot.Data, r, c) is not null)))
+                throw new ExcelInsertRejectedException("The Table has a formula outside its declared formula columns. Review its calculated columns in Excel.");
             if (section.HybridInputs && insertNew && section.InsertMode != "entireRow" && !SafeHybridRow(sheet, snapshot.Data, row - 1, left, right))
                 throw new ExcelInsertRejectedException("The subsection has no safe row template. Review its final data row in Excel.");
             foreach (var field in fields)
@@ -61,12 +75,12 @@ public sealed partial class ExcelHost
             if (section.HybridInputs && !insertNew)
                 fields = fields.Select(field => field.Value is null && Formula(snapshot.Data, row, field.Column) is not null
                     ? field with { DisplayValue = "Existing formula preserved" } : field).ToArray();
-            foreach (var formulaColumn in section.FormulaColumns.Select(A1Formula.ColumnNumber))
+            foreach (var formulaColumn in formulaColumns)
                 if (Formula(snapshot.Data, insertNew ? row - 1 : row, formulaColumn) is null) throw new ExcelInsertRejectedException("A formula column is missing its profile template formula.");
             try { ValidateInsertTarget(sheet, section, insertNew, row, left, right); }
             catch (InvalidOperationException error) { throw new ExcelInsertRejectedException(error.Message); }
             if (section.InsertMode is not ("tableRow" or "entireRow" or "columnsOnly")) throw new ArgumentException("Unknown insert mode.");
-            if (section.InsertMode == "tableRow") ValidateTable(sheet, section, row, left, right);
+            if (section.InsertMode == "tableRow") ValidateTable(sheet, section, boundary.Subtotal, left, right);
             var originals = new string?[right - left + 1]; var rewritten = new string?[originals.Length];
             var warnings = new List<FormulaReview>();
             for (var c = left; insertNew && c <= right; c++)
@@ -80,15 +94,17 @@ public sealed partial class ExcelHost
             var token = Guid.NewGuid().ToString("N");
             if (insertPlans.Count >= 64) insertPlans.Clear();
             var pending = new PendingInsert(workbookId, section, fields, before, row, left, right, originals, rewritten, warnings.ToArray(),
-                insertNew ? TemplateValidation(sheet, row - 1, section.InsertMode == "entireRow" ? 1 : left, section.InsertMode == "entireRow" ? 16384 : right) : 0, insertNew);
+                insertNew ? TemplateValidation(sheet, row - 1, section.InsertMode == "entireRow" ? 1 : left, section.InsertMode == "entireRow" ? 16384 : right) : 0, insertNew, binding);
             insertPlans.Add(token, pending);
             return new SectionInsertPreview(token, workbookId, section.Id, sheet.Name, new CellRange(row, left, 1, right - left + 1).Address, row, fields, warnings);
-        }));
+    }
 
     public Task<SectionInsertResult> InsertAsync(string previewToken) => queue.InvokeAsync(() =>
     {
         if (!insertPlans.Remove(previewToken, out var pending)) throw new ExcelInsertRejectedException("Preview expired or was already used. Request a new preview.");
-        return WithSheet(pending.WorkbookId, pending.Section.SheetName, (workbook, sheet) => InsertCore(workbook, sheet, pending));
+        return pending.Binding is { } binding
+            ? WithBoundSheet(pending.WorkbookId, binding.Target, (workbook, sheet) => InsertCore(workbook, sheet, pending))
+            : WithSheet(pending.WorkbookId, pending.Section.SheetName, (workbook, sheet) => InsertCore(workbook, sheet, pending));
     });
 
     private SectionInsertResult InsertCore(Interop.Workbook workbook, Interop.Worksheet sheet, PendingInsert pending)
@@ -102,8 +118,10 @@ public sealed partial class ExcelHost
         {
             InSectionBatch(pending, () =>
             {
-                if (SnapshotIdentity.Hash(ExcelReadback.Capture(workbook)) != SnapshotIdentity.Hash(pending.Before))
+                var currentSnapshot = ExcelReadback.Capture(workbook);
+                if (SnapshotIdentity.Hash(currentSnapshot) != SnapshotIdentity.Hash(pending.Before))
                     throw new ExcelInsertRejectedException("The workbook changed after preview. Request a new preview.");
+                if (pending.Binding is not null) _ = ResolveBinding(sheet, currentSnapshot, pending.Binding);
                 ValidateInsertTarget(sheet, pending.Section, pending.InsertNew, pending.Row, pending.Left, pending.Right);
                 mutationStarted = true;
                 if (pending.InsertNew) InsertRow(sheet, pending);

@@ -45,24 +45,31 @@ public static class ExcelLayoutMatching
         return rows[marker.Occurrence - 1];
     }
 
+    public static (int First, int Subtotal, IReadOnlyList<int> Protected) Resolve(RangeData data, ExcelSectionDefinition section) =>
+        LegacySectionResolution.Resolve(data, section);
+}
+
+// Compatibility for workbooks without registered targets. Remove with the legacy profile parser.
+internal static class LegacySectionResolution
+{
     public static (int First, int Subtotal, IReadOnlyList<int> Protected) Resolve(RangeData data, ExcelSectionDefinition section)
     {
-        if (section.SheetMatch is not null && !Matches(data, section.SheetMatch))
+        if (section.SheetMatch is not null && !ExcelLayoutMatching.Matches(data, section.SheetMatch))
             throw new ExcelInsertRejectedException("The selected sheet does not match the profile headers.");
-        foreach (var marker in section.StructureMarkers ?? []) _ = Marker(data, marker);
+        foreach (var marker in section.StructureMarkers ?? []) _ = ExcelLayoutMatching.Marker(data, marker);
         int subtotal;
-        if (section.SubtotalLocator is not null) subtotal = Marker(data, section.SubtotalLocator);
-        else if (section.SubtotalOccurrence > 0) subtotal = Marker(data, new(section.SubtotalColumn, section.SubtotalMarker, section.SubtotalOccurrence));
+        if (section.SubtotalLocator is not null) subtotal = ExcelLayoutMatching.Marker(data, section.SubtotalLocator);
+        else if (section.SubtotalOccurrence > 0) subtotal = ExcelLayoutMatching.Marker(data, new(section.SubtotalColumn, section.SubtotalMarker, section.SubtotalOccurrence));
         else
         {
             var rows = Enumerable.Range(data.Range.Row, data.Range.Rows).Where(r => r > section.HeaderRow &&
-                Equals(Value(data, r, A1Formula.ColumnNumber(section.SubtotalColumn)), section.SubtotalMarker)).ToArray();
+                Equals(ExcelLayoutMatching.Value(data, r, A1Formula.ColumnNumber(section.SubtotalColumn)), section.SubtotalMarker)).ToArray();
             if (rows.Length != 1) throw new ExcelInsertRejectedException("The section needs one exact subtotal marker.");
             subtotal = rows[0];
         }
         var first = section.Start is null ? section.HeaderRow + 1 : section.Start.HeaderRowOffset is int offset
-            ? section.HeaderRow + offset : Marker(data, section.Start.AfterRow!) + section.Start.Offset;
-        var protectedRows = (section.ProtectedRows ?? []).Select(m => Marker(data, m)).ToArray();
+            ? section.HeaderRow + offset : ExcelLayoutMatching.Marker(data, section.Start.AfterRow!) + section.Start.Offset;
+        var protectedRows = (section.ProtectedRows ?? []).Select(m => ExcelLayoutMatching.Marker(data, m)).ToArray();
         if (first <= section.HeaderRow || first > subtotal - 1 || protectedRows.Any(r => r >= first && r <= subtotal))
             throw new ExcelInsertRejectedException("The profile section overlaps a protected row or has no template data row.");
         return (first, subtotal, protectedRows);

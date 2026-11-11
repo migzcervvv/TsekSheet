@@ -5,8 +5,9 @@
 TsekSheet turns scanned, photographed and poor-quality PDF documents into human-verified rows
 in existing Microsoft Excel workbooks, fully offline on a Windows laptop.
 
-First workflow: accounting payables/reimbursements. The core stays generic: workflows are
-expressed as profiles (fields, sections, column mappings), not hard-coded accounting logic.
+The first workflow is accounting payables and reimbursements. Document types define fields,
+verification requirements, and page roles. Workbook bindings independently describe where
+verified fields can be entered. The Excel engine applies the same write safeguards across layouts.
 
 **The product is fast, trustworthy manual verification.** OCR accelerates it. If OCR returns
 nothing, the user can still finish the job quickly by reading the document and typing.
@@ -42,9 +43,9 @@ The MVP is complete when a user can:
 2. Add a batch of PDFs/images to a queue.
 3. For each document: see the page, get OCR proposals for printed fields, correct or type
    values, and mark each field verified.
-4. Choose a destination section (defined once per workbook layout and saved as a profile).
-5. Preview the row(s) to be inserted, then insert them through Excel. Subtotals and formula
-   columns update; neighbouring sections do not move.
+4. Choose a destination defined in the workbook's binding.
+5. Preview the rows, then insert them through Excel. Subtotals and formula columns update,
+   and neighbouring content retains its row alignment.
 6. See the inserted rows highlighted in Excel and save (or Save As) explicitly.
 7. Close the app mid-batch and resume review without losing verified fields.
 
@@ -54,7 +55,7 @@ The MVP is complete when a user can:
 - Windows 10 22H2 / Windows 11 x64.
 - Fully offline after install. No cloud OCR, no telemetry, no paid services.
 - All dependencies free and AGPL-3.0 compatible. Project license: AGPL-3.0.
-- Local persistence allowed for review state, profiles, OCR cache and the action log
+- Local persistence allowed for review state, workbook bindings, OCR cache and the action log
   (embedded SQLite or JSON files). No server database.
 - Source documents and original workbooks are never modified by the app. Workbooks change only
   through Excel, after a backup, and are saved only by explicit user action.

@@ -73,8 +73,9 @@ public sealed class SourceLinkedFieldReview : IDisposable
     internal RecordReviewSnapshot CorrectAll(ReviewVersion expected, WorkflowProfile profile,
         IReadOnlyDictionary<string, string> values, RegisteredSourcePage source, CancellationToken token) => Execute(expected, staged =>
     {
-        if (values.Count != profile.Fields.Count) throw Error("INVALID_REVIEW_INPUT", "Supply every configured field exactly once.");
-        WorkflowValueValidation.Validate(profile.Fields, profile.IdentifierFields, values);
+        var fields = DocumentTypes.ReviewFields(profile);
+        if (values.Count != fields.Length) throw Error("INVALID_REVIEW_INPUT", "Supply every configured field exactly once.");
+        WorkflowValueValidation.Validate(fields, profile.IdentifierFields, values);
         var evidence = Evidence(source, token);
         foreach (var field in staged.Snapshot.Fields)
             if (field.Value != values[field.Key])
@@ -95,9 +96,10 @@ public sealed class SourceLinkedFieldReview : IDisposable
     internal TypedReviewRecord ProjectDraft(ReviewVersion expected, WorkflowProfile profile, CancellationToken token) => Execute(expected, staged =>
     {
         var snapshot = staged.Snapshot;
-        var values = WorkflowValueValidation.Validate(profile.Fields, profile.IdentifierFields, snapshot.Fields.ToDictionary(f => f.Key, f => f.Value));
+        var fields = DocumentTypes.ReviewFields(profile);
+        var values = WorkflowValueValidation.Validate(fields, profile.IdentifierFields, snapshot.Fields.ToDictionary(f => f.Key, f => f.Value));
         return new TypedReviewRecord(expected, snapshot.Fields.Select(f => new TypedReviewField(f.Key,
-            profile.Fields.Single(p => p.Key == f.Key).Kind, f.Value, values[f.Key].Text, values[f.Key].Number, values[f.Key].Date, f.Source, f.ValueRevision)));
+            fields.Single(p => p.Key == f.Key).Kind, f.Value, values[f.Key].Text, values[f.Key].Number, values[f.Key].Date, f.Source, f.ValueRevision)));
     }, token);
 
     /// <summary>

@@ -343,4 +343,8 @@ Status: IN REVIEW (PR #18 already merged; UX-03-FIX correction on t/UX03-documen
 
 ### T8a-BUSY - Narrow the Receipt/Excel Lock Boundary
 
-Status: IN REVIEW (receipt reads and PDF rendering continue during Check. Check requests run in order and supersede earlier tokens for the same review. Add Row revalidates the active receipt, review, source and Excel target after waiting. Final Application 508/0/0, Frontend 102/0/0, Desktop 28/0/1, Excel functional 24/0/0 passed/failed/skipped. Release build and typecheck pass. Desktop OCR assets absent. Excel lifecycle stress excluded. Local validation used installed SDK 10.0.404. After merge, update PR #20 from main and rerun its full T8a regressions).
+Status: DONE (merged PR #21). Receipt reads and PDF rendering continue during Check. Check requests run in order and supersede earlier tokens for the same review. Add Row revalidates the active receipt, review, source and Excel target after waiting.
+
+### T9 - Document Types and Workbook Binding Foundation
+
+Status: IN REVIEW. RFP and EXTI verification use document types. Schema 1 Payables bindings cover all 22 synthetic named destinations. Unbound Payables and EXTI account routing use the compatibility adapter. The owner-controlled production copy validation remains pending before migration.

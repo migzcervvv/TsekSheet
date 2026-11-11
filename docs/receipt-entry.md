@@ -250,3 +250,13 @@ remain aligned. Existing blank-row reuse does not shift other records. No status
 text or financial value is copied from the preceding row. Unsafe merged,
 array/spill, protected or table templates remain blocked. The verified structural
 contract and owner-side validation boundary are documented in [Local Excel profiles](profiles.md).
+
+## Owner validation for native Payables bindings
+
+- Open a controlled Excel copy. Verify that the current production layout still works through the existing Payables route. Confirm `Unpaid RFPs - SEP` and the literal B–O headers, including `PAYEE (VENDOR NAME)` in C3.
+- Confirm readiness for 22 workbook-level target ranges. In the controlled copy, verify `TsekSheet_Payables_Identity` refers to `="payables-rfp"`. Each `TsekSheet_Payables_<target_id>` name spans B–O from the first data row through the subsection subtotal. Its `_start` name points to the first data cell in B and its `_subtotal` name points to the subtotal label in F. Use underscores in the name where a target ID has hyphens, such as `TsekSheet_Payables_member_company_1`. Check that no target reaches the overall totals or inventory. A Table destination needs its configured header, body and totals row.
+- Check all 22 destinations on the copy. Confirm that every preview identifies the intended workbook, sheet and subsection, including Member Company 01–14. Redirect one target name to a neighboring subsection in the copy and verify that Check rejects it.
+- Reuse a compatible blank row and insert a full row immediately before a subtotal where the preceding row has a financial formula. Read back the entered values, existing formulas, subtotals, overall totals, neighboring content and inventory through Excel. Check that a supplied optional financial value is written to an editable cell and that a formula left in a reused row is shown in the preview.
+- Run manual Check and explicit Add Row with a multi-page packet, confirm duplicate RFPs remain advisory, and verify that the packet cannot be submitted twice. Check the EXTI account choice and amount destination through the existing workflow. Confirm the backup, highlight and explicit Save behavior.
+
+The synthetic Excel tests qualify the binding design. Production compatibility remains pending until the owner completes these checks on the controlled copy.

@@ -23,5 +23,12 @@ public interface ISectionWriter
     Task<SectionInsertResult> InsertAsync(string previewToken);
 }
 
+public interface IBindingSectionWriter
+{
+    Task<bool> HasBindingAsync(string workbookId, WorkbookBinding binding);
+    Task<SectionInsertPreview> PreviewBoundInsertAsync(string workbookId, WorkbookBinding binding, Documents.DocumentType documentType,
+        string targetId, IReadOnlyList<InsertValue> values);
+}
+
 // A rejection before any insertion began; the same verified record may be previewed again.
 public sealed class ExcelInsertRejectedException(string message) : InvalidOperationException(message);
