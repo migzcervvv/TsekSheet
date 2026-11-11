@@ -28,7 +28,7 @@ findings**. Legacy tools are under **Settings → Troubleshooting → Advanced r
 A populated queue blocks entry because these tools share the session's receipt state.
 
 In **Edit**, read the source beside the profile fields, enter required values and choose
-an account. Expand **Profile and destination** to explicitly change the profile, sheet or
+an account when the profile has one. Expand **Profile and destination** to explicitly change the profile, sheet or
 section. The active workbook is fixed for the queue; it is never reopened or inferred from
 list order. New receipts inherit the active account as a draft; revisiting an existing
 receipt never replaces its account with a later selection.
@@ -58,7 +58,7 @@ Review highlighted changes and save explicitly in Excel (including Excel's Save 
 
 Missing/invalid fields, ambiguous subtotal formulas, changed sources or targets and
 duplicate submissions block Add Row. Equal source hashes are rejected in the queue.
-Layout profiles, including exti-liquidation, do not declare a value-based duplicate
+Account-driven layout profiles, including exti-liquidation, do not declare a value-based duplicate
 policy: item numbers and vendor/invoice values may repeat. Required fields and column
 order never imply uniqueness. A profile explicitly declaring `entity-and-any-identifier`
 rejects a matching configured identifier only within the same configured entity.
@@ -233,3 +233,20 @@ Horizontal zoom overflow stays inside the viewport. Fit modes adapt when the pan
 Mouse drags select a region on one page; touch gestures scroll. The OCR target page is shown
 above the viewport. Recognition waits for the active local render, and background rendering
 waits for recognition. Page changes reject late OCR results. Zoom never requests recognition.
+
+
+For **Payables — RFP**, one PDF packet is one row. Enter Payee, RFP No. and Amount;
+Invoice # and the other optional fields may stay empty. No account is selected.
+Choose a main destination or one of the fourteen numbered Member Company entries
+in the existing Section dropdown. Read the PDF alongside the fields, select
+**Check row**, review the exact destination and mapped values, then select
+**Add row to Excel**. OCR is optional. A possible duplicate RFP warning is advisory
+and leaves Add row available. Formula conflicts and unsafe section markers block
+Check. Blank optional financial inputs preserve existing formulas; Check labels
+those cells explicitly. New rows can use ordinary formula-bearing templates without copying their formulas;
+all new financial inputs are blank until explicitly supplied. New Payables rows
+shift the entire worksheet row so status notes in A and Inventory content through P
+remain aligned. Existing blank-row reuse does not shift other records. No status
+text or financial value is copied from the preceding row. Unsafe merged,
+array/spill, protected or table templates remain blocked. The verified structural
+contract and owner-side validation boundary are documented in [Local Excel profiles](profiles.md).

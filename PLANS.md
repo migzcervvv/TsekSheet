@@ -308,11 +308,11 @@ Status: TODO
 
 ### UX-01 - Workbook-Centered Workspace and Primary Navigation
 
-Status: IN REVIEW (Excel-backed workspace opens directly into Process Receipts; exact workbook identity reused without reopening; secondary inspection/legacy tools retained; unsafe switches preserve drafts and bindings; synthetic two-workbook hosted review/preview/explicit insertion and 1440/768/390 layout checks passed; final Release Application 499/0/0, Frontend 81/0/0, Desktop 25/0/0 passed/failed/skipped; typecheck/build passed; initial sandbox, selector, focus/timing and dependency-lock reruns retained and resolved)
+Status: DONE (merged PR #16); implementation review record: (Excel-backed workspace opens directly into Process Receipts; exact workbook identity reused without reopening; secondary inspection/legacy tools retained; unsafe switches preserve drafts and bindings; synthetic two-workbook hosted review/preview/explicit insertion and 1440/768/390 layout checks passed; final Release Application 499/0/0, Frontend 81/0/0, Desktop 25/0/0 passed/failed/skipped; typecheck/build passed; initial sandbox, selector, focus/timing and dependency-lock reruns retained and resolved)
 
 ### UX-02 - Unified Receipt Processing
 
-Status: IN REVIEW (PR #17; UX-02-FIX keeps manual Check independent of optional rendering/OCR; pre-Check OCR proposals are rejected by a synchronous proposal epoch; source navigation still invalidates previews; final Frontend 90/0/0 and targeted hosted Desktop Release 3/0/0 passed/failed/skipped, typecheck/build passed; backend verification and Excel safeguards unchanged; no unrelated Excel regressions repeated)
+Status: DONE (merged PR #17); implementation review record: (PR #17; UX-02-FIX keeps manual Check independent of optional rendering/OCR; pre-Check OCR proposals are rejected by a synchronous proposal epoch; source navigation still invalidates previews; final Frontend 90/0/0 and targeted hosted Desktop Release 3/0/0 passed/failed/skipped, typecheck/build passed; backend verification and Excel safeguards unchanged; no unrelated Excel regressions repeated)
 
 ## Risks
 

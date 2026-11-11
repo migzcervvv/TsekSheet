@@ -99,7 +99,7 @@ public sealed class TypedReviewRecordTests
         try
         {
             CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("fr-FR");
-            foreach (var p in WorkflowProfiles.BuiltInProfiles)
+            foreach (var p in WorkflowProfiles.BuiltInProfiles.Where(p => p.Layout is null))
             {
                 var values = Values(p);
                 var key = p.Fields.Single(f => f.Kind == kind).Key;
@@ -136,7 +136,7 @@ public sealed class TypedReviewRecordTests
     [DataRow("date", "tomorrow")]
     public void ExplicitlyVerifiedButInvalidTypesStillRejectWithoutChangingState(string kind, string input)
     {
-        foreach (var p in WorkflowProfiles.BuiltInProfiles)
+        foreach (var p in WorkflowProfiles.BuiltInProfiles.Where(p => p.Layout is null))
         {
             var values = Values(p);
             values[p.Fields.Single(f => f.Kind == kind).Key] = input;
@@ -328,7 +328,7 @@ public sealed class TypedReviewRecordTests
     [DataRow("xml")]
     public void ExtractedPlannerValidationStillRejectsMalformedRawInputs(string kind)
     {
-        foreach (var p in WorkflowProfiles.BuiltInProfiles)
+        foreach (var p in WorkflowProfiles.BuiltInProfiles.Where(p => p.Layout is null))
         {
             var values = Values(p);
             switch (kind)

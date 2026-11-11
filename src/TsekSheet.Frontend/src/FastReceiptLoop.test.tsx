@@ -8,7 +8,7 @@ import type { WorkflowProfile } from './bridge/workflows';
 
 afterEach(()=>{cleanup();vi.unstubAllGlobals();});
 const profile:WorkflowProfile={id:'synthetic-liquidation',displayName:'Synthetic liquidation',revision:1,profileHash:'A'.repeat(64),fields:[{key:'vendor',header:'Vendor',kind:'text',required:false,maxLength:256},{key:'itemNo',header:'Item no.',kind:'text',required:true,maxLength:256},{key:'account',header:'Account',kind:'accountChoice',required:true,maxLength:256},{key:'amount',header:'Amount',kind:'money',required:true,maxLength:256}],accounts:[{code:'FAKE',label:'Travel',column:'J',vatable:true},{code:'FAKE',label:'Travel',column:'Q',vatable:false}]};
-function setup(count=3,workspace=false,options:{empty?:boolean;render?:boolean}={}){
+function setup(count=3,workspace=false,options:{empty?:boolean;render?:boolean}={},entryProfile=profile){
   let imported=!options.empty,holdPreview=false;let finishPreview!:()=>void,finishOcr!:(value:unknown)=>void;
   let warnings:any[]=[];
   let previewNumber=0;
@@ -20,7 +20,7 @@ function setup(count=3,workspace=false,options:{empty?:boolean;render?:boolean}=
   for(const item of items){active=item.id;states[active]=blank();}active=items[0].id;
   function queue():ReceiptQueueState{return structuredClone(imported?{activeId:active,items,receipt:states[active]}:{activeId:null,items:[],receipt:{source:null,version:null,pageNumber:1,status:'NotStarted',fields:[]}});}
   let failure:Error|null=null;
-  const other={...profile,id:'other-liquidation',displayName:'Other liquidation'};
+  const other={...entryProfile,id:'other-liquidation',displayName:'Other liquidation'};
   const request=vi.fn((command:string,p:any)=>({promise:Promise.resolve().then(()=>{
     if(failure&&command==='excel.addRow')throw failure;
     if(command==='receipt.queue')return queue();
@@ -28,7 +28,7 @@ function setup(count=3,workspace=false,options:{empty?:boolean;render?:boolean}=
     if(command==='receipt.cancelRender')return {status:'requested'};
     if(command==='receipt.render')return {source:states[active].source!.document.version,page:{pageNumber:p.pageNumber,pageCount:2,width:1,height:1,pngBase64:'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jR1sAAAAASUVORK5CYII='}};
     if(command==='receipt.ocr')return new Promise(resolve=>{finishOcr=resolve;});
-    if(command==='receipt.start'){states[active]={...states[active],version:{reviewId:`11111111-1111-4111-8111-${active.slice(-12).replace(/a/g,'0')}`,revision:0,profileId:profile.id,profileHash:profile.profileHash},status:'Active',fields:profile.fields.map(f=>({key:f.key,value:'',valueRevision:0,status:'Draft'}))};return structuredClone(states[active]);}
+    if(command==='receipt.start'){states[active]={...states[active],version:{reviewId:`11111111-1111-4111-8111-${active.slice(-12).replace(/a/g,'0')}`,revision:0,profileId:entryProfile.id,profileHash:entryProfile.profileHash},status:'Active',fields:entryProfile.fields.map(f=>({key:f.key,value:'',valueRevision:0,status:'Draft'}))};return structuredClone(states[active]);}
     if(command==='excel.listWorkbooks')return {openedWorkbookId:'b'.repeat(32),workbooks:[{id:'b'.repeat(32),name:'Synthetic.xlsx',sheets:['Person 1','Person 2']}],sections:[{id:'expenses',label:'Expenses',sheetName:''},{id:'credits',label:'Credits',sheetName:''}],changes:[]};
     if(command==='receipt.changeProfile'){const state=states[active];state.version={...state.version!,profileId:p.profileId,revision:0};state.fields=state.fields.map(f=>({...f,value:p.values[f.key],status:'Draft'}));return structuredClone(state);}
     if(command==='receipt.prepare'){const state=states[active];state.version!.revision++;state.fields=state.fields.map(f=>({...f,value:p.values[f.key],status:'Corrected'}));return structuredClone(state);}
@@ -37,8 +37,8 @@ function setup(count=3,workspace=false,options:{empty?:boolean;render?:boolean}=
     if(command==='receipt.navigate'){if(p.skip)(items.find(i=>i.id===active)! as {status:string}).status='Skipped';active=p.targetId;return queue();}
     throw new Error(command);
   })}));
-  render(<FastReceiptLoop activeWorkbook={workspace?{id:'b'.repeat(32),name:'Synthetic.xlsx',sheets:['Person 1','Person 2']}:undefined} bridge={{request} as unknown as BridgeClient} profiles={[profile,other]} disabled={false} renderingAvailable={options.render??false}/>);
-  return {request,items,fail:(message:string|Error)=>{failure=typeof message==='string'?new Error(message):message;},hold:()=>holdPreview=true,finish:()=>finishPreview(),ocr:(values:Record<string,string>)=>finishOcr({values,words:[{text:'123.50',confidence:.9,x:.1,y:.1,width:.2,height:.1}]}),warnings:(value:any[])=>warnings=value};
+  render(<FastReceiptLoop activeWorkbook={workspace?{id:'b'.repeat(32),name:'Synthetic.xlsx',sheets:['Person 1','Person 2']}:undefined} bridge={{request} as unknown as BridgeClient} profiles={[entryProfile,other]} disabled={false} renderingAvailable={options.render??false}/>);
+  return {request,items,fail:(message:string|Error)=>{failure=typeof message==='string'?new Error(message):message;},hold:()=>holdPreview=true,finish:()=>finishPreview(),ocr:(values:Record<string,string>)=>finishOcr({values,words:[{text:'123.50',confidence:.9,x:.1,y:.1,width:.2,height:.1}]}),warnings:(value:any[])=>warnings=value,advisories:(value:string[])=>advisoryWarnings=value};
 }
 async function start(){await screen.findByLabelText('Queue itemNo');}
 function configuration(){const details=screen.getByText('Profile and destination').closest('details')!;if(!details.open)fireEvent.click(screen.getByText('Profile and destination'));}

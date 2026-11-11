@@ -77,7 +77,7 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
             {
                 Measure("application.source", sourceWatch);
                 var watch = Stopwatch.StartNew();
-                if (inserted.Contains(version.ReviewId) || SourceKeys(record).Any(submittedSources.Contains)) throw new FieldReviewException("ALREADY_INSERTED", "This receipt source was already inserted or submitted. Review the highlighted row in Excel.");
+                if (inserted.Contains(version.ReviewId) || AlreadySubmitted(SourceKeys(record))) throw new FieldReviewException("ALREADY_INSERTED", "This receipt source was already inserted or submitted. Review the highlighted row in Excel.");
                 var profile = Profile(version.ProfileId);
                 if (WorkflowProfiles.Hash(profile) != version.ProfileHash) throw new FieldReviewException("STALE_PROFILE", "The local profile changed. Start a new review.");
                 foreach (var oldToken in previews.Where(entry => entry.Value.Version.ReviewId == version.ReviewId).Select(entry => entry.Key).ToArray())
@@ -86,7 +86,7 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
                     ? layout.Section(sectionId, sheetName ?? throw new FieldReviewException("SHEET_REQUIRED", "Choose a matching sheet."))
                     : profile.ExcelSections?.SingleOrDefault(s => s.Id == sectionId) ?? throw new FieldReviewException("UNKNOWN_SECTION", "Choose a section from this receipt profile.");
                 if (sheetName is not null && section.SheetName != sheetName) throw new FieldReviewException("UNKNOWN_SECTION", "Choose a section on the selected sheet.");
-                if (profile.Layout is { } accountLayout)
+                if (profile.Layout is { MappingMode: "account" } accountLayout)
                 {
                     var choice = record.Fields.Single(f => f.Kind == "accountChoice").LiteralText;
                     var account = accountLayout.Accounts.SingleOrDefault(a => a.Column == choice)
@@ -106,6 +106,8 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
                 Measure("application.identity", watch); watch.Restart();
                 var preview = await writer.PreviewInsertAsync(workbookId, section, values);
                 Measure("application.excelPreview", watch);
+                if (profile.Layout?.AdvisoryIdentifier is string identifier)
+                    preview = preview with { AdvisoryWarnings = await DuplicateWarningsAsync(workbookId, profile, record, identifier) };
                 if (draft)
                 {
                     if (preview.ManualReview.Count > 0) throw new FieldReviewException("AMBIGUOUS_TOTAL", "A subtotal formula needs manual review in Excel before Add Row is available.");
@@ -184,6 +186,25 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
         finally { commands.Release(); }
     }
 
+    private async Task<IReadOnlyList<string>> DuplicateWarningsAsync(string workbookId, WorkflowProfile profile, TypedReviewRecord record, string key)
+    {
+        var reader = host as IWorkbookReader ?? throw new InvalidOperationException("Excel readback is unavailable.");
+        var identifier = record.Fields.Single(f => f.Key == key).LiteralText.Trim();
+        var column = A1Formula.ColumnNumber(profile.Layout!.Fields.Single(f => f.Key == key).Column!);
+        var warnings = new List<string>();
+        var book = (await host.ListWorkbooksAsync()).Single(b => b.Id == workbookId);
+        foreach (var sheet in book.Sheets)
+        {
+            var range = await reader.UsedRangeAsync(workbookId, sheet);
+            var data = await reader.ReadAsync(workbookId, sheet, range);
+            if (!ExcelLayoutMatching.Matches(data, profile.Layout.SheetMatch)) continue;
+            if (Enumerable.Range(range.Row, range.Rows).Any(row => row > profile.Layout.SheetMatch.HeaderRow &&
+                string.Equals(identifier, Convert.ToString(ExcelLayoutMatching.Value(data, row, column), System.Globalization.CultureInfo.InvariantCulture)?.Trim(), StringComparison.OrdinalIgnoreCase)))
+                warnings.Add($"Possible duplicate {profile.Fields.Single(f => f.Key == key).Header} in {sheet}. Review Excel; insertion is still available.");
+        }
+        return warnings;
+    }
+
     private async Task RejectDuplicateAsync(string workbookId, ExcelSectionDefinition section, WorkflowProfile profile, TypedReviewRecord record)
     {
         // Required fields and column order do not establish uniqueness. Layout profiles
@@ -220,6 +241,10 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
         Measure("duplicate.scan", watch);
     }
 
-    private static (string Hash, int Page)[] SourceKeys(TypedReviewRecord record) => record.Fields
-        .Where(f => f.Source is not null).Select(f => (f.Source!.DocumentSha256, f.Source.PageNumber)).Distinct().ToArray();
+    private bool AlreadySubmitted((string Hash, int Page)[] sources) => sources.Any(source =>
+        submittedSources.Contains(source) || submittedSources.Contains((source.Hash, 0)) ||
+        source.Page == 0 && submittedSources.Any(previous => previous.Hash == source.Hash));
+
+    private (string Hash, int Page)[] SourceKeys(TypedReviewRecord record) => record.Fields
+        .Where(f => f.Source is not null).Select(f => (f.Source!.DocumentSha256, Profile(record.Version.ProfileId).Layout?.SourceScope == "document" ? 0 : f.Source.PageNumber)).Distinct().ToArray();
 }

@@ -27,7 +27,7 @@ public static class WorkflowProfiles
     { PropertyNameCaseInsensitive = false, UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow, MaxDepth = 12 };
     private static readonly Lazy<IReadOnlyList<WorkflowProfile>> BuiltIns = new(() => Array.AsReadOnly(
         typeof(WorkflowProfiles).Assembly.GetManifestResourceNames().Where(n => n.EndsWith(".workflow.json", StringComparison.Ordinal)).Order()
-        .Select(n => { using var stream = typeof(WorkflowProfiles).Assembly.GetManifestResourceStream(n)!; using var reader = new StreamReader(stream); return Parse(reader.ReadToEnd()); }).ToArray()));
+        .Select(n => { using var stream = typeof(WorkflowProfiles).Assembly.GetManifestResourceStream(n)!; using var reader = new StreamReader(stream); return Parse(reader.ReadToEnd()); }).OrderBy(p => p.Layout is not null).ToArray()));
     public static string LocalDirectory => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TsekSheet", "profiles");
     public static IReadOnlyList<WorkflowProfile> BuiltInProfiles => BuiltIns.Value;
     public static IReadOnlyList<WorkflowProfile> All => LoadDirectory(LocalDirectory);
