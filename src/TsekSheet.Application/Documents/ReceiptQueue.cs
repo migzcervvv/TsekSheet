@@ -47,6 +47,7 @@ public sealed class ReceiptQueue(Func<string, WorkflowProfile>? profiles = null)
         lock (gate)
         {
             Require(expectedId);
+            Active.CheckMutationAllowed();
             var target = items.FindIndex(e => e.Id == targetId);
             if (target < 0) throw new FieldReviewException("UNKNOWN_RECEIPT", "Choose a receipt in this queue.");
             if (skip && items[active].Status == "Pending") items[active].Status = "Skipped";
@@ -63,11 +64,16 @@ public sealed class ReceiptQueue(Func<string, WorkflowProfile>? profiles = null)
         }
     }
 
-    public ReceiptQueueState Complete(string expectedId)
+    public ReceiptQueueState Complete(string expectedId) => Complete(expectedId, excelOwner: null);
+
+    internal ReceiptQueueState Complete(string expectedId, DesktopReceiptReview? excelOwner)
     {
         lock (gate)
         {
-            Require(expectedId); items[active].Status = "Inserted";
+            Require(expectedId);
+            if (excelOwner is null) Active.CheckMutationAllowed();
+            else if (!ReferenceEquals(Active, excelOwner)) throw new FieldReviewException("STALE_QUEUE", "The active receipt changed.");
+            items[active].Status = "Inserted";
             for (var offset = 1; offset <= items.Count; offset++)
             {
                 var next = (active + offset) % items.Count;
@@ -79,8 +85,22 @@ public sealed class ReceiptQueue(Func<string, WorkflowProfile>? profiles = null)
     private void Require(string id)
     {
         if (items.Count == 0 || items[active].Id != id) throw new FieldReviewException("STALE_QUEUE", "Refresh the queue before changing receipts.");
-        _ = Active.State; // Also rejects navigation while Excel holds this review.
     }
+
+    // Called after the Excel semaphore is acquired. The synchronous start takes
+    // the receipt lease before navigation can change the active receipt.
+    internal Task<T> StartExcel<T>(DesktopReceiptReview owner, string? expectedId, Func<Task<T>> start)
+    {
+        lock (gate)
+        {
+            if (expectedId is not null) Require(expectedId);
+            if (!ReferenceEquals(Active, owner))
+                throw new FieldReviewException("STALE_QUEUE", "The active receipt changed. Request a fresh preview.");
+            RequireEditable();
+            return start();
+        }
+    }
+
     public void Dispose() { lock (gate) { single.Dispose(); foreach (var e in items) e.Review.Dispose(); } }
 }
 
@@ -91,6 +111,7 @@ public sealed partial class DesktopReceiptReview
         lock (gate)
         {
             var current = Require(expected);
+            CheckMutationAllowed();
             var previous = Profile(expected.ProfileId);
             if (values.Count != previous.Fields.Count || previous.Fields.Any(f => !values.ContainsKey(f.Key) || values[f.Key] is null || values[f.Key].Length > f.MaxLength))
                 throw new FieldReviewException("INVALID_REVIEW_INPUT", "Supply each current draft field within its configured length.");
@@ -109,6 +130,7 @@ public sealed partial class DesktopReceiptReview
         lock (gate)
         {
             var current = Require(expected);
+            CheckMutationAllowed();
             current.CorrectAll(expected, Profile(expected.ProfileId), values, new(source!.Document.Version, page), token);
             return State;
         }
@@ -116,7 +138,13 @@ public sealed partial class DesktopReceiptReview
 
     public ReceiptState ConfirmAll(ReviewVersion expected, CancellationToken token)
     {
-        lock (gate) { Require(expected).ConfirmAll(expected, token); return State; }
+        lock (gate)
+        {
+            var current = Require(expected);
+            CheckMutationAllowed();
+            current.ConfirmAll(expected, token);
+            return State;
+        }
     }
 
     public async Task<T> WithDraftExcelAsync<T>(ReviewVersion expected, Func<TypedReviewRecord, Task<T>> operation, CancellationToken token)
@@ -124,12 +152,14 @@ public sealed partial class DesktopReceiptReview
         TypedReviewRecord record;
         lock (gate)
         {
-            record = Require(expected).ProjectDraft(expected, Profile(expected.ProfileId), token);
+            var current = Require(expected);
+            CheckMutationAllowed();
+            record = current.ProjectDraft(expected, Profile(expected.ProfileId), token);
             // Even an entirely blank optional field must not bypass the receipt's identity check.
-            sources.Capture(source!.Document.Version, token);
-            excelBusy = true;
+            RecheckExcelSource(token);
+            excelOperationActive = true;
         }
         try { return await operation(record).ConfigureAwait(false); }
-        finally { lock (gate) { excelBusy = false; if (disposeAfterExcel) Dispose(); } }
+        finally { lock (gate) { excelOperationActive = false; if (disposeAfterExcel) Dispose(); } }
     }
 }

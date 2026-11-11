@@ -2,11 +2,7 @@
 
 [README](README.md) · **Changelog**
 
-- 2026-11-10 — T8a-FIX2: Match year-prefixed Inventory and distinct reporting-period totals; insert complete Payables rows while preserving status and Inventory alignment.
-
-- 2026-11-10 — T8a-FIX: Match year-prefixed Payables headings and scoped column-F subtotals; safely insert blank manual inputs above ordinary formula-bearing templates.
-
-- 2026-11-10 — T8a: Add fixed-column Payables RFP entry, 22 flat destinations, compatible-row reuse and advisory duplicates; retain Excel safeguards and reject unproven formula templates.
+- 2026-11-11 — T8a-BUSY: Keep receipt reads and PDF rendering available during Excel checks, sequence repeated Check actions, and revalidate queued insertions.
 
 - 2026-11-07 — UX-03-FIX: Fit mixed-size PDF pages independently and preserve the visible reading position during page loading, zoom and viewport resizing.
 

@@ -30,6 +30,7 @@ export default function FastReceiptLoop({bridge,profiles,disabled,renderingAvail
   const [preview,setPreview] = useState<ExcelPreview|null>(null);
   const [busy,setBusy] = useState(true);
   const proposalEpoch = useRef(0);
+  const pendingChecks = useRef<{remaining:number}|null>(null);
   const [error,setError] = useState(''), [errorDetails,setErrorDetails] = useState(''), [notice,setNotice] = useState('');
   const lock = useRef(true), editRevision = useRef(0);
   const invalidate = useCallback(()=>{editRevision.current++;setPreview(null);},[]);
@@ -44,7 +45,7 @@ export default function FastReceiptLoop({bridge,profiles,disabled,renderingAvail
   const uncertain = !!queue?.activeId&&unknownSubmissions.current.has(queue.activeId);
   const reason = inserted ? 'This receipt is already inserted. Review its highlighted row in Excel.'
     : uncertain ? 'The insertion result is unknown. Check Excel and refresh the queue. Do not submit this receipt again.'
-    : busy ? 'Finishing the current receipt action…' : disabled ? 'Receipt processing is temporarily unavailable.'
+    : busy && pendingChecks.current===null ? 'Finishing the current receipt action…' : disabled ? 'Receipt processing is temporarily unavailable.'
     : !profile ? 'Choose a workflow profile.' : profileChoice!==receipt?.version?.profileId ? 'Apply the profile change before checking the row.'
     : !destination.workbookId||!destination.sheet||!destination.sectionId||changedDestination ? 'Choose a sheet and section, then use that destination for this receipt.'
     : missingFields.length ? 'Complete: '+missingFields.map(f=>f.header).join(', ')+'.' : '';
@@ -96,15 +97,36 @@ export default function FastReceiptLoop({bridge,profiles,disabled,renderingAvail
   function move(targetId:string,skip=false){if(!queue?.activeId)return;void run(async()=>adopt(await bridge.request('receipt.navigate',{expectedId:queue.activeId!,targetId,skip}).promise));}
   async function check(){
     if(reason||!receipt?.version||!queue)return;
+    if(pendingChecks.current!==null){
+      pendingChecks.current.remaining++;
+      return;
+    }
+    if(lock.current)return;
     proposalEpoch.current++;
+    const checks={remaining:1};
+    pendingChecks.current=checks;
     await run(async()=>{
       const generation=editRevision.current;
-      const state=await bridge.request('receipt.prepare',{expected:receipt.version!,values:drafts}).promise;
-      setQueue({...queue,receipt:state});
-      const result=await bridge.request('excel.previewDraft',{expected:state.version!,...destination}).promise;
-      if(generation!==editRevision.current)return;
-      if(result.workbookId!==destination.workbookId||result.sheet!==destination.sheet||result.sectionId!==destination.sectionId)throw new Error('The preview destination changed. Check the destination again.');
-      setPreview(result);
+      let expected=receipt.version!;
+      try {
+        while(checks.remaining>0 && generation===editRevision.current){
+          checks.remaining--;
+          setError('');setErrorDetails('');
+          try {
+            const state=await bridge.request('receipt.prepare',{expected,values:drafts}).promise;
+            expected=state.version!;
+            setQueue({...queue,receipt:state});
+            if(generation!==editRevision.current)break;
+            const result=await bridge.request('excel.previewDraft',{expected,...destination}).promise;
+            if(generation!==editRevision.current)break;
+            if(result.workbookId!==destination.workbookId||result.sheet!==destination.sheet||result.sectionId!==destination.sectionId)
+              throw new Error('The preview destination changed. Check the destination again.');
+            if(checks.remaining===0)setPreview(result);
+          } catch(e) { showError(e); }
+        }
+        if(checks.remaining>0 && generation!==editRevision.current)
+          setError('The source or draft changed. Check the row again with the current values.');
+      } finally { pendingChecks.current=null; }
     });
   }
   async function add(){
@@ -171,7 +193,7 @@ export default function FastReceiptLoop({bridge,profiles,disabled,renderingAvail
         <div className="receipt-editor">
           {!preview?<><div className="receipt-edit-heading"><h3>Edit</h3><span>{active?.status}{!inserted?' · Unverified drafts':''}</span></div>
             <div className="receipt-fields">{profile?.fields.map(f=><div className="receipt-field" key={f.key}><label htmlFor={`queue-${f.key}`}>{f.header}{f.required?' (required)':''}</label>{f.kind==='accountChoice'?<select id={`queue-${f.key}`} aria-label={`Queue ${f.key}`} disabled={blocked||inserted} value={drafts[f.key]??''} onFocus={()=>setFocusedField(f.key)} onChange={e=>{edit(f.key,e.target.value);setAccount(e.target.value);}}><option value="">Choose account</option>{profile.accounts?.map(a=><option key={a.column} value={a.column}>{a.code} · {a.label} · {a.column}</option>)}</select>:<input onFocus={()=>setFocusedField(f.key)} id={`queue-${f.key}`} aria-label={`Queue ${f.key}`} disabled={blocked||inserted} maxLength={f.maxLength} value={drafts[f.key]??''} onChange={e=>edit(f.key,e.target.value)}/>}</div>)}</div>
-            <div className="receipt-next"><p id="check-reason">{reason||'Check the exact Excel row before confirming insertion.'}</p>{!inserted&&<button className="primary" disabled={!!reason} aria-describedby="check-reason" onClick={()=>void check()}>Check row</button>}</div>
+            <div className="receipt-next"><p id="check-reason">{reason||(busy?'Checking the Excel row…':'Check the exact Excel row before confirming insertion.')}</p>{!inserted&&<button className="primary" disabled={!!reason} aria-describedby="check-reason" onClick={()=>void check()}>Check row</button>}</div>
           </>:<section aria-label="Queue row preview" className="receipt-check"><div className="receipt-edit-heading"><h3>Check</h3><span>{active?.displayName}</span></div>
             <dl className="check-destination"><dt>Workbook</dt><dd>{selectedBook?.name??activeWorkbook?.name}</dd><dt>Sheet / section</dt><dd>{preview.sheet} · {sectionLabel}</dd><dt>Account</dt><dd>{accountLabel?accountLabel.label+' · '+accountLabel.column:accountValue||'Not applicable'}</dd><dt>Target row / range</dt><dd>{preview.insertRow} · {preview.sheet}!{preview.range}</dd></dl>
             <div className="mapped-values"><table><caption>Confirm these exact values against the source</caption><thead><tr><th>Field</th><th>Column</th><th>Value</th></tr></thead><tbody>{preview.values.map(v=><tr key={v.key}><th>{v.header}</th><td>{column(v.column)}</td><td>{v.displayValue??String(v.value??'')}</td></tr>)}</tbody></table></div>

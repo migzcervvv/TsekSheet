@@ -161,23 +161,23 @@ public sealed class BridgeSession : IDisposable
                 if (!(command is "excel.previewInsert" or "excel.previewDraft" ? HasOnly(payload, "expected", "workbookId", "sectionId") || HasOnly(payload, "expected", "workbookId", "sectionId", "sheet") : command == "excel.addRow" ? HasOnly(payload, "expected", "previewToken", "queueId") : HasOnly(payload, "expected", "previewToken"))
                     || !HasOnly(payload.GetProperty("expected"), "reviewId", "revision", "profileId", "profileHash")) throw new JsonException();
                 var expected = JsonSerializer.Deserialize<ReviewVersion>(payload.GetProperty("expected"), JsonOptions)!;
-                receiptQueue.RequireEditable();
+                var receipt = receipts;
                 if (command is "excel.previewInsert" or "excel.previewDraft")
                 {
-                    var preview = await excel.PreviewAsync(receipts, expected, payload.GetProperty("workbookId").GetString()!, payload.GetProperty("sectionId").GetString()!, lifetime.Token,
-                        payload.TryGetProperty("sheet", out var sheetValue) ? sheetValue.GetString() : null, draft: command == "excel.previewDraft");
-                    Success(id!, new { preview.Token, preview.WorkbookId, preview.SectionId, preview.Sheet, preview.Range, preview.InsertRow, preview.Values, preview.AdvisoryWarnings,
+                    var preview = await excel.PreviewAsync(receipt, expected, payload.GetProperty("workbookId").GetString()!, payload.GetProperty("sectionId").GetString()!, lifetime.Token,
+                        payload.TryGetProperty("sheet", out var sheetValue) ? sheetValue.GetString() : null, draft: command == "excel.previewDraft", queue: receiptQueue);
+                    Success(id!, new { preview.Token, preview.WorkbookId, preview.SectionId, preview.Sheet, preview.Range, preview.InsertRow, preview.Values,
                         manualReview = preview.ManualReview.Select(w => new { w.Cell, w.Reason }) });
                 }
                 else
                 {
                     var queueId = command == "excel.addRow" ? payload.GetProperty("queueId").GetString() : null;
                     if (command == "excel.addRow" && (queueId is not { Length: 32 } || !queueId.All(char.IsAsciiHexDigit))) throw new JsonException();
-                    if (queueId != null && receiptQueue.State.ActiveId != queueId) throw new FieldReviewException("STALE_QUEUE", "The active receipt changed. Request a fresh preview.");
-                    var result = await excel.InsertAsync(receipts, expected, payload.GetProperty("previewToken").GetString()!, lifetime.Token, confirm: command == "excel.addRow");
+                    var (result, completed) = await excel.InsertFromQueueAsync(receipt, expected,
+                        payload.GetProperty("previewToken").GetString()!, lifetime.Token, receiptQueue, queueId);
                     if (queueId != null)
                     {
-                        Success(id!, new { change = new { result.Workbook, result.Sheet, result.Range, manualReview = result.ManualReview.Select(w => new { w.Cell, w.Reason }) }, queue = receiptQueue.Complete(queueId) }); return;
+                        Success(id!, new { change = new { result.Workbook, result.Sheet, result.Range, manualReview = result.ManualReview.Select(w => new { w.Cell, w.Reason }) }, queue = completed }); return;
                     }
                     Success(id!, new { result.Workbook, result.Sheet, result.Range, manualReview = result.ManualReview.Select(w => new { w.Cell, w.Reason }) });
                 }

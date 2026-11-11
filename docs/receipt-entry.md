@@ -37,6 +37,11 @@ receipt never replaces its account with a later selection.
 destination are ready. OCR proposals from a request started before Check are ignored after
 Check begins; source navigation still invalidates the preview.
 
+PDF rendering continues while Excel checks a row. Repeated Check actions use the
+review version returned by the preceding action and display the final preview when
+the checks finish. Receipt editing and queue navigation resume after the active
+Check or Add Row completes. Confirm the displayed preview to write the row.
+
 **Check row** validates the drafts and opens **Check** with the authoritative Excel row,
 range, mapped columns, exact values and applicable warnings. It does not verify or write
 them. **Back to edit** returns to retained drafts. Changing values, profile, destination,

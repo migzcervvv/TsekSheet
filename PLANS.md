@@ -339,9 +339,8 @@ Status: DONE (merged PR #17); implementation review record: (PR #17; UX-02-FIX k
 
 ### UX-03 - Document Viewer Zoom & Continuous Scrolling
 
-Status: DONE (PR #18 and UX-03-FIX PR #19 merged into main at d4adbc5; existing viewer regression coverage retained).
+Status: IN REVIEW (PR #18 already merged; UX-03-FIX correction on t/UX03-document-viewer pending planner review; fits mixed-size pages independently and anchors reading position through loading/zoom/resize; continuous local pages, three-image cache, zoom and page-specific regions; source association and manual Check safeguards preserved; Frontend 101/0/0 and targeted Desktop Release 11/0/0 passed/failed/skipped; typecheck/build passed; 1366/768/390 screenshots retained locally; PR pending planner review)
 
+### T8a-BUSY - Narrow the Receipt/Excel Lock Boundary
 
-### T8a - Payables RFP Profile & Safe Excel Entry
-
-Status: IN REVIEW (T8a-FIX2 matches year-prefixed Inventory and distinct period-specific External/Payables totals; whole-row insertion preserves synthetic status/RFP and Inventory A–P alignment, with safe blank-row reuse and no copied status/financial values. Final Application 517/0/0, Frontend 104/0/0, full Excel 41/0/0 including the 30-instance lifecycle test, Desktop 28/0/1 passed/failed/skipped; Release build/typecheck pass. Desktop skip: OCR assets absent. Original-workbook compatibility and owner-side insertion validation remain pending; PR #20 stays draft).
+Status: IN REVIEW (receipt reads and PDF rendering continue during Check. Check requests run in order and supersede earlier tokens for the same review. Add Row revalidates the active receipt, review, source and Excel target after waiting. Final Application 508/0/0, Frontend 102/0/0, Desktop 28/0/1, Excel functional 24/0/0 passed/failed/skipped. Release build and typecheck pass. Desktop OCR assets absent. Excel lifecycle stress excluded. Local validation used installed SDK 10.0.404. After merge, update PR #20 from main and rerun its full T8a regressions).
