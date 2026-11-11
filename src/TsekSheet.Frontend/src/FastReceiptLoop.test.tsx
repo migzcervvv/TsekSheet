@@ -11,6 +11,7 @@ const profile:WorkflowProfile={id:'synthetic-liquidation',displayName:'Synthetic
 function setup(count=3,workspace=false,options:{empty?:boolean;render?:boolean}={},entryProfile=profile){
   let imported=!options.empty,holdPreview=false;let finishPreview!:()=>void,finishOcr!:(value:unknown)=>void;
   let warnings:any[]=[];
+  let advisoryWarnings:string[]=[];
   let previewNumber=0;
   if(options.render)vi.stubGlobal('URL',{createObjectURL:()=>'blob:synthetic',revokeObjectURL:vi.fn()});
   const states:Record<string,ReceiptState>={};
@@ -32,7 +33,7 @@ function setup(count=3,workspace=false,options:{empty?:boolean;render?:boolean}=
     if(command==='excel.listWorkbooks')return {openedWorkbookId:'b'.repeat(32),workbooks:[{id:'b'.repeat(32),name:'Synthetic.xlsx',sheets:['Person 1','Person 2']}],sections:[{id:'expenses',label:'Expenses',sheetName:''},{id:'credits',label:'Credits',sheetName:''}],changes:[]};
     if(command==='receipt.changeProfile'){const state=states[active];state.version={...state.version!,profileId:p.profileId,revision:0};state.fields=state.fields.map(f=>({...f,value:p.values[f.key],status:'Draft'}));return structuredClone(state);}
     if(command==='receipt.prepare'){const state=states[active];state.version!.revision++;state.fields=state.fields.map(f=>({...f,value:p.values[f.key],status:'Corrected'}));return structuredClone(state);}
-    if(command==='excel.previewDraft'){const result={token:(++previewNumber).toString(16).padStart(32,'c'),workbookId:p.workbookId,sectionId:p.sectionId,sheet:p.sheet,range:'B29:AF29',insertRow:29,values:[{key:'amount',header:'Amount',column:states[active].fields.find(f=>f.key==='account')?.value==='J'?10:17,value:123.5,displayValue:'123.50'}],manualReview:warnings};return holdPreview?new Promise(resolve=>{finishPreview=()=>resolve(result);}):result;}
+    if(command==='excel.previewDraft'){const result={token:(++previewNumber).toString(16).padStart(32,'c'),workbookId:p.workbookId,sectionId:p.sectionId,sheet:p.sheet,range:'B29:AF29',insertRow:29,values:[{key:'amount',header:'Amount',column:states[active].fields.find(f=>f.key==='account')?.value==='J'?10:17,value:123.5,displayValue:'123.50'}],manualReview:warnings,advisoryWarnings};return holdPreview?new Promise(resolve=>{finishPreview=()=>resolve(result);}):result;}
     if(command==='excel.addRow'){(items.find(i=>i.id===active)! as {status:string}).status='Inserted';active=items.find(i=>i.status==='Pending')?.id??active;return {change:{workbook:'Synthetic.xlsx',sheet:'Person 1',range:'B29:AF29',manualReview:[]},queue:queue()};}
     if(command==='receipt.navigate'){if(p.skip)(items.find(i=>i.id===active)! as {status:string}).status='Skipped';active=p.targetId;return queue();}
     throw new Error(command);
@@ -249,4 +250,27 @@ it('drains successive Check requests in order and offers only the latest preview
   expect(f.request.mock.calls.find(c=>c[0]==='excel.addRow')?.[1]).toMatchObject({
     previewToken:'2'.padStart(32,'c'),expected:{revision:2}
   });
+});
+
+const payables:WorkflowProfile={id:'payables-rfp',displayName:'Payables — RFP',revision:1,profileHash:'A'.repeat(64),fields:[
+  {key:'payee',header:'Payee',kind:'text',required:true,maxLength:256},
+  {key:'rfpNo',header:'RFP No.',kind:'text',required:true,maxLength:256},
+  {key:'amount',header:'Amount',kind:'money',required:true,maxLength:256},
+  {key:'invoice',header:'Invoice #',kind:'text',required:false,maxLength:256}
+],accounts:[]};
+it('checks manual fixed-column drafts with blank invoice and leaves advisory duplicate insertion available',async()=>{
+  const f=setup(1,false,{},payables);
+  await screen.findByLabelText('Queue rfpNo');await destination();
+  expect(screen.queryByLabelText('Queue account')).toBeNull();
+  fireEvent.change(screen.getByLabelText('Queue rfpNo'),{target:{value:'00001'}});
+  fireEvent.change(screen.getByLabelText('Queue amount'),{target:{value:'123.50'}});
+  expect((screen.getByRole('button',{name:'Check row'}) as HTMLButtonElement).disabled).toBe(true);
+  fireEvent.change(screen.getByLabelText('Queue payee'),{target:{value:'Manual vendor'}});
+  f.advisories(['Possible duplicate RFP No. Review Excel; insertion is still available.']);
+  fireEvent.click(screen.getByRole('button',{name:'Check row'}));
+  await screen.findByText('Advisory: possible duplicate');
+  expect((screen.getByRole('button',{name:'Add row to Excel'}) as HTMLButtonElement).disabled).toBe(false);
+  expect(f.request.mock.calls.find(c=>c[0]==='receipt.prepare')![1].values).toEqual({payee:'Manual vendor',rfpNo:'00001',amount:'123.50',invoice:''});
+  fireEvent.click(screen.getByRole('button',{name:'Add row to Excel'}));
+  await waitFor(()=>expect(f.request.mock.calls.some(c=>c[0]==='excel.addRow')).toBe(true));
 });

@@ -12,6 +12,7 @@ namespace TsekSheet.Excel.Tests;
 public sealed class PayablesInsertTests
 {
     private static WorkflowProfile Profile => WorkflowProfiles.BuiltInProfiles.Single(p => p.Id == "payables-rfp");
+    private static WorkbookBinding Binding => WorkbookBindings.Payables;
     private const string Sheet = "Unpaid RFPs - SEP";
 
     [TestInitialize]
@@ -20,6 +21,155 @@ public sealed class PayablesInsertTests
 #if DEBUG
         Assert.Fail("Excel tests require Release.");
 #endif
+    }
+
+    [TestMethod]
+    public async Task AllBoundTargetsResolveAfterWholeRowInsertion()
+    {
+        var host = await ExcelTestScope.SharedHostAsync();
+        var path = await CreateAsync(host, bound: true);
+        await using var scope = new ExcelTestScope();
+        var book = await host.OpenAsync(path);
+        Assert.IsTrue(await host.HasBindingAsync(book.Id, Binding));
+        var legacy = Profile.Layout!;
+        for (var pass = 0; pass < 2; pass++)
+        {
+            var data = (await host.CaptureAsync(book.Id)).Sheets.Single().Data;
+            foreach (var target in Binding.Targets)
+            {
+                var section = legacy.Section(target.Id, Sheet);
+                var (first, subtotal, _) = ExcelLayoutMatching.Resolve(data, section);
+                var preview = await host.PreviewBoundInsertAsync(book.Id, Binding, DocumentTypes.Rfp, target.Id, Values(section, "BOUND"));
+                Assert.AreEqual(target.Id, preview.SectionId);
+                Assert.IsTrue(preview.InsertRow >= first && preview.InsertRow <= subtotal, target.Id);
+                if (target.Id != "employee" && !(pass == 1 && target.Id == "member-company-1"))
+                    Assert.AreEqual(subtotal, preview.InsertRow, target.Id);
+            }
+            if (pass == 0)
+            {
+                var section = legacy.Section("member-company-1", Sheet);
+                var preview = await host.PreviewBoundInsertAsync(book.Id, Binding, DocumentTypes.Rfp, section.Id, Values(section, "SHIFT"));
+                await host.InsertAsync(preview.Token);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task BoundAndLegacyPathsProduceEquivalentExcelReadback()
+    {
+        var host = await ExcelTestScope.SharedHostAsync();
+        await using var scope = new ExcelTestScope();
+        async Task<PreservationSnapshot> InsertAsync(bool bound)
+        {
+            var path = await CreateAsync(host, bound: bound);
+            var book = await host.OpenAsync(path);
+            foreach (var (id, expectedRow) in new[] { ("employee", 8), ("member-company-1", 197) })
+            {
+                var section = Profile.Layout!.Section(id, Sheet);
+                var fields = Values(section, "EQUIVALENT").Select(f => id == "member-company-1" && f.Key == "vat" ? f with { Value = 7.25d } : f).ToArray();
+                var preview = bound ? await host.PreviewBoundInsertAsync(book.Id, Binding, DocumentTypes.Rfp, id, fields)
+                    : await host.PreviewInsertAsync(book.Id, section, fields);
+                Assert.AreEqual(expectedRow, preview.InsertRow);
+                await host.InsertAsync(preview.Token);
+            }
+            var snapshot = await host.CaptureAsync(book.Id);
+            await host.CloseAsync(book.Id, discardChanges: true);
+            return snapshot;
+        }
+
+        var legacy = await InsertAsync(false);
+        var bound = await InsertAsync(true);
+        var expected = legacy.Sheets.Single();
+        var actual = bound.Sheets.Single();
+        Assert.AreEqual(expected.Data.Range, actual.Data.Range);
+        CollectionAssert.AreEqual(expected.Data.Values, actual.Data.Values);
+        CollectionAssert.AreEqual(expected.Data.Formulas, actual.Data.Formulas);
+        CollectionAssert.AreEqual(expected.Data.NumberFormats, actual.Data.NumberFormats);
+        CollectionAssert.AreEqual(expected.MergedAreas.ToArray(), actual.MergedAreas.ToArray());
+        CollectionAssert.AreEqual(expected.Tables.ToArray(), actual.Tables.ToArray());
+        Assert.AreEqual(expected.ValidationCells, actual.ValidationCells);
+        Assert.AreEqual(expected.ValidationAreas, actual.ValidationAreas);
+        Assert.AreEqual(expected.ConditionalFormats, actual.ConditionalFormats);
+        Assert.AreEqual("=G196*0.12", ExcelLayoutMatching.Formula(actual.Data, 196, 9));
+        Assert.AreEqual(7.25d, ExcelLayoutMatching.Value(actual.Data, 197, 9));
+        Assert.IsNull(ExcelLayoutMatching.Formula(actual.Data, 197, 9));
+        Assert.AreEqual("=SUM(G75:G197)", ExcelLayoutMatching.Formula(actual.Data, 198, 7));
+        Assert.AreEqual("2024 INVENTORY", ExcelLayoutMatching.Value(actual.Data, 902, 2));
+        Assert.AreEqual("Member-status-00198", ExcelLayoutMatching.Value(actual.Data, 199, 1));
+        StringAssert.EndsWith(bound.Names.Single(n => n.Name == Binding.Targets.Single(t => t.Id == "member-company-1").Reference).RefersTo, "$B$75:$O$198");
+    }
+
+    [TestMethod, DataRow("bound-header", "headers"), DataRow("bound-redirect", "independent"),
+        DataRow("bound-missing-subtotal", "subtotal"), DataRow("bound-wrong-subtotal", "subtotal"), DataRow("bound-identity", "identity")]
+    public async Task BoundCheckRejectsChangedWorkbookIdentityWithoutFallingBack(string fault, string reason)
+    {
+        var host = await ExcelTestScope.SharedHostAsync();
+        var path = await CreateAsync(host, fault, bound: true);
+        await using var scope = new ExcelTestScope();
+        var book = await host.OpenAsync(path);
+        Assert.IsTrue(await host.HasBindingAsync(book.Id, Binding));
+        using var receipt = PrepareReceipt(path, out var state);
+        var insertion = new ExcelReceiptInsertion(host, host, _ => Profile);
+        var error = await Assert.ThrowsExactlyAsync<ExcelInsertRejectedException>(() => insertion.PreviewAsync(receipt, state.Version!, book.Id,
+            "member-company-1", default, Sheet, draft: true));
+        StringAssert.Contains(error.Message, reason);
+        Assert.AreEqual(0, Directory.GetFiles(Path.GetDirectoryName(path)!, "*.tseksheet-*.xlsx").Length);
+    }
+
+    [TestMethod, DataRow("binding"), DataRow("workbook"), DataRow("source")]
+    public async Task BoundReceiptRejectsChangesBetweenCheckAndAddRow(string change)
+    {
+        var host = await ExcelTestScope.SharedHostAsync();
+        var path = await CreateAsync(host, bound: true);
+        await using var scope = new ExcelTestScope();
+        var book = await host.OpenAsync(path);
+        var binding = Binding;
+        using var receipt = PrepareReceipt(path, out var state);
+        var insertion = new ExcelReceiptInsertion(host, host, _ => Profile, _ => binding);
+        var preview = await insertion.PreviewAsync(receipt, state.Version!, book.Id, "employee", default, Sheet, draft: true);
+        if (change == "binding") binding = binding with { Revision = binding.Revision + 1 };
+        if (change == "workbook") await host.WriteAsync(book.Id, Sheet, new(3, 3, 1, 1), new object?[,] { { "Changed header" } });
+        if (change == "source") File.AppendAllText(Path.Combine(Path.GetDirectoryName(path)!, "bound-receipt.pdf"), "\nChanged source");
+        Task<ExcelInsertDisplay> Add() => insertion.InsertAsync(receipt, state.Version!, preview.Token, default, confirm: true);
+        if (change == "source")
+            Assert.AreEqual("SOURCE_INVALIDATED", (await Assert.ThrowsExactlyAsync<DocumentSourceException>(Add)).Code);
+        else
+            Assert.AreEqual("STALE_INSERT_PREVIEW", (await Assert.ThrowsExactlyAsync<FieldReviewException>(Add)).Code);
+        Assert.IsNull((await host.ReadAsync(book.Id, Sheet, new(8, 5, 1, 1))).Values[0, 0]);
+    }
+
+    [TestMethod]
+    public async Task BoundManualCheckKeepsDuplicatesAdvisoryAndRequiresExplicitAddRow()
+    {
+        var host = await ExcelTestScope.SharedHostAsync();
+        var path = await CreateAsync(host, bound: true);
+        await using var scope = new ExcelTestScope();
+        var book = await host.OpenAsync(path);
+        using var receipt = PrepareReceipt(path, out var state);
+        var insertion = new ExcelReceiptInsertion(host, host, _ => Profile);
+        Task<SectionInsertPreview> Check() => insertion.PreviewAsync(receipt, state.Version!, book.Id, "employee", default, Sheet, draft: true);
+        var preview = await Check();
+        Assert.AreEqual(1, preview.AdvisoryWarnings!.Count);
+        Assert.AreEqual(8, preview.InsertRow);
+        var error = await Assert.ThrowsExactlyAsync<FieldReviewException>(() => insertion.InsertAsync(receipt, state.Version!, preview.Token, default));
+        Assert.AreEqual("CONFIRMATION_REQUIRED", error.Code);
+        preview = await Check();
+        await insertion.InsertAsync(receipt, state.Version!, preview.Token, default, confirm: true);
+        using var repeated = PrepareReceipt(path, out var repeatedState, page: 2);
+        error = await Assert.ThrowsExactlyAsync<FieldReviewException>(() => insertion.PreviewAsync(repeated, repeatedState.Version!, book.Id, "employee", default, Sheet, draft: true));
+        Assert.AreEqual("ALREADY_INSERTED", error.Code);
+    }
+
+    private static DesktopReceiptReview PrepareReceipt(string workbookPath, out ReceiptState state, int page = 1)
+    {
+        var source = Path.Combine(Path.GetDirectoryName(workbookPath)!, "bound-receipt.pdf");
+        if (!File.Exists(source)) File.WriteAllText(source, "%PDF-1.7\n" + new string('x', 100));
+        var receipt = new DesktopReceiptReview(_ => Profile);
+        receipt.Register(source, default);
+        var start = receipt.Start(Profile.Id, page, default);
+        var fields = Profile.Fields.ToDictionary(f => f.Key, f => f.Key switch { "payee" => "Bound vendor", "rfpNo" => "00001", "amount" => "125.50", _ => "" });
+        state = receipt.Prepare(start.Version!, fields, default);
+        return receipt;
     }
 
     [TestMethod]
@@ -306,7 +456,7 @@ public sealed class PayablesInsertTests
         new InsertValue(p.Key, Profile.Fields.Single(f => f.Key == p.Key).Header, A1Formula.ColumnNumber(p.Value),
             p.Key switch { "payee" => "Synthetic vendor", "rfpNo" => rfp, "amount" => 125.50d, _ => null })).ToArray();
 
-    private static async Task<string> CreateAsync(ExcelHost host, string fault = "")
+    private static async Task<string> CreateAsync(ExcelHost host, string fault = "", bool bound = false)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "GOALS.md"))) directory = directory.Parent;
@@ -314,11 +464,11 @@ public sealed class PayablesInsertTests
         Directory.CreateDirectory(root);
         var path = Path.Combine(root, "payables-synthetic.xlsx");
         var queue = (StaCommandQueue)typeof(ExcelHost).GetField("queue", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(host)!;
-        await queue.InvokeAsync(() => Author(host, path, fault));
+        await queue.InvokeAsync(() => Author(host, path, fault, bound));
         return path;
     }
 
-    private static int Author(ExcelHost host, string path, string fault)
+    private static int Author(ExcelHost host, string path, string fault, bool bound)
     {
         var app = (Interop.Application)typeof(ExcelHost).GetField("application", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(host)!;
         Interop.Workbooks? books = null; Interop.Workbook? book = null;
@@ -367,6 +517,9 @@ public sealed class PayablesInsertTests
                 if (fault == "missing-external") data[894, 2] = null;
                 if (fault == "extra-external") data[895, 2] = "TOTAL EXTERNAL AS OF JAN 2026";
                 if (fault == "offband-merge") data[196, 15] = "Merged insertion boundary";
+                if (fault == "bound-header") data[2, 2] = "Changed vendor header";
+                if (fault == "bound-missing-subtotal") data[196, 5] = null;
+                if (fault == "bound-wrong-subtotal") data[196, 5] = "Other Total";
                 Put(sheet, new(1, 1, 905, 16), r => r.Value2 = data);
                 var financial = new object?[901, 7];
                 for (var row = 5; row <= 905; row++)
@@ -383,6 +536,7 @@ public sealed class PayablesInsertTests
                 Put(sheet, new(901, 16, 3, 1), r => r.Formula2 = new object[,] { { "Synthetic inventory reference" }, { "INV-ROW-902" }, { "=G903*2" } });
                 if (fault == "merge-template") Put(sheet, new(196, 9, 1, 2), r => r.Merge());
                 if (fault == "offband-merge") Put(sheet, new(197, 16, 2, 1), r => r.Merge());
+                if (bound) AddBindingNames(book, starts, ends, fault);
             }
             finally { app.Calculation = calculation; app.EnableEvents = events; app.ScreenUpdating = screen; }
             book.SaveAs(path, Interop.XlFileFormat.xlOpenXMLWorkbook);
@@ -394,6 +548,31 @@ public sealed class PayablesInsertTests
             try { if (book is not null) book.Close(false); }
             finally { ComLifetime.Release(book); ComLifetime.Release(books); }
         }
+    }
+
+    private static void AddBindingNames(Interop.Workbook book, int[] starts, int[] ends, string fault)
+    {
+        Interop.Names? names = null;
+        try
+        {
+            names = book.Names;
+            void Add(string name, string refersTo)
+            {
+                Interop.Name? entry = null;
+                try { entry = names.Add(Name: name, RefersTo: refersTo); }
+                finally { ComLifetime.Release(entry); }
+            }
+            Add(Binding.WorkbookIdentityName, fault == "bound-identity" ? "=\"different-workbook\"" : $"=\"{Binding.Id}\"");
+            for (var i = 0; i < Binding.Targets.Count; i++)
+            {
+                var target = Binding.Targets[i];
+                var rangeIndex = fault == "bound-redirect" && target.Id == "member-company-1" ? i + 1 : i;
+                Add(target.Reference!, $"='{Sheet}'!$B${starts[rangeIndex]}:$O${ends[rangeIndex]}");
+                Add(target.StartAnchor!, $"='{Sheet}'!$B${starts[i]}");
+                Add(target.Subtotal!.Anchor!, $"='{Sheet}'!$F${ends[i]}");
+            }
+        }
+        finally { ComLifetime.Release(names); }
     }
 
     private static void Put(Interop.Worksheet sheet, CellRange bounds, Action<Interop.Range> action)

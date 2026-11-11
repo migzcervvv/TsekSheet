@@ -37,6 +37,16 @@ Use a single desktop process for WPF, WebView2, and C# application services, plu
 
 Dependencies point toward the domain. Engine implementations satisfy small contracts owned by the application layer. Domain types never depend on WPF, WebView2, Python, or workbook-library objects. The template engine returns proposed edits; it does not mutate workbooks or save files.
 
+### Receipt document types and workbook bindings
+
+Document types version the fields, value types, verification requirements and page roles independently of Excel. A manual RFP packet yields one record. Each entered value still needs explicit human verification. EXTI verification uses an equivalent document type and retains the installed account choices during the compatibility period.
+
+A schema 1 workbook binding identifies a document-type revision, a workbook identity name and required sheets. Each target has its own ID, field-to-column map, required fields, formula columns and literal header and subtotal signatures. A named range spans its first data row through its subtotal and is checked against two separate workbook-level names for the start and subtotal cells. A Table supplies its own body and totals row. Excel verifies the open workbook registration, target bounds, signatures and workbook structures at preview and again before mutation.
+
+The shared Excel engine reuses safe blank rows, inserts Table rows, or inserts complete worksheet rows before named-range subtotals. It only propagates formulas in explicitly declared formula columns. Payables allows optional financial formulas to remain in reused rows and creates blank manual-entry cells on inserted rows. Existing preservation checks cover the workbook after each write. A partially registered binding fails in the bound route. Workbooks without a registration can use the temporary marker resolver and legacy profile parser.
+
+Schema version describes the file format. A binding revision tracks the saved configuration. Pending previews carry the document type, binding revision and target identity and expire when the binding or workbook changes. A future persisted draft needs the document-type ID and revision, binding ID and revision, target ID, workbook and source identities, plus the reviewed values and verification revisions. Restoring it requires a fresh preview against live Excel. [Receipt entry and owner validation](../receipt-entry.md#owner-validation-for-native-payables-bindings)
+
 Use ordinary classes and explicit composition. Introduce interfaces where substituting an external boundary helps testing: workbook access, OCR execution, and file commit. Avoid a plugin framework, generic repository layer, distributed messaging, or a universal workflow engine. Logical boundaries can begin as folders and a few .NET projects; they do not require a project per service.
 
 ## React-to-C# Communication

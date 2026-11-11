@@ -9,10 +9,14 @@ public sealed record ExcelWorkbookChoice(string Id, string Name, IReadOnlyList<s
 public sealed record ExcelSectionChoice(string Id, string Label, string SheetName);
 public sealed record ExcelInsertDisplay(string Workbook, string Sheet, string Range, IReadOnlyList<FormulaReview> ManualReview);
 
-public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer, Func<string, WorkflowProfile>? profiles = null)
+public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer, Func<string, WorkflowProfile>? profiles = null,
+    Func<string, WorkbookBinding?>? bindings = null)
 {
     private WorkflowProfile Profile(string id) => (profiles ?? WorkflowProfiles.Get)(id);
-    private readonly Dictionary<string, (ReviewVersion Version, SectionInsertPreview Preview, string Workbook, bool Draft)> previews = [];
+    private WorkbookBinding? Binding(string profileId) => bindings is not null ? bindings(profileId)
+        : profileId == "payables-rfp" ? WorkbookBindings.Payables : null;
+    private sealed record PreviewPlan(ReviewVersion Version, string Workbook, bool Draft, string WorkbookId, string? BindingConfiguration);
+    private readonly Dictionary<string, PreviewPlan> previews = [];
     private readonly HashSet<Guid> inserted = [];
     private readonly HashSet<(string Hash, int Page)> submittedSources = [];
     private readonly SemaphoreSlim commands = new(1, 1);
@@ -36,8 +40,14 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
             if (path is not null) await host.OpenAsync(path);
             var result = new List<ExcelWorkbookChoice>();
             var profile = profileId is null ? null : Profile(profileId);
+            var binding = profileId is null ? null : Binding(profileId);
             foreach (var book in await host.ListWorkbooksAsync())
             {
+                if (binding is not null && writer is IBindingSectionWriter boundWriter && await boundWriter.HasBindingAsync(book.Id, binding))
+                {
+                    result.Add(new(book.Id, book.Name, book.Sheets.Where(s => binding.RequiredSheets.Contains(s)).ToArray()));
+                    continue;
+                }
                 var sheets = new List<string>();
                 foreach (var sheet in book.Sheets)
                 {
@@ -57,6 +67,8 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
     public IReadOnlyList<ExcelSectionChoice> Sections(string profileId)
     {
         var p = Profile(profileId);
+        if (Binding(profileId) is { } binding)
+            return binding.Targets.Select(t => new ExcelSectionChoice(t.Id, t.Label, "")).ToArray();
         return p.Layout is { } layout ? layout.Sections.Select(s => new ExcelSectionChoice(s.Id, s.Label, "")).ToArray()
             : (p.ExcelSections ?? []).Select(s => new ExcelSectionChoice(s.Id, s.Label, s.SheetName)).ToArray();
     }
@@ -82,40 +94,53 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
                 if (WorkflowProfiles.Hash(profile) != version.ProfileHash) throw new FieldReviewException("STALE_PROFILE", "The local profile changed. Start a new review.");
                 foreach (var oldToken in previews.Where(entry => entry.Value.Version.ReviewId == version.ReviewId).Select(entry => entry.Key).ToArray())
                     previews.Remove(oldToken);
-                var section = profile.Layout is { } layout
-                    ? layout.Section(sectionId, sheetName ?? throw new FieldReviewException("SHEET_REQUIRED", "Choose a matching sheet."))
-                    : profile.ExcelSections?.SingleOrDefault(s => s.Id == sectionId) ?? throw new FieldReviewException("UNKNOWN_SECTION", "Choose a section from this receipt profile.");
-                if (sheetName is not null && section.SheetName != sheetName) throw new FieldReviewException("UNKNOWN_SECTION", "Choose a section on the selected sheet.");
-                if (profile.Layout is { MappingMode: "account" } accountLayout)
+                var book = (await host.ListWorkbooksAsync()).SingleOrDefault(w => w.Id == workbookId) ?? throw new InvalidOperationException("Choose an open Excel workbook.");
+                var binding = Binding(profile.Id);
+                var boundWriter = writer as IBindingSectionWriter;
+                var useBinding = binding is not null && boundWriter is not null && await boundWriter.HasBindingAsync(workbookId, binding);
+                Measure("application.identity", watch); watch.Restart();
+                var document = DocumentTypes.ForProfile(profile);
+                WorkbookTarget? target = null;
+                ExcelSectionDefinition? legacySection = null;
+                if (useBinding)
                 {
-                    var choice = record.Fields.Single(f => f.Kind == "accountChoice").LiteralText;
-                    var account = accountLayout.Accounts.SingleOrDefault(a => a.Column == choice)
-                        ?? throw new FieldReviewException("INVALID_ACCOUNT", "Choose an account from this profile.");
-                    var amount = accountLayout.Fields.Single(f => f.WritesTo == "selectedAccountColumn");
-                    section = section with { ColumnMap = section.ColumnMap.Append(new KeyValuePair<string, string>(amount.Key, account.Column)).ToDictionary() };
+                    if (document is null) throw new FieldReviewException("INVALID_BINDING", "This receipt has no installed document type for its workbook binding.");
+                    WorkbookBindings.Validate(binding!, document);
+                    target = binding!.Targets.SingleOrDefault(t => t.Id == sectionId)
+                        ?? throw new FieldReviewException("UNKNOWN_SECTION", "Choose a target from this workbook binding.");
+                    if (target.Type == "unsupported") throw new FieldReviewException("UNSUPPORTED_TARGET", "The selected target cannot accept entries.");
+                    if (target.Sheet != sheetName) throw new FieldReviewException("UNKNOWN_SECTION", "Choose a target on the selected sheet.");
+                    foreach (var required in target.RequiredFields)
+                        if (!record.Fields.Any(f => f.Key == required && !string.IsNullOrWhiteSpace(f.LiteralText)))
+                            throw new FieldReviewException("TARGET_FIELD_REQUIRED", $"Enter {document.Fields.Single(f => f.Key == required).Label} for {target.Label}.");
                 }
-                var values = record.Fields.Where(f => f.Kind != "accountChoice").Select(field => new InsertValue(field.Key, profile.Fields.Single(f => f.Key == field.Key).Header,
-                    A1Formula.ColumnNumber(section.ColumnMap[field.Key]), field.Kind switch
+                else legacySection = LegacyReceiptDestination.Resolve(profile, record, sectionId, sheetName);
+                var columnMap = target?.ColumnMap ?? legacySection!.ColumnMap;
+                if (useBinding && record.Fields.Any(f => !columnMap.ContainsKey(f.Key) && !string.IsNullOrWhiteSpace(f.LiteralText)))
+                    throw new FieldReviewException("UNMAPPED_FIELD", "This target has no column for a supplied field. Choose a target that can retain every entered value.");
+                var values = record.Fields.Where(f => useBinding ? columnMap.ContainsKey(f.Key) : f.Kind != "accountChoice").Select(field => new InsertValue(field.Key, profile.Fields.Single(f => f.Key == field.Key).Header,
+                    A1Formula.ColumnNumber(columnMap[field.Key]), field.Kind switch
                     {
                         "decimal" or "money" => field.DecimalValue is decimal number ? (object)MapNumber(number) : null,
                         "date" => field.DateValue is DateOnly date ? MapDate(date) : null,
                         _ => field.LiteralText.Length == 0 ? null : field.LiteralText
                     }, field.LiteralText, field.Kind == "date")).ToArray();
                 Measure("application.mapping", watch); watch.Restart();
-                var book = (await host.ListWorkbooksAsync()).SingleOrDefault(w => w.Id == workbookId) ?? throw new InvalidOperationException("Choose an open Excel workbook.");
-                Measure("application.identity", watch); watch.Restart();
-                var preview = await writer.PreviewInsertAsync(workbookId, section, values);
+                var preview = useBinding
+                    ? await boundWriter!.PreviewBoundInsertAsync(workbookId, binding!, document!, sectionId, values)
+                    : await writer.PreviewInsertAsync(workbookId, legacySection!, values);
                 Measure("application.excelPreview", watch);
-                if (profile.Layout?.AdvisoryIdentifier is string identifier)
-                    preview = preview with { AdvisoryWarnings = await DuplicateWarningsAsync(workbookId, profile, record, identifier) };
+                if ((document?.AdvisoryIdentifier ?? profile.Layout?.AdvisoryIdentifier) is string identifier && columnMap.TryGetValue(identifier, out var identifierColumn))
+                    preview = preview with { AdvisoryWarnings = await DuplicateWarningsAsync(book, target?.HeaderSignature ?? profile.Layout!.SheetMatch,
+                        record, identifier, identifierColumn, profile.Fields.Single(f => f.Key == identifier).Header) };
                 if (draft)
                 {
                     if (preview.ManualReview.Count > 0) throw new FieldReviewException("AMBIGUOUS_TOTAL", "A subtotal formula needs manual review in Excel before Add Row is available.");
-                    await RejectDuplicateAsync(workbookId, section, profile, record);
+                    if (legacySection is not null) await RejectDuplicateAsync(workbookId, legacySection, profile, record);
                 }
                 receipt.RecheckExcelSource(token);
                 if (previews.Count >= 64) previews.Clear();
-                previews[preview.Token] = (version, preview, book.Name, draft);
+                previews[preview.Token] = new(version, book.Name, draft, workbookId, useBinding ? WorkbookBindings.Configuration(binding!) : null);
                 return preview;
             }
         }
@@ -159,10 +184,16 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
                     throw new FieldReviewException("CONFIRMATION_REQUIRED", "Explicitly confirm the draft values and destination with Add Row.");
                 if (WorkflowProfiles.Hash(Profile(version.ProfileId)) != version.ProfileHash)
                     throw new FieldReviewException("STALE_PROFILE", "The local profile changed. Start a new review.");
+                var binding = Binding(version.ProfileId);
+                if (plan.BindingConfiguration is not null && (binding is null || plan.BindingConfiguration != WorkbookBindings.Configuration(binding)))
+                    throw new FieldReviewException("STALE_INSERT_PREVIEW", "The workbook binding changed. Run Check Row again.");
                 return receipt.WithVerifiedExcelAsync(version, Write, token, confirm);
 
                 async Task<(ExcelInsertDisplay Change, ReceiptQueueState? Queue)> Write(TypedReviewRecord record)
                 {
+                    if (plan.BindingConfiguration is null && binding is not null && writer is IBindingSectionWriter boundWriter
+                        && await boundWriter.HasBindingAsync(plan.WorkbookId, binding))
+                        throw new FieldReviewException("STALE_INSERT_PREVIEW", "The workbook binding changed. Run Check Row again.");
                     receipt.RecheckExcelSource(token);
                     var sources = SourceKeys(record);
                     if (sources.Any(submittedSources.Contains)) throw new FieldReviewException("ALREADY_INSERTED", "This receipt source was already submitted. Review Excel before retrying.");
@@ -186,21 +217,21 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
         finally { commands.Release(); }
     }
 
-    private async Task<IReadOnlyList<string>> DuplicateWarningsAsync(string workbookId, WorkflowProfile profile, TypedReviewRecord record, string key)
+    private async Task<IReadOnlyList<string>> DuplicateWarningsAsync(ExcelWorkbook book, SheetMatch signature, TypedReviewRecord record, string key,
+        string identifierColumn, string label)
     {
         var reader = host as IWorkbookReader ?? throw new InvalidOperationException("Excel readback is unavailable.");
         var identifier = record.Fields.Single(f => f.Key == key).LiteralText.Trim();
-        var column = A1Formula.ColumnNumber(profile.Layout!.Fields.Single(f => f.Key == key).Column!);
+        var column = A1Formula.ColumnNumber(identifierColumn);
         var warnings = new List<string>();
-        var book = (await host.ListWorkbooksAsync()).Single(b => b.Id == workbookId);
         foreach (var sheet in book.Sheets)
         {
-            var range = await reader.UsedRangeAsync(workbookId, sheet);
-            var data = await reader.ReadAsync(workbookId, sheet, range);
-            if (!ExcelLayoutMatching.Matches(data, profile.Layout.SheetMatch)) continue;
-            if (Enumerable.Range(range.Row, range.Rows).Any(row => row > profile.Layout.SheetMatch.HeaderRow &&
+            var range = await reader.UsedRangeAsync(book.Id, sheet);
+            var data = await reader.ReadAsync(book.Id, sheet, range);
+            if (!ExcelLayoutMatching.Matches(data, signature)) continue;
+            if (Enumerable.Range(range.Row, range.Rows).Any(row => row > signature.HeaderRow &&
                 string.Equals(identifier, Convert.ToString(ExcelLayoutMatching.Value(data, row, column), System.Globalization.CultureInfo.InvariantCulture)?.Trim(), StringComparison.OrdinalIgnoreCase)))
-                warnings.Add($"Possible duplicate {profile.Fields.Single(f => f.Key == key).Header} in {sheet}. Review Excel; insertion is still available.");
+                warnings.Add($"Possible duplicate {label} in {sheet}. Review Excel; insertion is still available.");
         }
         return warnings;
     }
@@ -245,6 +276,10 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
         submittedSources.Contains(source) || submittedSources.Contains((source.Hash, 0)) ||
         source.Page == 0 && submittedSources.Any(previous => previous.Hash == source.Hash));
 
-    private (string Hash, int Page)[] SourceKeys(TypedReviewRecord record) => record.Fields
-        .Where(f => f.Source is not null).Select(f => (f.Source!.DocumentSha256, Profile(record.Version.ProfileId).Layout?.SourceScope == "document" ? 0 : f.Source.PageNumber)).Distinct().ToArray();
+    private (string Hash, int Page)[] SourceKeys(TypedReviewRecord record)
+    {
+        var profile = Profile(record.Version.ProfileId);
+        var packet = DocumentTypes.ForProfile(profile)?.OneRecordPerPacket ?? profile.Layout?.SourceScope == "document";
+        return record.Fields.Where(f => f.Source is not null).Select(f => (f.Source!.DocumentSha256, packet ? 0 : f.Source.PageNumber)).Distinct().ToArray();
+    }
 }

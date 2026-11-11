@@ -2,6 +2,8 @@
 
 [README](README.md) · **Changelog**
 
+- 2026-11-11 — T9: Separate document verification from versioned workbook bindings, validate named and Table destinations in Excel, and retain unbound Payables and EXTI compatibility.
+
 - 2026-11-11 — T8a-BUSY: Keep receipt reads and PDF rendering available during Excel checks, sequence repeated Check actions, and revalidate queued insertions.
 
 - 2026-11-07 — UX-03-FIX: Fit mixed-size PDF pages independently and preserve the visible reading position during page loading, zoom and viewport resizing.

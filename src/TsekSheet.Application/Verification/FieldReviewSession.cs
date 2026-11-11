@@ -1,4 +1,5 @@
 using System.Xml;
+using TsekSheet.Application.Documents;
 using TsekSheet.Application.Workflows;
 
 namespace TsekSheet.Application.Verification;
@@ -46,7 +47,7 @@ public sealed class FieldReviewSession
         WorkflowProfiles.Validate(profile);
         _profileId = profile.Id;
         _profileHash = WorkflowProfiles.Hash(profile);
-        _fields = profile.Fields.ToArray();
+        _fields = DocumentTypes.ReviewFields(profile);
         _identifierFields = profile.IdentifierFields.ToArray();
         if (candidates == null || candidates.Count > _fields.Length)
             throw Error("INVALID_REVIEW_INPUT", "Supply at most one draft for each configured field.");

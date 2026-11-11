@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Text.Json;
+using TsekSheet.Application.Documents;
 using TsekSheet.Application.Excel;
 using TsekSheet.Application.Workflows;
 using Interop = Microsoft.Office.Interop.Excel;
@@ -17,6 +18,31 @@ public sealed class SectionInsertTests
 #if DEBUG
         Assert.Fail("Excel integration tests require Release.");
 #endif
+    }
+
+    [TestMethod]
+    public async Task BoundTableUsesItsOwnBodyAndApprovedFormulaColumn()
+    {
+        var fixture = await ExcelFixture.CreateAsync(sections: true, boundTable: true);
+        await using var scope = new ExcelTestScope();
+        var host = scope.Host;
+        var book = await host.OpenAsync(fixture.Path);
+        var profile = WorkflowProfiles.Get("synthetic-payables");
+        var section = profile.ExcelSections!.Single(s => s.Id == "table");
+        var document = new DocumentType(new("synthetic-receipt", 1), profile.Fields.Select(f => new DocumentField(f.Key, f.Header, f.Kind, f.Required, f.MaxLength)).ToArray(), ["receipt"], true);
+        var headers = profile.Fields.Select(f => new HeaderAnchor(section.ColumnMap[f.Key], f.Header)).Append(new("G", "Derived")).ToArray();
+        var target = new WorkbookTarget("table", "Records", "Table", "table", "Records", section.ColumnMap, ["G"],
+            new(2, headers), new("A", "Subtotal"), ["vendor", "amount"]);
+        var binding = new WorkbookBinding(1, "synthetic-table", 1, document.Identity,
+            "fixture.xlsx", ["Table"], "Synthetic_Table_Identity", [target]);
+        var preview = await host.PreviewBoundInsertAsync(book.Id, binding, document, target.Id, Values(profile, section, 0));
+        Assert.AreEqual(5, preview.InsertRow);
+        await host.InsertAsync(preview.Token);
+        var after = (await host.CaptureAsync(book.Id)).Sheets.Single(s => s.Name == "Table");
+        Assert.AreEqual("A2:G6", after.Tables.Single().Address);
+        Assert.AreEqual("=E5*2", ExcelLayoutMatching.Formula(after.Data, 5, 7));
+        Assert.AreEqual("=SUM(E3:E5)", ExcelLayoutMatching.Formula(after.Data, 6, 5));
+        Assert.AreEqual(77d, ExcelLayoutMatching.Value(after.Data, 3, 11));
     }
 
     [TestMethod]
