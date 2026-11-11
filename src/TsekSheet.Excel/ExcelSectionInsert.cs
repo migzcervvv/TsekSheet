@@ -41,18 +41,29 @@ public sealed partial class ExcelHost
             var boundary = ExcelLayoutMatching.Resolve(snapshot.Data, section);
             PreviewTiming?.Invoke(new("excel.layout", watch.Elapsed.TotalMilliseconds));
             var inputColumns = (section.InputColumns ?? section.ColumnMap.Values.ToArray()).Select(A1Formula.ColumnNumber).ToArray();
+            bool Compatible(int r) => inputColumns.All(c =>
+                Formula(snapshot.Data, r, c) is null
+                    ? Cell(snapshot.Data, r, c) is null or ""
+                    : section.HybridInputs && (section.HybridFormulaColumns ?? []).Any(column => A1Formula.ColumnNumber(column) == c) && fields.SingleOrDefault(f => f.Column == c)?.Value is null);
             var blank = section.FillBlankRowsFirst ? Enumerable.Range(boundary.First, boundary.Subtotal - boundary.First)
-                .FirstOrDefault(r => inputColumns.All(c => Formula(snapshot.Data, r, c) is null && Cell(snapshot.Data, r, c) is null or "")) : 0;
+                .FirstOrDefault(r => Compatible(r) && (!section.HybridInputs || SafeHybridRow(sheet, snapshot.Data, r, left, right))) : 0;
             var insertNew = blank == 0;
             var row = insertNew ? boundary.Subtotal : blank;
+            if (section.HybridInputs && insertNew && section.InsertMode != "entireRow" && !SafeHybridRow(sheet, snapshot.Data, row - 1, left, right))
+                throw new ExcelInsertRejectedException("The subsection has no safe row template. Review its final data row in Excel.");
             foreach (var field in fields)
             {
                 if (section.SheetMatch is null && !Equals(Cell(snapshot.Data, section.HeaderRow, field.Column), field.Header)) throw new ExcelInsertRejectedException("The profile headers do not match this workbook section.");
-                if (Formula(snapshot.Data, insertNew ? row - 1 : row, field.Column) is not null) throw new ExcelInsertRejectedException("A mapped input column contains a formula; the profile layout does not match this target.");
+                var preserveOptionalFormula = section.HybridInputs && !insertNew && field.Value is null;
+                var createBlankInput = section.HybridInputs && insertNew && section.BlankHybridNewRows;
+                if (Formula(snapshot.Data, insertNew ? row - 1 : row, field.Column) is not null && !preserveOptionalFormula && !createBlankInput) throw new ExcelInsertRejectedException($"Column {new CellRange(1, field.Column, 1, 1).Address} contains a formula in the target or new-row template. Choose a compatible subsection or review its template in Excel.");
             }
+            if (section.HybridInputs && !insertNew)
+                fields = fields.Select(field => field.Value is null && Formula(snapshot.Data, row, field.Column) is not null
+                    ? field with { DisplayValue = "Existing formula preserved" } : field).ToArray();
             foreach (var formulaColumn in section.FormulaColumns.Select(A1Formula.ColumnNumber))
                 if (Formula(snapshot.Data, insertNew ? row - 1 : row, formulaColumn) is null) throw new ExcelInsertRejectedException("A formula column is missing its profile template formula.");
-            try { ValidateTarget(sheet, new(insertNew ? row - 1 : row, left, 1, right - left + 1), section.InsertMode == "tableRow" ? section.TableName : null, insertNew ? row - 1 : row); }
+            try { ValidateInsertTarget(sheet, section, insertNew, row, left, right); }
             catch (InvalidOperationException error) { throw new ExcelInsertRejectedException(error.Message); }
             if (section.InsertMode is not ("tableRow" or "entireRow" or "columnsOnly")) throw new ArgumentException("Unknown insert mode.");
             if (section.InsertMode == "tableRow") ValidateTable(sheet, section, row, left, right);
@@ -89,21 +100,24 @@ public sealed partial class ExcelHost
         var mutationStarted = false;
         try
         {
-            InBatch(() =>
+            InSectionBatch(pending, () =>
             {
                 if (SnapshotIdentity.Hash(ExcelReadback.Capture(workbook)) != SnapshotIdentity.Hash(pending.Before))
                     throw new ExcelInsertRejectedException("The workbook changed after preview. Request a new preview.");
-                ValidateTarget(sheet, new(pending.InsertNew ? pending.Row - 1 : pending.Row, pending.Left, 1, pending.Right - pending.Left + 1),
-                    pending.Section.InsertMode == "tableRow" ? pending.Section.TableName : null, pending.InsertNew ? pending.Row - 1 : pending.Row);
+                ValidateInsertTarget(sheet, pending.Section, pending.InsertNew, pending.Row, pending.Left, pending.Right);
                 mutationStarted = true;
                 if (pending.InsertNew) InsertRow(sheet, pending);
+                if (pending.InsertNew && pending.Section.BlankHybridNewRows)
+                {
+                    RequireBlankManualRow(sheet, pending);
+                }
                 foreach (var group in Groups(pending.InsertNew ? pending.Section.FormulaColumns.Select(A1Formula.ColumnNumber) : []))
                 {
                     Interop.Range? fill = null;
                     try { fill = ExcelReadback.Range(sheet, new(pending.Row - 1, group.Left, 2, group.Right - group.Left + 1)); fill.FillDown(); }
                     finally { ComLifetime.Release(fill); }
                 }
-                foreach (var group in Groups(pending.Values.Select(v => v.Column)))
+                foreach (var group in Groups(pending.Values.Where(v => !pending.Section.HybridInputs || v.Value is not null).Select(v => v.Column)))
                 {
                     var bounds = new CellRange(pending.Row, group.Left, 1, group.Right - group.Left + 1);
                     ValidateTarget(sheet, bounds, pending.Section.InsertMode == "tableRow" ? pending.Section.TableName : null, pending.Row);
@@ -139,6 +153,49 @@ public sealed partial class ExcelHost
         }
         catch { if (mutationStarted) registration.Faulted = true; throw; }
     }
+
+    private static void ValidateInsertTarget(Interop.Worksheet sheet, ExcelSectionDefinition section, bool insertNew, int row, int left, int right)
+    {
+        var wholeRow = insertNew && section.HybridInputs && section.InsertMode == "entireRow";
+        var source = insertNew ? row - 1 : row;
+        ValidateTarget(sheet, new(source, wholeRow ? 1 : left, 1, wholeRow ? 16384 : right - left + 1),
+            section.InsertMode == "tableRow" ? section.TableName : null, source);
+        // Inspect the insertion boundary too: whole-row shifts cannot split a merged,
+        // table, array or spill structure intersecting the subtotal row.
+        if (wholeRow) ValidateTarget(sheet, new(row, 1, 1, 16384));
+    }
+
+    private static void RequireBlankManualRow(Interop.Worksheet sheet, PendingInsert pending)
+    {
+        Interop.Range? created = null;
+        try
+        {
+            var wholeRow = pending.Section.InsertMode == "entireRow";
+            created = ExcelReadback.Range(sheet, new(pending.Row, wholeRow ? 1 : pending.Left, 1, wholeRow ? 16384 : pending.Right - pending.Left + 1));
+            var raw = created.Value2;
+            var occupied = raw is object[,] values ? values.Cast<object?>().Any(value => value is not null and not "") : raw is not null and not "";
+            if (created.HasFormula is not false || occupied)
+                throw new InvalidOperationException("Excel populated the new manual row unexpectedly. No supplied values were written; review the inserted row in Excel.");
+        }
+        finally { ComLifetime.Release(created); }
+    }
+
+    // A merged separator, foreign content or array/spill target is not a reusable data row.
+    private static bool SafeHybridRow(Interop.Worksheet sheet, RangeData data, int row, int left, int right)
+    {
+        for (var c = data.Range.Column; c < data.Range.Column + data.Range.Columns; c++)
+            if ((c < left || c > right) && (Cell(data, row, c) is not null and not "" || Formula(data, row, c) is not null)) return false;
+        try { ValidateTarget(sheet, new(row, left, 1, right - left + 1), null, row); return true; }
+        catch (InvalidOperationException) { return false; }
+    }
+
+    private T InSectionBatch<T>(PendingInsert pending, Func<T> operation) => InBatch(() =>
+    {
+        if (!pending.Section.BlankHybridNewRows) return operation();
+        var extendList = application!.ExtendList;
+        try { application.ExtendList = false; return operation(); }
+        finally { application.ExtendList = extendList; }
+    });
 
     private static void InsertRow(Interop.Worksheet sheet, PendingInsert pending)
     {
