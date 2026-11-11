@@ -11,6 +11,7 @@ const profile:WorkflowProfile={id:'synthetic-liquidation',displayName:'Synthetic
 function setup(count=3,workspace=false,options:{empty?:boolean;render?:boolean}={}){
   let imported=!options.empty,holdPreview=false;let finishPreview!:()=>void,finishOcr!:(value:unknown)=>void;
   let warnings:any[]=[];
+  let previewNumber=0;
   if(options.render)vi.stubGlobal('URL',{createObjectURL:()=>'blob:synthetic',revokeObjectURL:vi.fn()});
   const states:Record<string,ReceiptState>={};
   const items=Array.from({length:count},(_,i)=>({id:String(i+1).padStart(32,'a'),displayName:`synthetic-${i}.pdf`,status:'Pending' as const}));
@@ -31,7 +32,7 @@ function setup(count=3,workspace=false,options:{empty?:boolean;render?:boolean}=
     if(command==='excel.listWorkbooks')return {openedWorkbookId:'b'.repeat(32),workbooks:[{id:'b'.repeat(32),name:'Synthetic.xlsx',sheets:['Person 1','Person 2']}],sections:[{id:'expenses',label:'Expenses',sheetName:''},{id:'credits',label:'Credits',sheetName:''}],changes:[]};
     if(command==='receipt.changeProfile'){const state=states[active];state.version={...state.version!,profileId:p.profileId,revision:0};state.fields=state.fields.map(f=>({...f,value:p.values[f.key],status:'Draft'}));return structuredClone(state);}
     if(command==='receipt.prepare'){const state=states[active];state.version!.revision++;state.fields=state.fields.map(f=>({...f,value:p.values[f.key],status:'Corrected'}));return structuredClone(state);}
-    if(command==='excel.previewDraft'){const result={token:'c'.repeat(32),workbookId:p.workbookId,sectionId:p.sectionId,sheet:p.sheet,range:'B29:AF29',insertRow:29,values:[{key:'amount',header:'Amount',column:states[active].fields.find(f=>f.key==='account')?.value==='J'?10:17,value:123.5,displayValue:'123.50'}],manualReview:warnings};return holdPreview?new Promise(resolve=>{finishPreview=()=>resolve(result);}):result;}
+    if(command==='excel.previewDraft'){const result={token:(++previewNumber).toString(16).padStart(32,'c'),workbookId:p.workbookId,sectionId:p.sectionId,sheet:p.sheet,range:'B29:AF29',insertRow:29,values:[{key:'amount',header:'Amount',column:states[active].fields.find(f=>f.key==='account')?.value==='J'?10:17,value:123.5,displayValue:'123.50'}],manualReview:warnings};return holdPreview?new Promise(resolve=>{finishPreview=()=>resolve(result);}):result;}
     if(command==='excel.addRow'){(items.find(i=>i.id===active)! as {status:string}).status='Inserted';active=items.find(i=>i.status==='Pending')?.id??active;return {change:{workbook:'Synthetic.xlsx',sheet:'Person 1',range:'B29:AF29',manualReview:[]},queue:queue()};}
     if(command==='receipt.navigate'){if(p.skip)(items.find(i=>i.id===active)! as {status:string}).status='Skipped';active=p.targetId;return queue();}
     throw new Error(command);
@@ -223,4 +224,29 @@ it('checks manual values during pending OCR and ignores its late proposals after
  expect((screen.getByLabelText('Queue amount') as HTMLInputElement).value).toBe('123.50');
  expect(f.request.mock.calls.filter(c=>c[0]==='excel.addRow')).toHaveLength(0);
  expect(f.request.mock.calls.filter(c=>c[0]==='excel.previewDraft')).toHaveLength(1);
+});
+
+it('drains successive Check requests in order and offers only the latest preview for confirmation',async()=>{
+  const f=setup();await start();await destination();fields();
+  f.hold();
+  const button=screen.getByRole('button',{name:'Check row'});
+  fireEvent.click(button);
+  await waitFor(()=>expect(f.request.mock.calls.filter(c=>c[0]==='excel.previewDraft')).toHaveLength(1));
+  fireEvent.click(button);
+  expect(f.request.mock.calls.filter(c=>c[0]==='receipt.prepare')).toHaveLength(1);
+  expect(screen.queryByRole('button',{name:'Add row to Excel'})).toBeNull();
+  f.finish();
+  await waitFor(()=>expect(f.request.mock.calls.filter(c=>c[0]==='excel.previewDraft')).toHaveLength(2));
+  const prepares=f.request.mock.calls.filter(c=>c[0]==='receipt.prepare');
+  expect(prepares.map(c=>c[1].expected.revision)).toEqual([0,1]);
+  expect(screen.queryByRole('button',{name:'Add row to Excel'})).toBeNull();
+  f.finish();
+  const add=await screen.findByRole('button',{name:'Add row to Excel'});
+  expect(f.request.mock.calls.filter(c=>c[0]==='excel.addRow')).toHaveLength(0);
+  fireEvent.click(add);
+  fireEvent.click(add);
+  await waitFor(()=>expect(f.request.mock.calls.filter(c=>c[0]==='excel.addRow')).toHaveLength(1));
+  expect(f.request.mock.calls.find(c=>c[0]==='excel.addRow')?.[1]).toMatchObject({
+    previewToken:'2'.padStart(32,'c'),expected:{revision:2}
+  });
 });

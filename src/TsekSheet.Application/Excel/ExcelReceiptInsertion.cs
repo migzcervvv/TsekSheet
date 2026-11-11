@@ -61,7 +61,7 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
             : (p.ExcelSections ?? []).Select(s => new ExcelSectionChoice(s.Id, s.Label, s.SheetName)).ToArray();
     }
 
-    public async Task<SectionInsertPreview> PreviewAsync(DesktopReceiptReview receipt, ReviewVersion version, string workbookId, string sectionId, CancellationToken token, string? sheetName = null, bool draft = false)
+    public async Task<SectionInsertPreview> PreviewAsync(DesktopReceiptReview receipt, ReviewVersion version, string workbookId, string sectionId, CancellationToken token, string? sheetName = null, bool draft = false, ReceiptQueue? queue = null)
     {
         var total = Stopwatch.StartNew();
         await commands.WaitAsync(token);
@@ -69,7 +69,10 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
         {
             Measure("application.queue", total);
             var sourceWatch = Stopwatch.StartNew();
-            return await (draft ? receipt.WithDraftExcelAsync(version, Build, token) : receipt.WithVerifiedExcelAsync(version, Build, token));
+            Task<SectionInsertPreview> Start() => draft
+                ? receipt.WithDraftExcelAsync(version, Build, token)
+                : receipt.WithVerifiedExcelAsync(version, Build, token);
+            return await (queue is null ? Start() : queue.StartExcel(receipt, null, Start));
             async Task<SectionInsertPreview> Build(TypedReviewRecord record)
             {
                 Measure("application.source", sourceWatch);
@@ -77,6 +80,8 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
                 if (inserted.Contains(version.ReviewId) || SourceKeys(record).Any(submittedSources.Contains)) throw new FieldReviewException("ALREADY_INSERTED", "This receipt source was already inserted or submitted. Review the highlighted row in Excel.");
                 var profile = Profile(version.ProfileId);
                 if (WorkflowProfiles.Hash(profile) != version.ProfileHash) throw new FieldReviewException("STALE_PROFILE", "The local profile changed. Start a new review.");
+                foreach (var oldToken in previews.Where(entry => entry.Value.Version.ReviewId == version.ReviewId).Select(entry => entry.Key).ToArray())
+                    previews.Remove(oldToken);
                 var section = profile.Layout is { } layout
                     ? layout.Section(sectionId, sheetName ?? throw new FieldReviewException("SHEET_REQUIRED", "Choose a matching sheet."))
                     : profile.ExcelSections?.SingleOrDefault(s => s.Id == sectionId) ?? throw new FieldReviewException("UNKNOWN_SECTION", "Choose a section from this receipt profile.");
@@ -106,6 +111,7 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
                     if (preview.ManualReview.Count > 0) throw new FieldReviewException("AMBIGUOUS_TOTAL", "A subtotal formula needs manual review in Excel before Add Row is available.");
                     await RejectDuplicateAsync(workbookId, section, profile, record);
                 }
+                receipt.RecheckExcelSource(token);
                 if (previews.Count >= 64) previews.Clear();
                 previews[preview.Token] = (version, preview, book.Name, draft);
                 return preview;
@@ -128,33 +134,52 @@ public sealed class ExcelReceiptInsertion(IExcelHost host, ISectionWriter writer
         return date.ToDateTime(TimeOnly.MinValue).ToOADate();
     }
 
-    public async Task<ExcelInsertDisplay> InsertAsync(DesktopReceiptReview receipt, ReviewVersion version, string previewToken, CancellationToken token, bool confirm = false)
+    public async Task<ExcelInsertDisplay> InsertAsync(DesktopReceiptReview receipt, ReviewVersion version, string previewToken, CancellationToken token, bool confirm = false) =>
+        (await InsertCoreAsync(receipt, version, previewToken, token, confirm, null, null)).Change;
+
+    internal Task<(ExcelInsertDisplay Change, ReceiptQueueState? Queue)> InsertFromQueueAsync(
+        DesktopReceiptReview receipt, ReviewVersion version, string previewToken, CancellationToken token, ReceiptQueue queue, string? queueId) =>
+        InsertCoreAsync(receipt, version, previewToken, token, confirm: queueId is not null, queue, queueId);
+
+    private async Task<(ExcelInsertDisplay Change, ReceiptQueueState? Queue)> InsertCoreAsync(
+        DesktopReceiptReview receipt, ReviewVersion version, string previewToken, CancellationToken token, bool confirm, ReceiptQueue? queue, string? queueId)
     {
         await commands.WaitAsync(token);
         try
         {
-            if (!previews.Remove(previewToken, out var plan) || plan.Version != version) throw new FieldReviewException("STALE_INSERT_PREVIEW", "Request a fresh preview for the current receipt.");
-            if (plan.Draft && !confirm) throw new FieldReviewException("CONFIRMATION_REQUIRED", "Explicitly confirm the draft values and destination with Add Row.");
-            if (confirm) version = receipt.ConfirmAll(version, token).Version!;
-            return await receipt.WithVerifiedExcelAsync(version, async record =>
+            return await (queue is null ? Start() : queue.StartExcel(receipt, queueId, Start));
+
+            Task<(ExcelInsertDisplay Change, ReceiptQueueState? Queue)> Start()
             {
-                var sources = SourceKeys(record);
-                if (sources.Any(submittedSources.Contains)) throw new FieldReviewException("ALREADY_INSERTED", "This receipt source was already submitted. Review Excel before retrying.");
-                if (!inserted.Add(version.ReviewId)) throw new FieldReviewException("ALREADY_INSERTED", "This receipt was already submitted. Review Excel before retrying.");
-                submittedSources.UnionWith(sources);
-                // Once submitted, a failed/unknown outcome cannot be retried as another revision.
-                SectionInsertResult result;
-                try { result = await writer.InsertAsync(previewToken); }
-                catch (ExcelInsertRejectedException error)
+                if (!previews.Remove(previewToken, out var plan) || plan.Version != version)
+                    throw new FieldReviewException("STALE_INSERT_PREVIEW", "Request a fresh preview for the current receipt.");
+                if (plan.Draft && !confirm)
+                    throw new FieldReviewException("CONFIRMATION_REQUIRED", "Explicitly confirm the draft values and destination with Add Row.");
+                if (WorkflowProfiles.Hash(Profile(version.ProfileId)) != version.ProfileHash)
+                    throw new FieldReviewException("STALE_PROFILE", "The local profile changed. Start a new review.");
+                return receipt.WithVerifiedExcelAsync(version, Write, token, confirm);
+
+                async Task<(ExcelInsertDisplay Change, ReceiptQueueState? Queue)> Write(TypedReviewRecord record)
                 {
-                    inserted.Remove(version.ReviewId);
-                    foreach (var source in sources) submittedSources.Remove(source);
-                    throw new FieldReviewException("STALE_INSERT_PREVIEW", error.Message);
+                    receipt.RecheckExcelSource(token);
+                    var sources = SourceKeys(record);
+                    if (sources.Any(submittedSources.Contains)) throw new FieldReviewException("ALREADY_INSERTED", "This receipt source was already submitted. Review Excel before retrying.");
+                    if (!inserted.Add(version.ReviewId)) throw new FieldReviewException("ALREADY_INSERTED", "This receipt was already submitted. Review Excel before retrying.");
+                    submittedSources.UnionWith(sources);
+                    // Once submitted, a failed/unknown outcome cannot be retried as another revision.
+                    SectionInsertResult result;
+                    try { result = await writer.InsertAsync(previewToken); }
+                    catch (ExcelInsertRejectedException error)
+                    {
+                        inserted.Remove(version.ReviewId);
+                        foreach (var source in sources) submittedSources.Remove(source);
+                        throw new FieldReviewException("STALE_INSERT_PREVIEW", error.Message);
+                    }
+                    var display = new ExcelInsertDisplay(plan.Workbook, result.Sheet, result.Range, result.ManualReview);
+                    lock (changes) { if (changes.Count >= 128) changes.RemoveAt(0); changes.Add(display); }
+                    return (display, queueId is null ? null : queue!.Complete(queueId, receipt));
                 }
-                var display = new ExcelInsertDisplay(plan.Workbook, result.Sheet, result.Range, result.ManualReview);
-                lock (changes) { if (changes.Count >= 128) changes.RemoveAt(0); changes.Add(display); }
-                return display;
-            }, token);
+            }
         }
         finally { commands.Release(); }
     }

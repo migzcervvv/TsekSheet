@@ -18,18 +18,25 @@ public sealed partial class DesktopReceiptReview(Func<string, WorkflowProfile>? 
     private SourceLinkedFieldReview? review;
     private int page = 1;
     private bool disposed;
-    private bool excelBusy, disposeAfterExcel;
+    private bool excelOperationActive, disposeAfterExcel;
 
-    public async Task<T> WithVerifiedExcelAsync<T>(ReviewVersion expected, Func<TypedReviewRecord, Task<T>> operation, CancellationToken token)
+    public async Task<T> WithVerifiedExcelAsync<T>(ReviewVersion expected, Func<TypedReviewRecord, Task<T>> operation, CancellationToken token, bool confirm = false)
     {
         TypedReviewRecord record;
-        lock (gate) { record = Require(expected).Project(expected, token); excelBusy = true; }
+        lock (gate)
+        {
+            var current = Require(expected);
+            CheckMutationAllowed();
+            if (confirm) expected = current.ConfirmAll(expected, token).Version;
+            record = current.Project(expected, token);
+            excelOperationActive = true;
+        }
         try { return await operation(record).ConfigureAwait(false); }
         finally
         {
             lock (gate)
             {
-                excelBusy = false;
+                excelOperationActive = false;
                 if (disposeAfterExcel) Dispose();
             }
         }
@@ -53,7 +60,7 @@ public sealed partial class DesktopReceiptReview(Func<string, WorkflowProfile>? 
     {
         lock (gate)
         {
-            CheckOpen();
+            CheckMutationAllowed();
             if (source != null) throw new FieldReviewException("RECEIPT_ALREADY_OPEN", "Close the current receipt before selecting another source.");
             var document = sources.Register(path, token);
             source = new(document, Path.GetFileName(path));
@@ -65,7 +72,7 @@ public sealed partial class DesktopReceiptReview(Func<string, WorkflowProfile>? 
     {
         lock (gate)
         {
-            CheckOpen();
+            CheckMutationAllowed();
             if (review != null) throw new FieldReviewException("REVIEW_ALREADY_STARTED", "Close the receipt before changing its profile or page association.");
             if (source == null) throw new FieldReviewException("SOURCE_REQUIRED", "Select a local receipt first.");
             sources.IssueEvidence(source.Document.Version, pageNumber, token);
@@ -80,6 +87,7 @@ public sealed partial class DesktopReceiptReview(Func<string, WorkflowProfile>? 
         lock (gate)
         {
             var current = Require(expected);
+            CheckMutationAllowed();
             var field = current.Snapshot.Review.Fields.SingleOrDefault(f => f.Key == key);
             if (field == null || field.ValueRevision != valueRevision)
                 throw new FieldReviewException("STALE_FIELD_REVIEW", "Refresh the field before continuing review.");
@@ -133,15 +141,36 @@ public sealed partial class DesktopReceiptReview(Func<string, WorkflowProfile>? 
     {
         lock (gate)
         {
-            CheckOpen(); review?.Dispose(); review = null;
+            CheckMutationAllowed(); review?.Dispose(); review = null;
             if (source != null) sources.Release(sources.Snapshot(source.Document.Version.DocumentId).Version);
             source = null; page = 1;
         }
     }
-    public void Dispose() { lock (gate) { if (excelBusy) { disposeAfterExcel = true; return; } review?.Dispose(); sources.Dispose(); disposed = true; } }
+    public void Dispose() { lock (gate) { if (excelOperationActive) { disposeAfterExcel = true; return; } review?.Dispose(); sources.Dispose(); disposed = true; } }
     private void CheckOpen()
     {
         if (disposed || disposeAfterExcel) throw new FieldReviewException("SOURCE_SESSION_CLOSED", "Receipt session is closed.");
-        if (excelBusy) throw new FieldReviewException("EXCEL_INSERT_BUSY", "Wait for the Excel preview or insert to finish before changing this receipt.");
+    }
+
+    internal void CheckMutationAllowed()
+    {
+        lock (gate)
+        {
+            CheckOpen();
+            if (excelOperationActive) throw new FieldReviewException("RECEIPT_REVIEW_LOCKED", "Wait for Check Row or Add Row to finish, then refresh the receipt before editing or navigating.");
+        }
+    }
+
+    internal void RecheckExcelSource(CancellationToken token)
+    {
+        LocalDocumentVersion version;
+        int sourcePage;
+        lock (gate)
+        {
+            CheckOpen();
+            version = source!.Document.Version;
+            sourcePage = page;
+        }
+        sources.IssueEvidence(version, sourcePage, token);
     }
 }

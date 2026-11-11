@@ -218,11 +218,182 @@ public sealed class ReceiptQueueTests
         Assert.AreEqual(2, excel.Inserts);
     }
 
+    [TestMethod, DataRow(false), DataRow(true)]
+    public async Task HeldCheckAllowsRenderingAndObservationsButGuardsEditsAndNavigation(bool editAfterCheck)
+    {
+        var profile = LiquidationProfile.Create();
+        using var queue = new ReceiptQueue(_ => profile);
+        var initial = queue.Add([Source(1), Source(2)], default);
+        var receipt = queue.Active;
+        var started = receipt.Start(profile.Id, 1, default);
+        var draft = receipt.Prepare(started.Version!, Values(), default);
+        var barrier = new PreviewBarrier();
+        var excel = new FakeExcel { BeforePreview = barrier.Hold };
+        var insertion = new ExcelReceiptInsertion(excel, excel, _ => profile);
+        var check = insertion.PreviewAsync(receipt, draft.Version!, excel.Id, "expenses", default, "Person 1", draft: true, queue: queue);
+        try
+        {
+            await barrier.Entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            var source = draft.Source!.Document.Version;
+            var render = await receipt.RenderAsync(new TestRenderer(), source, 2, default);
+            Assert.AreEqual(source, render.Source);
+            Assert.AreEqual(2, render.Page.PageNumber);
+            var wrongSource = source with { Revision = source.Revision + 1 };
+            await Assert.ThrowsExactlyAsync<DocumentSourceException>(() => receipt.RenderAsync(new TestRenderer(), wrongSource, 1, default));
+            Assert.AreEqual(draft.Version, queue.State.Receipt.Version);
+            CollectionAssert.AreEqual(draft.Fields.ToArray(), receipt.State.Fields.ToArray());
+            var stale = Assert.ThrowsExactly<FieldReviewException>(() => receipt.Prepare(started.Version!, Values("STALE"), default));
+            Assert.AreEqual("STALE_RECORD_REVIEW", stale.Code);
+            var locked = Assert.ThrowsExactly<FieldReviewException>(() => receipt.Prepare(draft.Version!, Values("BLOCKED"), default));
+            Assert.AreEqual("RECEIPT_REVIEW_LOCKED", locked.Code);
+            locked = Assert.ThrowsExactly<FieldReviewException>(() => queue.Navigate(initial.ActiveId!, initial.Items[1].Id, false));
+            Assert.AreEqual("RECEIPT_REVIEW_LOCKED", locked.Code);
+            Assert.ThrowsExactly<FieldReviewException>(receipt.Close);
+        }
+        finally { barrier.Release.TrySetResult(); }
+
+        var preview = await check;
+        Assert.AreEqual("LOOP-1", preview.Values.Single(v => v.Key == "itemNo").Value);
+        if (editAfterCheck)
+        {
+            var changed = receipt.Prepare(draft.Version!, Values("AFTER-CHECK"), default);
+            Assert.AreNotEqual(draft.Version, changed.Version);
+            await Assert.ThrowsExactlyAsync<FieldReviewException>(() => insertion.InsertAsync(receipt, draft.Version!, preview.Token, default, confirm: true));
+        }
+        else await insertion.InsertAsync(receipt, draft.Version!, preview.Token, default, confirm: true);
+        Assert.AreEqual(editAfterCheck ? 0 : 1, excel.Inserts);
+    }
+
+    [TestMethod, DataRow(false), DataRow(true)]
+    public async Task HeldCheckRejectsSourceChangesAndSessionDisposal(bool dispose)
+    {
+        var profile = LiquidationProfile.Create();
+        using var receipt = new DesktopReceiptReview(_ => profile);
+        var path = Source(1);
+        receipt.Register(path, default);
+        var started = receipt.Start(profile.Id, 1, default);
+        var draft = receipt.Prepare(started.Version!, Values(), default);
+        var barrier = new PreviewBarrier();
+        var excel = new FakeExcel { BeforePreview = barrier.Hold };
+        var insertion = new ExcelReceiptInsertion(excel, excel, _ => profile);
+        var check = insertion.PreviewAsync(receipt, draft.Version!, excel.Id, "expenses", default, "Person 1", draft: true);
+        try
+        {
+            await barrier.Entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            if (dispose) receipt.Dispose();
+            else File.AppendAllText(path, "changed during Check");
+        }
+        finally { barrier.Release.TrySetResult(); }
+        if (dispose)
+        {
+            var closed = await Assert.ThrowsExactlyAsync<FieldReviewException>(() => check);
+            Assert.AreEqual("SOURCE_SESSION_CLOSED", closed.Code);
+        }
+        else await Assert.ThrowsExactlyAsync<DocumentSourceException>(() => check);
+        Assert.AreEqual(0, excel.Inserts);
+    }
+
+    [TestMethod]
+    public async Task ConsecutiveChecksSerializeAndOnlyNewestTokenCanBeConfirmed()
+    {
+        var profile = LiquidationProfile.Create();
+        using var receipt = new DesktopReceiptReview(_ => profile);
+        var draft = PrepareReceipt(receipt, profile, 1);
+        var barrier = new PreviewBarrier();
+        var excel = new FakeExcel { BeforePreview = barrier.Hold };
+        var insertion = new ExcelReceiptInsertion(excel, excel, _ => profile);
+        Task<SectionInsertPreview> Check() => insertion.PreviewAsync(receipt, draft.Version!, excel.Id, "expenses", default, "Person 1", draft: true);
+        var first = Check();
+        await barrier.Entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        var second = Check();
+        try
+        {
+            Assert.IsFalse(second.IsCompleted);
+            Assert.AreEqual(1, excel.Previews);
+        }
+        finally { barrier.Release.TrySetResult(); }
+        var older = await first;
+        var latest = await second;
+        Assert.AreEqual(2, excel.Previews);
+        Assert.AreNotEqual(older.Token, latest.Token);
+        var stale = await Assert.ThrowsExactlyAsync<FieldReviewException>(() => insertion.InsertAsync(receipt, draft.Version!, older.Token, default, confirm: true));
+        Assert.AreEqual("STALE_INSERT_PREVIEW", stale.Code);
+        Assert.AreEqual(0, excel.Inserts);
+        await insertion.InsertAsync(receipt, draft.Version!, latest.Token, default, confirm: true);
+        await Assert.ThrowsExactlyAsync<FieldReviewException>(() => insertion.InsertAsync(receipt, draft.Version!, latest.Token, default, confirm: true));
+        Assert.AreEqual(1, excel.Inserts);
+    }
+
+    [TestMethod, DataRow("unchanged"), DataRow("edit"), DataRow("source"), DataRow("navigate")]
+    public async Task InsertWaitsBehindAnotherCheckAndRevalidatesReceipt(string change)
+    {
+        var profile = LiquidationProfile.Create();
+        using var queue = new ReceiptQueue(_ => profile);
+        using var other = new DesktopReceiptReview(_ => profile);
+        var path = Source(1);
+        var initial = queue.Add([path, Source(2)], default);
+        var target = queue.Active;
+        var started = target.Start(profile.Id, 1, default);
+        var draft = target.Prepare(started.Version!, Values(), default);
+        var otherDraft = PrepareReceipt(other, profile, 3);
+        var excel = new FakeExcel();
+        var insertion = new ExcelReceiptInsertion(excel, excel, _ => profile);
+        var preview = await insertion.PreviewAsync(target, draft.Version!, excel.Id, "expenses", default, "Person 1", draft: true);
+        var barrier = new PreviewBarrier();
+        excel.BeforePreview = barrier.Hold;
+        var check = insertion.PreviewAsync(other, otherDraft.Version!, excel.Id, "expenses", default, "Person 1", draft: true);
+        await barrier.Entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        var write = insertion.InsertFromQueueAsync(target, draft.Version!, preview.Token, default, queue, initial.ActiveId);
+        try
+        {
+            Assert.IsFalse(write.IsCompleted);
+            Assert.AreEqual(0, excel.Inserts);
+            if (change == "edit") target.Prepare(draft.Version!, Values("NEW-DRAFT"), default);
+            if (change == "source") File.AppendAllText(path, "changed");
+            if (change == "navigate") queue.Navigate(initial.ActiveId!, initial.Items[1].Id, false);
+        }
+        finally { barrier.Release.TrySetResult(); }
+        await check;
+        if (change is "edit" or "navigate")
+        {
+            var stale = await Assert.ThrowsExactlyAsync<FieldReviewException>(() => write);
+            Assert.AreEqual(change == "edit" ? "STALE_RECORD_REVIEW" : "STALE_QUEUE", stale.Code);
+        }
+        else if (change == "source") await Assert.ThrowsExactlyAsync<DocumentSourceException>(() => write);
+        else Assert.AreEqual("Inserted", (await write).Queue!.Items[0].Status);
+        await Assert.ThrowsExactlyAsync<FieldReviewException>(() => insertion.InsertFromQueueAsync(target, draft.Version!, preview.Token, default, queue, initial.ActiveId));
+        Assert.AreEqual(change == "unchanged" ? 1 : 0, excel.Inserts);
+    }
+
+    private ReceiptState PrepareReceipt(DesktopReceiptReview receipt, WorkflowProfile profile, int source)
+    {
+        receipt.Register(Source(source), default);
+        var state = receipt.Start(profile.Id, 1, default);
+        return receipt.Prepare(state.Version!, Values(), default);
+    }
+
+    private sealed class PreviewBarrier
+    {
+        public TaskCompletionSource Entered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public Task Hold() { Entered.TrySetResult(); return Release.Task; }
+    }
+
+    private sealed class TestRenderer : ILocalDocumentRenderer
+    {
+        public Task<RenderedDocumentPage> RenderAsync(byte[] bytes, LocalDocumentKind kind, int page, CancellationToken token)
+        {
+            Assert.IsTrue(bytes.AsSpan().StartsWith("%PDF-"u8));
+            return Task.FromResult(new RenderedDocumentPage(page, 2, 10, 10, "synthetic"));
+        }
+    }
+
     private sealed class FakeExcel : IExcelHost, IWorkbookReader, ISectionWriter
     {
         public string Id => new('a', 32);
         public bool Ambiguous, Duplicate, DuplicateInvoice, Legacy, UnknownOutcome, RejectInsert;
         public int Inserts, Reads, UsedRanges, Previews;
+        public Func<Task>? BeforePreview;
         public Task<ExcelHostInfo> StartAsync() => Task.FromResult(new ExcelHostInfo(1, "synthetic"));
         public Task<IReadOnlyList<ExcelWorkbook>> ListWorkbooksAsync() => Task.FromResult<IReadOnlyList<ExcelWorkbook>>([new(Id, "Synthetic.xlsx", "native-only", ["Person 1"])]);
         public Task<ExcelWorkbook> OpenAsync(string path) => throw new NotSupportedException();
@@ -242,9 +413,11 @@ public sealed class ReceiptQueueTests
             if (Legacy) { values[3, 0] = "Existing vendor"; values[3, 2] = "SHARED-1"; values[5, 0] = "Subtotal"; }
             return Task.FromResult(new RangeData(range, values, new string?[43, 32], new string[43, 32]));
         }
-        public Task<SectionInsertPreview> PreviewInsertAsync(string id, ExcelSectionDefinition section, IReadOnlyList<InsertValue> values)
+        public async Task<SectionInsertPreview> PreviewInsertAsync(string id, ExcelSectionDefinition section, IReadOnlyList<InsertValue> values)
         {
-            Previews++; return Task.FromResult(new SectionInsertPreview(Guid.NewGuid().ToString("N"), id, section.Id, section.SheetName, "B29:AF29", 29, values, Ambiguous ? [new("J31:J31", "unsupported", "Review total")] : []));
+            Previews++;
+            if (BeforePreview is not null) await BeforePreview();
+            return new SectionInsertPreview(Guid.NewGuid().ToString("N"), id, section.Id, section.SheetName, "B29:AF29", 29, values, Ambiguous ? [new("J31:J31", "unsupported", "Review total")] : []);
         }
         public Task<SectionInsertResult> InsertAsync(string token)
         {
